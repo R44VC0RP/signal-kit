@@ -1,0 +1,52 @@
+{
+  "name": "@signal-kit/client",
+  "version": "0.1.1",
+  "description": "Tiny WebSocket client for Signal Kit. Subscribe to Twitch EventSub notifications from any JavaScript runtime.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "browser": {
+    "./dist/index.cjs": "./dist/index.global.js",
+    "./dist/index.js": "./dist/index.global.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup && node scripts/copy-iife.mjs",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "tsup"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "twitch",
+    "eventsub",
+    "websocket",
+    "signal-kit",
+    "streaming",
+    "overlay"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anomalyco/signal-kit",
+    "directory": "packages/client"
+  },
+  "homepage": "https://signal.ryan.ceo",
+  "devDependencies": {
+    "tsup": "^8.3.6",
+    "typescript": "^5"
+  }
+}

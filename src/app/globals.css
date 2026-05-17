@@ -1,26 +1,86 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Aeonik is a commercial font licensed via https://cofotype.com/aeonik.
+ * The repo only references it via local() lookups so it picks up an installed
+ * copy if you have one. To self-host the webfont, drop the .woff2 files in
+ * public/fonts/aeonik/ and re-add the `url("/fonts/aeonik/...")` source to
+ * each @font-face below. See public/fonts/aeonik/README.md.
+ */
+
+@font-face {
+  font-family: "Aeonik";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Aeonik Pro Regular"),
+    local("AeonikPro-Regular"),
+    local("Aeonik");
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@font-face {
+  font-family: "Aeonik";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Aeonik Pro Regular Italic"),
+    local("AeonikPro-RegularItalic");
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@font-face {
+  font-family: "Aeonik";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src:
+    local("Aeonik Pro Medium"),
+    local("AeonikPro-Medium");
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@font-face {
+  font-family: "Aeonik";
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src:
+    local("Aeonik Pro Medium Italic"),
+    local("AeonikPro-MediumItalic");
+}
+
+@font-face {
+  font-family: "Aeonik";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local("Aeonik Pro Bold"),
+    local("AeonikPro-Bold");
+}
+
+@font-face {
+  font-family: "Aeonik";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local("Aeonik Pro Bold Italic"),
+    local("AeonikPro-BoldItalic");
+}
+
+@theme {
+  --font-sans: "Aeonik", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+html {
+  font-family: var(--font-sans);
+  color: var(--color-neutral-950);
+  background-color: white;
+}
+
+::selection {
+  background: var(--color-violet-200);
+  color: var(--color-violet-900);
 }
