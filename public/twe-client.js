@@ -48,6 +48,7 @@ var __SignalKitBundle = (() => {
       if (this.socket && (this.socket.readyState === 0 || this.socket.readyState === 1)) {
         return this;
       }
+      clearTimeout(this.reconnectTimer);
       this.closed = false;
       const WebSocketImpl = this.options.WebSocket ?? globalThis.WebSocket;
       if (!WebSocketImpl) {
@@ -78,7 +79,7 @@ var __SignalKitBundle = (() => {
       socket.addEventListener?.("close", (event) => {
         const closeEvent = event;
         this.options.onClose?.({ code: closeEvent.code, reason: closeEvent.reason });
-        if (!this.closed && this.options.reconnectMs !== false) {
+        if (!this.closed && this.options.reconnectMs !== false && this.shouldReconnect(closeEvent.code)) {
           const delay = typeof this.options.reconnectMs === "number" ? this.options.reconnectMs : DEFAULT_RECONNECT_MS;
           this.reconnectTimer = setTimeout(() => this.connect(), delay);
         }
@@ -125,6 +126,10 @@ var __SignalKitBundle = (() => {
       this.handlers.get("*")?.forEach((handler) => {
         void handler(message);
       });
+    }
+    shouldReconnect(code) {
+      const terminalCodes = this.options.terminalCloseCodes ?? [1002, 1003, 1007, 1008];
+      return !terminalCodes.includes(code);
     }
   };
   var index_default = SignalKit;

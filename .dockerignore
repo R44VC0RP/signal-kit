@@ -1,8 +1,12 @@
 .env
 .env.*
+**/.env
+**/.env.*
 !.env.example
+!**/.env.example
 .next
 node_modules
+**/node_modules
 npm-debug.log*
 Dockerfile
 docker-compose*.yml
@@ -10,3 +14,4 @@ docker-compose*.yml
 .gitignore
 README.md
 docs
+packages/*/dist

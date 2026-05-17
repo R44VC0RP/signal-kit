@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Signal Kit Browser Smoke Test</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 32px;
+        max-width: 720px;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      pre,
+      code {
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      #status {
+        margin: 12px 0 16px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: #f4f1ff;
+        color: #5b21b6;
+        font-size: 13px;
+      }
+      #log {
+        margin: 0;
+        padding: 12px;
+        border-radius: 8px;
+        background: #0c0b17;
+        color: #f3f1ff;
+        white-space: pre-wrap;
+        overflow-x: auto;
+        min-height: 240px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Signal Kit · Browser smoke test</h1>
+    <div id="status">booting…</div>
+    <pre id="log"></pre>
+
+    <script src="https://signal.ryan.ceo/twe-client.js"></script>
+    <script>
+      const status = document.getElementById("status");
+      const log = document.getElementById("log");
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token");
+      if (!token) {
+        status.textContent = "missing ?token=sk_live_… in URL";
+      } else if (typeof SignalKit !== "function") {
+        status.textContent = "SignalKit global not found";
+      } else {
+        const events = new SignalKit({
+          url: "wss://signal.ryan.ceo/ws",
+          token,
+          onOpen: () => {
+            status.textContent = "connected";
+          },
+          onClose: (e) => {
+            status.textContent = "closed code=" + e.code + " reason=" + (e.reason || "");
+          },
+          onError: () => {
+            status.textContent = "error";
+          },
+        });
+
+        events.on("*", (msg) => {
+          log.textContent += JSON.stringify(msg) + "\n\n";
+          window.__signalKitMessages = (window.__signalKitMessages || []).concat(msg);
+        });
+
+        events.connect();
+      }
+    </script>
+  </body>
+</html>

@@ -29,11 +29,12 @@ type ManagedConnection = {
   ws?: WebSocket;
   reconnectTimer?: NodeJS.Timeout;
   sessionId?: string;
-  intentionallyClosed?: boolean;
 };
 
 class EventSubManager {
   private connections = new Map<string, ManagedConnection>();
+  private suppressedReconnects = new WeakSet<WebSocket>();
+  private activeSubscribeJobs = new Set<string>();
   private started = false;
 
   start() {
@@ -41,8 +42,14 @@ class EventSubManager {
       return;
     }
     this.started = true;
-    void this.syncAllUsers();
-    setInterval(() => void this.syncAllUsers(), 60_000);
+    void this.syncAllUsers().catch((error) => {
+      console.error("[eventsub] initial sync failed", error);
+    });
+    setInterval(() => {
+      void this.syncAllUsers().catch((error) => {
+        console.error("[eventsub] periodic sync failed", error);
+      });
+    }, 60_000);
   }
 
   async syncAllUsers() {
@@ -68,13 +75,12 @@ class EventSubManager {
   }
 
   private connect(connection: ManagedConnection, url: string) {
-    connection.intentionallyClosed = false;
     const ws = new WebSocket(url);
     connection.ws = ws;
 
     ws.on("message", (data) => void this.handleMessage(connection, data.toString()));
     ws.on("close", () => {
-      if (!connection.intentionallyClosed) {
+      if (!this.suppressedReconnects.has(ws)) {
         this.scheduleReconnect(connection);
       }
     });
@@ -84,7 +90,10 @@ class EventSubManager {
   }
 
   private async handleMessage(connection: ManagedConnection, rawMessage: string) {
-    const message = JSON.parse(rawMessage) as TwitchEventSubMessage;
+    const message = parseEventSubMessage(connection.userId, rawMessage);
+    if (!message) {
+      return;
+    }
     const messageType = message.metadata?.message_type;
 
     if (messageType === "session_welcome") {
@@ -131,11 +140,15 @@ class EventSubManager {
     const replacement = new WebSocket(reconnectUrl);
     replacement.on("message", (data) => {
       const raw = data.toString();
-      const message = JSON.parse(raw) as TwitchEventSubMessage;
+      const message = parseEventSubMessage(connection.userId, raw);
+      if (!message) {
+        return;
+      }
       if (message.metadata?.message_type === "session_welcome") {
-        connection.intentionallyClosed = true;
+        if (oldWs) {
+          this.suppressedReconnects.add(oldWs);
+        }
         oldWs?.close();
-        connection.intentionallyClosed = false;
         connection.ws = replacement;
         connection.sessionId = message.payload?.session?.id;
         return;
@@ -154,45 +167,64 @@ class EventSubManager {
   }
 
   private async subscribeActive(userId: string, sessionId: string) {
-    const accessToken = await getUsableAccessToken(userId);
-    const subscriptions = await getDb()
-      .select()
-      .from(eventSubscriptions)
-      .where(eq(eventSubscriptions.twitchUserId, userId));
+    const jobKey = `${userId}:${sessionId}`;
+    if (this.activeSubscribeJobs.has(jobKey)) {
+      return;
+    }
 
-    const needsSubscription = subscriptions.filter(
-      (subscription) =>
-        subscription.status === "desired" ||
-        (subscription.status === "enabled" && subscription.twitchSessionId !== sessionId),
-    );
+    this.activeSubscribeJobs.add(jobKey);
+    try {
+      const accessToken = await getUsableAccessToken(userId);
+      const subscriptions = await getDb()
+        .select()
+        .from(eventSubscriptions)
+        .where(eq(eventSubscriptions.twitchUserId, userId));
 
-    await Promise.all(
-      needsSubscription.map(async (subscription) => {
-        try {
-          const result = await createEventSubSubscription(accessToken, {
-            type: subscription.type,
-            version: subscription.version,
-            condition: subscription.conditionJson,
-            sessionId,
-          });
-          const created = result.data[0];
-          await getDb()
-            .update(eventSubscriptions)
-            .set({
-              status: created?.status ?? "enabled",
-              twitchSubscriptionId: created?.id,
-              twitchSessionId: sessionId,
-              error: null,
-            })
-            .where(eq(eventSubscriptions.id, subscription.id));
-        } catch (error) {
-          await getDb()
-            .update(eventSubscriptions)
-            .set({ status: "failed", twitchSessionId: sessionId, error: String(error) })
-            .where(eq(eventSubscriptions.id, subscription.id));
-        }
-      }),
-    );
+      const needsSubscription = subscriptions.filter(
+        (subscription) =>
+          subscription.status === "desired" ||
+          (subscription.status === "enabled" && subscription.twitchSessionId !== sessionId),
+      );
+
+      await Promise.all(
+        needsSubscription.map(async (subscription) => {
+          try {
+            const result = await createEventSubSubscription(accessToken, {
+              type: subscription.type,
+              version: subscription.version,
+              condition: subscription.conditionJson,
+              sessionId,
+            });
+            const created = result.data[0];
+            await getDb()
+              .update(eventSubscriptions)
+              .set({
+                status: created?.status ?? "enabled",
+                twitchSubscriptionId: created?.id,
+                twitchSessionId: sessionId,
+                error: null,
+              })
+              .where(eq(eventSubscriptions.id, subscription.id));
+          } catch (error) {
+            await getDb()
+              .update(eventSubscriptions)
+              .set({ status: "failed", twitchSessionId: sessionId, error: String(error) })
+              .where(eq(eventSubscriptions.id, subscription.id));
+          }
+        }),
+      );
+    } finally {
+      this.activeSubscribeJobs.delete(jobKey);
+    }
+  }
+}
+
+function parseEventSubMessage(userId: string, rawMessage: string) {
+  try {
+    return JSON.parse(rawMessage) as TwitchEventSubMessage;
+  } catch (error) {
+    console.warn(`[eventsub] ${userId} received invalid JSON`, error);
+    return null;
   }
 }
 

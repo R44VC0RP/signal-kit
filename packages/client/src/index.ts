@@ -33,6 +33,8 @@ export type SignalKitOptions = {
   WebSocket?: typeof WebSocket;
   /** Auto-reconnect delay in milliseconds. Default `2000`. Set `false` to disable. */
   reconnectMs?: number | false;
+  /** Close codes that should not reconnect. Default: 1002, 1003, 1007, 1008. */
+  terminalCloseCodes?: number[];
   /** Called when the underlying socket opens. */
   onOpen?: () => void;
   /** Called when the underlying socket closes. */
@@ -69,6 +71,7 @@ export class SignalKit {
       return this;
     }
 
+    clearTimeout(this.reconnectTimer);
     this.closed = false;
     const WebSocketImpl = this.options.WebSocket ?? globalThis.WebSocket;
     if (!WebSocketImpl) {
@@ -102,7 +105,7 @@ export class SignalKit {
     socket.addEventListener?.("close", (event) => {
       const closeEvent = event as CloseEvent;
       this.options.onClose?.({ code: closeEvent.code, reason: closeEvent.reason });
-      if (!this.closed && this.options.reconnectMs !== false) {
+      if (!this.closed && this.options.reconnectMs !== false && this.shouldReconnect(closeEvent.code)) {
         const delay = typeof this.options.reconnectMs === "number" ? this.options.reconnectMs : DEFAULT_RECONNECT_MS;
         this.reconnectTimer = setTimeout(() => this.connect(), delay);
       }
@@ -155,6 +158,11 @@ export class SignalKit {
     this.handlers.get("*")?.forEach((handler) => {
       void handler(message);
     });
+  }
+
+  private shouldReconnect(code: number): boolean {
+    const terminalCodes = this.options.terminalCloseCodes ?? [1002, 1003, 1007, 1008];
+    return !terminalCodes.includes(code);
   }
 }
 

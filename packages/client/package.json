@@ -1,6 +1,6 @@
 {
   "name": "@signal-kit/client",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Tiny WebSocket client for Signal Kit. Subscribe to Twitch EventSub notifications from any JavaScript runtime.",
   "license": "MIT",
   "type": "module",
@@ -41,7 +41,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/anomalyco/signal-kit",
+    "url": "git+https://github.com/R44VC0RP/signal-kit.git",
     "directory": "packages/client"
   },
   "homepage": "https://signal.ryan.ceo",

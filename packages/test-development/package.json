@@ -1,0 +1,18 @@
+{
+  "name": "test-development",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:sdk": "node --env-file=.env test-sdk.mjs",
+    "test:sdk-invalid": "node --env-file=.env test-sdk-invalid.mjs",
+    "test:browser": "node --env-file=.env test-browser.mjs",
+    "test:negative": "node --env-file=.env test-negative.mjs"
+  },
+  "dependencies": {
+    "@signal-kit/client": "*"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
+  }
+}

@@ -35,6 +35,7 @@ Options:
 - `token` (required) — Relay token issued by the Signal Kit dashboard.
 - `WebSocket` — Optional WebSocket constructor. Defaults to `globalThis.WebSocket`. On older Node versions, pass the `ws` package: `import { WebSocket } from "ws"; new SignalKit({ ..., WebSocket })`.
 - `reconnectMs` — Auto-reconnect delay in ms. Default `2000`. Pass `false` to disable.
+- `terminalCloseCodes` — Close codes that should not reconnect. Defaults to `1002`, `1003`, `1007`, and `1008` so invalid/revoked tokens do not reconnect forever.
 - `onOpen`, `onClose`, `onError` — Lifecycle callbacks.
 
 ### Methods

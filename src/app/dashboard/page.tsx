@@ -79,7 +79,9 @@ export default async function DashboardPage() {
           initialTokens={data.tokens}
           events={data.events}
           wsUrl={data.wsUrl}
-          connectionHtml={data.connectionHtml}
+          appUrl={data.appUrl}
+          snippets={data.snippets}
+          highlighted={data.highlighted}
         />
       </main>
       <DashboardFooter />

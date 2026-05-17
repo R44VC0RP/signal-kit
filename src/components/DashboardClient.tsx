@@ -29,16 +29,34 @@ type DashboardEvent = {
   error: string | null;
 };
 
+type Snippets = {
+  npmInstall: string;
+  scriptTag: string;
+  browserExample: string;
+  nodeExample: string;
+};
+
+type Highlighted = {
+  npmInstall: string;
+  scriptTag: string;
+  browserExample: string;
+  nodeExample: string;
+};
+
 export function DashboardClient({
   initialTokens,
   events,
   wsUrl,
-  connectionHtml,
+  appUrl,
+  snippets,
+  highlighted,
 }: {
   initialTokens: TokenRow[];
   events: DashboardEvent[];
   wsUrl: string;
-  connectionHtml: string;
+  appUrl: string;
+  snippets: Snippets;
+  highlighted: Highlighted;
 }) {
   const [tokens, setTokens] = useState(initialTokens);
   const [newToken, setNewToken] = useState<string | null>(null);
@@ -93,7 +111,9 @@ export function DashboardClient({
         tokens={tokens}
         newToken={newToken}
         wsUrl={wsUrl}
-        connectionHtml={connectionHtml}
+        appUrl={appUrl}
+        snippets={snippets}
+        highlighted={highlighted}
         onCreate={createToken}
         onRevoke={revokeToken}
       />
@@ -106,69 +126,48 @@ function Tokens({
   tokens,
   newToken,
   wsUrl,
-  connectionHtml,
+  appUrl,
+  snippets,
+  highlighted,
   onCreate,
   onRevoke,
 }: {
   tokens: TokenRow[];
   newToken: string | null;
   wsUrl: string;
-  connectionHtml: string;
+  appUrl: string;
+  snippets: Snippets;
+  highlighted: Highlighted;
   onCreate: () => void;
   onRevoke: (id: string) => void;
 }) {
   return (
     <section className="border-b border-neutral-200">
-      <div className="mx-auto w-full max-w-6xl px-6 pt-16 pb-16">
+      <div className="mx-auto w-full max-w-6xl px-6 pt-12 pb-16">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
               Relay tokens
             </p>
-            <h2 className="mt-3 text-2xl font-medium tracking-tight sm:text-3xl">
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
               Tokens for overlays and bots
             </h2>
             <p className="mt-2 max-w-[60ch] text-pretty text-neutral-600">
-              Pass a token in the WebSocket URL or{" "}
-              <code className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-sm text-neutral-900">
-                Authorization
-              </code>{" "}
-              header. Tokens are shown once and can be revoked any time.
+              Pass a token in the WebSocket URL. Tokens are shown once and can be revoked any time.
             </p>
           </div>
           <button
             type="button"
             onClick={onCreate}
-            className="inline-flex items-center rounded-md bg-violet-600 px-3 py-2 text-sm font-medium text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+            className="inline-flex items-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
           >
             Generate token
           </button>
         </div>
 
-        {newToken ? (
-          <div className="mt-8 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-950 font-mono text-sm text-neutral-100">
-            <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-2.5 text-xs tracking-wide text-neutral-400 uppercase">
-              <span>new token</span>
-              <span>shown once</span>
-            </div>
-            <pre className="overflow-x-auto p-5 text-neutral-200">
-              <code className="break-all">{newToken}</code>
-            </pre>
-          </div>
-        ) : null}
+        {newToken ? <NewTokenReveal token={newToken} /> : null}
 
-        <div className="mt-8 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-950 font-mono text-sm text-neutral-100">
-          <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-2.5 text-xs tracking-wide text-neutral-400 uppercase">
-            <span>connection</span>
-            <span className="break-all text-neutral-500 normal-case">{wsUrl}?token=sk_live_...</span>
-          </div>
-          <div
-            className="overflow-x-auto p-5 text-sm leading-6 [&_pre]:m-0 [&_pre]:bg-transparent! [&_pre]:p-0"
-            dangerouslySetInnerHTML={{ __html: connectionHtml }}
-          />
-        </div>
-
-        <div className="mt-10">
+        <div className="mt-8">
           {tokens.length === 0 ? (
             <p className="border-t border-neutral-200 pt-6 text-sm text-neutral-500">
               No tokens yet. Generate one to start connecting overlays.
@@ -181,7 +180,7 @@ function Tokens({
                   className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <div className="text-sm font-medium tracking-tight">{token.label}</div>
+                    <div className="text-sm font-semibold tracking-tight">{token.label}</div>
                     <div className="mt-1 font-mono text-xs text-neutral-500">
                       {token.revokedAt ? "revoked" : "active"} · last used{" "}
                       {token.lastUsedAt
@@ -193,7 +192,7 @@ function Tokens({
                     <button
                       type="button"
                       onClick={() => onRevoke(token.id)}
-                      className="inline-flex items-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                      className="inline-flex items-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
                     >
                       Revoke
                     </button>
@@ -203,9 +202,254 @@ function Tokens({
             </ul>
           )}
         </div>
+
+        <UseTheToken
+          wsUrl={wsUrl}
+          appUrl={appUrl}
+          newToken={newToken}
+          snippets={snippets}
+          highlighted={highlighted}
+        />
       </div>
     </section>
   );
+}
+
+function NewTokenReveal({ token }: { token: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-8 overflow-hidden rounded-xl border border-violet-200 bg-violet-50">
+      <div className="flex items-center justify-between border-b border-violet-200 bg-white px-4 py-2.5 font-mono text-xs tracking-wide text-violet-700 uppercase">
+        <span>new token</span>
+        <span>shown once</span>
+      </div>
+      <div className="flex items-center gap-3 p-4">
+        <pre className="flex-1 overflow-x-auto font-mono text-sm text-violet-900">
+          <code className="break-all">{token}</code>
+        </pre>
+        <button
+          type="button"
+          onClick={() => {
+            void navigator.clipboard.writeText(token);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          }}
+          className="inline-flex shrink-0 items-center rounded-md border border-violet-300 bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function UseTheToken({
+  wsUrl,
+  appUrl,
+  newToken,
+  snippets,
+  highlighted,
+}: {
+  wsUrl: string;
+  appUrl: string;
+  newToken: string | null;
+  snippets: Snippets;
+  highlighted: Highlighted;
+}) {
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+
+  const tokenForPrompt = newToken ?? "<paste-your-relay-token-here>";
+  const prompt = buildAiPrompt({ wsUrl, appUrl, token: tokenForPrompt });
+
+  async function copyPrompt() {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopiedPrompt(true);
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } catch {
+      setCopiedPrompt(false);
+    }
+  }
+
+  return (
+    <div className="mt-12 border-t border-neutral-200 pt-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
+            Use the token
+          </p>
+          <h3 className="mt-3 text-xl font-semibold tracking-tight sm:text-2xl">
+            Install and connect
+          </h3>
+          <p className="mt-2 max-w-[60ch] text-pretty text-neutral-600">
+            The{" "}
+            <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
+              @signal-kit/client
+            </code>{" "}
+            package is published on npm. Drop it into any JavaScript project.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={copyPrompt}
+          className="inline-flex items-center gap-2 rounded-md border border-violet-300 bg-violet-50 px-3 py-2 text-sm font-semibold text-violet-800 hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+        >
+          {copiedPrompt ? "Copied to clipboard" : "Copy AI agent prompt"}
+        </button>
+      </div>
+
+      <div className="mt-6 grid gap-6">
+        <div>
+          <p className="mb-2 font-mono text-xs tracking-wide text-neutral-500 uppercase">
+            Install
+          </p>
+          <TabbedCode
+            tabs={[
+              {
+                key: "npm",
+                label: "npm",
+                html: highlighted.npmInstall,
+                fallback: snippets.npmInstall,
+              },
+              {
+                key: "browser",
+                label: "script tag",
+                html: highlighted.scriptTag,
+                fallback: snippets.scriptTag,
+              },
+            ]}
+          />
+        </div>
+
+        <div>
+          <p className="mb-2 font-mono text-xs tracking-wide text-neutral-500 uppercase">
+            Quick start
+          </p>
+          <TabbedCode
+            tabs={[
+              {
+                key: "node",
+                label: "Node / Bun",
+                html: highlighted.nodeExample,
+                fallback: snippets.nodeExample,
+              },
+              {
+                key: "browser",
+                label: "Browser",
+                html: highlighted.browserExample,
+                fallback: snippets.browserExample,
+              },
+            ]}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type CodeTab = {
+  key: string;
+  label: string;
+  html: string;
+  fallback: string;
+};
+
+function TabbedCode({ tabs }: { tabs: CodeTab[] }) {
+  const [activeKey, setActiveKey] = useState(tabs[0]?.key);
+  const active = tabs.find((tab) => tab.key === activeKey) ?? tabs[0];
+  if (!active) {
+    return null;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-950 font-mono text-sm text-neutral-100 shadow-sm shadow-violet-200/40 ring-1 ring-black/5">
+      <div
+        role="tablist"
+        aria-label="Code variants"
+        className="flex items-center gap-1 border-b border-neutral-800 px-2 py-1.5"
+      >
+        {tabs.map((tab) => {
+          const isActive = tab.key === active.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveKey(tab.key)}
+              className={
+                isActive
+                  ? "rounded-md bg-neutral-800 px-3 py-1 text-xs font-semibold tracking-wide text-white uppercase"
+                  : "rounded-md px-3 py-1 text-xs font-semibold tracking-wide text-neutral-400 uppercase hover:text-neutral-100"
+              }
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+        <span aria-hidden="true" className="ml-auto pr-2 text-neutral-500">
+          •••
+        </span>
+      </div>
+      {active.html ? (
+        <div
+          className="overflow-x-auto p-5 text-sm leading-6 [&_pre]:m-0 [&_pre]:bg-transparent! [&_pre]:p-0"
+          dangerouslySetInnerHTML={{ __html: active.html }}
+        />
+      ) : (
+        <pre className="overflow-x-auto p-5 leading-6 text-neutral-200">
+          <code>{active.fallback}</code>
+        </pre>
+      )}
+    </div>
+  );
+}
+
+function buildAiPrompt({
+  wsUrl,
+  appUrl,
+  token,
+}: {
+  wsUrl: string;
+  appUrl: string;
+  token: string;
+}) {
+  return `Integrate the @signal-kit/client SDK into this project. Signal Kit (${appUrl}) is a Twitch EventSub WebSocket relay.
+
+Setup:
+1. Install: \`npm install @signal-kit/client\`
+2. Add to .env (do not commit):
+   SIGNAL_KIT_URL=${wsUrl}
+   SIGNAL_KIT_TOKEN=${token}
+
+Usage example:
+\`\`\`ts
+import { SignalKit } from "@signal-kit/client";
+
+const events = new SignalKit({
+  url: process.env.SIGNAL_KIT_URL!,
+  token: process.env.SIGNAL_KIT_TOKEN!,
+});
+
+events.on("channel.cheer", ({ event }) => {
+  // event.user_name, event.bits, event.message
+});
+
+events.on("*", (message) => {
+  console.log(message.type, message.event);
+});
+
+events.connect();
+\`\`\`
+
+Notes:
+- The client auto-reconnects on connection drops.
+- Event payloads are the raw Twitch EventSub JSON (untouched).
+- Use the "*" handler to receive every event.
+- Reference docs: ${appUrl}/docs
+- Never commit SIGNAL_KIT_TOKEN to source control.
+
+Now ask me what I want to do with these events before writing any code.`;
 }
 
 function Events({
@@ -225,13 +469,13 @@ function Events({
 
   return (
     <section>
-      <div className="mx-auto w-full max-w-6xl px-6 pt-16 pb-24">
+      <div className="mx-auto w-full max-w-6xl px-6 pt-12 pb-24">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
               Subscriptions
             </p>
-            <h2 className="mt-3 text-2xl font-medium tracking-tight sm:text-3xl">
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
               EventSub state
             </h2>
             <p className="mt-2 max-w-[60ch] text-pretty text-neutral-600">
@@ -242,7 +486,7 @@ function Events({
           <button
             type="button"
             onClick={onSync}
-            className="inline-flex items-center rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+            className="inline-flex items-center rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
           >
             Sync subscriptions
           </button>
@@ -270,7 +514,7 @@ function Events({
               >
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-medium tracking-tight text-neutral-950">
+                    <span className="text-sm font-semibold tracking-tight text-neutral-950">
                       {event.label}
                     </span>
                     <span className="font-mono text-xs text-neutral-500">v{event.version}</span>
