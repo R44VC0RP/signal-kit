@@ -132,12 +132,14 @@ export async function getMyYouTubeChannel(accessToken: string) {
 export async function listActiveLiveBroadcasts(accessToken: string) {
   const url = new URL(`${YOUTUBE_API_BASE}/liveBroadcasts`);
   url.searchParams.set("part", "id,snippet,status");
-  url.searchParams.set("broadcastStatus", "active");
   url.searchParams.set("broadcastType", "all");
   url.searchParams.set("mine", "true");
-  url.searchParams.set("maxResults", "5");
+  url.searchParams.set("maxResults", "50");
   const response = await youtubeFetch<{ items?: YouTubeLiveBroadcast[] }>(accessToken, url);
-  return response.items ?? [];
+  return (response.items ?? []).filter((broadcast) => {
+    const status = broadcast.status?.lifeCycleStatus;
+    return status === "live" || status === "liveStarting" || status === "testing" || status === "testStarting";
+  });
 }
 
 export async function listLiveChatMessages(
