@@ -215,21 +215,7 @@
           "isUnique": true
         }
       },
-      "foreignKeys": {
-        "connected_accounts_owner_twitch_user_id_twitch_users_id_fk": {
-          "name": "connected_accounts_owner_twitch_user_id_twitch_users_id_fk",
-          "tableFrom": "connected_accounts",
-          "tableTo": "twitch_users",
-          "columnsFrom": [
-            "owner_twitch_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {
         "connected_accounts_id": {
           "name": "connected_accounts_id",

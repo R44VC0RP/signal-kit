@@ -19,6 +19,5 @@ CREATE TABLE `connected_accounts` (
 	CONSTRAINT `connected_accounts_unique_provider_account_idx` UNIQUE(`owner_twitch_user_id`,`provider`,`provider_account_id`)
 );
 --> statement-breakpoint
-ALTER TABLE `connected_accounts` ADD CONSTRAINT `connected_accounts_owner_twitch_user_id_twitch_users_id_fk` FOREIGN KEY (`owner_twitch_user_id`) REFERENCES `twitch_users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX `connected_accounts_owner_idx` ON `connected_accounts` (`owner_twitch_user_id`);--> statement-breakpoint
 CREATE INDEX `connected_accounts_provider_idx` ON `connected_accounts` (`provider`);

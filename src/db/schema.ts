@@ -44,9 +44,7 @@ export const connectedAccounts = mysqlTable(
   "connected_accounts",
   {
     id: varchar("id", { length: 64 }).primaryKey(),
-    ownerTwitchUserId: varchar("owner_twitch_user_id", { length: 64 })
-      .notNull()
-      .references(() => twitchUsers.id, { onDelete: "cascade" }),
+    ownerTwitchUserId: varchar("owner_twitch_user_id", { length: 64 }).notNull(),
     provider: varchar("provider", { length: 32 }).notNull(),
     providerAccountId: varchar("provider_account_id", { length: 128 }).notNull(),
     login: varchar("login", { length: 128 }).notNull(),
