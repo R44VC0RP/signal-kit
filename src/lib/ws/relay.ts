@@ -2,6 +2,8 @@ import WebSocket from "ws";
 
 export type RelayPayload = {
   type: string;
+  provider?: string;
+  account?: unknown;
   subscription?: unknown;
   event?: unknown;
   receivedAt: string;

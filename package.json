@@ -14,7 +14,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "sdk:build": "npm run build --workspace @signal-kit/client",
-    "sdk:check": "npm run typecheck --workspace @signal-kit/client"
+    "sdk:check": "npm run typecheck --workspace @signal-kit/client",
+    "cli:build": "npm run build --workspace @signal-kit/cli",
+    "cli:check": "npm run typecheck --workspace @signal-kit/cli"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",

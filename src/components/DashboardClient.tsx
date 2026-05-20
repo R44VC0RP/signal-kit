@@ -10,6 +10,20 @@ type TokenRow = {
   revokedAt: Date | string | null;
 };
 
+type ConnectedAccount = {
+  id: string;
+  provider: string;
+  providerAccountId: string;
+  login: string;
+  displayName: string;
+  profileImageUrl: string | null;
+  scopes: string[];
+  lastSyncAt: Date | string | null;
+  lastEventAt: Date | string | null;
+  lastError: string | null;
+  connectedAt: Date | string | null;
+};
+
 type DashboardEventStatus =
   | "enabled"
   | "desired"
@@ -45,6 +59,7 @@ type Highlighted = {
 
 export function DashboardClient({
   initialTokens,
+  accounts,
   events,
   wsUrl,
   appUrl,
@@ -52,6 +67,7 @@ export function DashboardClient({
   highlighted,
 }: {
   initialTokens: TokenRow[];
+  accounts: ConnectedAccount[];
   events: DashboardEvent[];
   wsUrl: string;
   appUrl: string;
@@ -107,6 +123,7 @@ export function DashboardClient({
         </div>
       ) : null}
 
+      <Accounts accounts={accounts} />
       <Tokens
         tokens={tokens}
         newToken={newToken}
@@ -119,6 +136,91 @@ export function DashboardClient({
       />
       <Events events={events} onSync={syncSubscriptions} />
     </>
+  );
+}
+
+function Accounts({ accounts }: { accounts: ConnectedAccount[] }) {
+  return (
+    <section className="border-b border-neutral-200">
+      <div className="mx-auto w-full max-w-6xl px-6 pt-12 pb-16">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
+              Connected accounts
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+              Twitch plus YouTube Live
+            </h2>
+            <p className="mt-2 max-w-[62ch] text-pretty text-neutral-600">
+              YouTube support watches active live broadcasts and relays live chat events through
+              the same WebSocket tokens as Twitch.
+            </p>
+          </div>
+          <a
+            href="/api/auth/youtube/start"
+            className="inline-flex items-center rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white ring-1 ring-neutral-950 hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+          >
+            Connect YouTube
+          </a>
+        </div>
+
+        <ul role="list" className="mt-8 divide-y divide-neutral-200 border-t border-neutral-200">
+          {accounts.map((account) => (
+            <li
+              key={`${account.provider}-${account.id}`}
+              className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                {account.profileImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={account.profileImageUrl}
+                    alt=""
+                    className="size-10 rounded-full bg-neutral-100 object-cover"
+                  />
+                ) : (
+                  <div className="flex size-10 items-center justify-center rounded-full bg-neutral-100 font-mono text-xs text-neutral-500 uppercase">
+                    {account.provider.slice(0, 2)}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="truncate text-sm font-semibold tracking-tight">
+                      {account.displayName}
+                    </span>
+                    <span className="font-mono text-xs text-neutral-500 uppercase">
+                      {account.provider}
+                    </span>
+                  </div>
+                  <div className="mt-1 truncate font-mono text-xs text-neutral-500">
+                    {account.provider === "youtube" ? "live chat relay" : "eventsub relay"} · {account.scopes.length} scopes
+                  </div>
+                  {account.lastError ? (
+                    <div className="mt-2 max-w-[72ch] truncate font-mono text-xs text-red-700" title={account.lastError}>
+                      {account.lastError}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="font-mono text-xs text-neutral-500 sm:text-right">
+                {account.provider === "youtube" ? (
+                  <>
+                    <div>
+                      last sync {account.lastSyncAt ? new Date(account.lastSyncAt).toLocaleString() : "pending"}
+                    </div>
+                    <div>
+                      last event {account.lastEventAt ? new Date(account.lastEventAt).toLocaleString() : "none yet"}
+                    </div>
+                  </>
+                ) : (
+                  <div>connected owner</div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }
 
@@ -414,7 +516,7 @@ function buildAiPrompt({
   appUrl: string;
   token: string;
 }) {
-  return `Integrate the @signal-kit/client SDK into this project. Signal Kit (${appUrl}) is a Twitch EventSub WebSocket relay.
+  return `Integrate the @signal-kit/client SDK into this project. Signal Kit (${appUrl}) is a Twitch EventSub and YouTube Live Chat WebSocket relay.
 
 Setup:
 1. Install: \`npm install @signal-kit/client\`
@@ -435,8 +537,12 @@ events.on("channel.cheer", ({ event }) => {
   // event.user_name, event.bits, event.message
 });
 
+events.on("youtube.live_chat.message", ({ event }) => {
+  // event.authorDetails?.displayName, event.snippet?.displayMessage
+});
+
 events.on("*", (message) => {
-  console.log(message.type, message.event);
+  console.log(message.provider, message.type, message.event);
 });
 
 events.connect();
@@ -444,7 +550,7 @@ events.connect();
 
 Notes:
 - The client auto-reconnects on connection drops.
-- Event payloads are the raw Twitch EventSub JSON (untouched).
+- Event payloads are raw provider JSON. Twitch events are EventSub payloads; YouTube events are liveChatMessage resources.
 - Use the "*" handler to receive every event.
 - Reference docs: ${appUrl}/docs
 - Never commit SIGNAL_KIT_TOKEN to source control.

@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { eventSubscriptions, overlayTokens } from "@/db/schema";
+import { connectedAccounts, eventSubscriptions, overlayTokens } from "@/db/schema";
 import { getAppUrl, getWsUrl } from "@/lib/app-url";
 import { highlightCode } from "@/lib/highlighter";
 import { eventCatalogForUser } from "@/lib/twitch/event-catalog";
@@ -31,8 +31,28 @@ export type DashboardSnippets = {
   nodeExample: string;
 };
 
-export async function getDashboardData(user: { id: string; scopes: string[] }) {
-  const [tokens, subscriptions] = await Promise.all([
+export type DashboardConnectedAccount = {
+  id: string;
+  provider: string;
+  providerAccountId: string;
+  login: string;
+  displayName: string;
+  profileImageUrl: string | null;
+  scopes: string[];
+  lastSyncAt: Date | null;
+  lastEventAt: Date | null;
+  lastError: string | null;
+  connectedAt: Date | null;
+};
+
+export async function getDashboardData(user: {
+  id: string;
+  login: string;
+  displayName: string;
+  profileImageUrl: string | null;
+  scopes: string[];
+}) {
+  const [tokens, subscriptions, linkedAccounts] = await Promise.all([
     getDb()
       .select({
         id: overlayTokens.id,
@@ -53,6 +73,23 @@ export async function getDashboardData(user: { id: string; scopes: string[] }) {
       })
       .from(eventSubscriptions)
       .where(eq(eventSubscriptions.twitchUserId, user.id)),
+    getDb()
+      .select({
+        id: connectedAccounts.id,
+        provider: connectedAccounts.provider,
+        providerAccountId: connectedAccounts.providerAccountId,
+        login: connectedAccounts.login,
+        displayName: connectedAccounts.displayName,
+        profileImageUrl: connectedAccounts.profileImageUrl,
+        scopes: connectedAccounts.scopes,
+        lastSyncAt: connectedAccounts.lastSyncAt,
+        lastEventAt: connectedAccounts.lastEventAt,
+        lastError: connectedAccounts.lastError,
+        connectedAt: connectedAccounts.connectedAt,
+      })
+      .from(connectedAccounts)
+      .where(eq(connectedAccounts.ownerTwitchUserId, user.id))
+      .orderBy(desc(connectedAccounts.connectedAt)),
   ]);
 
   const subscriptionsByKey = new Map(
@@ -110,6 +147,10 @@ export async function getDashboardData(user: { id: string; scopes: string[] }) {
     document.body.dataset.bits = event.bits;
   });
 
+  events.on("youtube.live_chat.super_chat", ({ event }) => {
+    console.log(event.snippet.displayMessage);
+  });
+
   events.connect();
 </script>`;
 
@@ -124,8 +165,12 @@ events.on("channel.cheer", ({ event }) => {
   console.log(\`\${event.user_name} cheered \${event.bits} bits\`);
 });
 
+events.on("youtube.live_chat.message", ({ event }) => {
+  console.log(event.authorDetails?.displayName, event.snippet?.displayMessage);
+});
+
 events.on("*", (message) => {
-  console.log(message.type, message.event);
+  console.log(message.provider, message.type, message.event);
 });
 
 events.connect();`;
@@ -139,6 +184,22 @@ events.connect();`;
 
   return {
     tokens,
+    accounts: [
+      {
+        id: user.id,
+        provider: "twitch",
+        providerAccountId: user.id,
+        login: user.login,
+        displayName: user.displayName,
+        profileImageUrl: user.profileImageUrl,
+        scopes: user.scopes,
+        lastSyncAt: null,
+        lastEventAt: null,
+        lastError: null,
+        connectedAt: null,
+      },
+      ...linkedAccounts,
+    ] satisfies DashboardConnectedAccount[],
     events,
     wsUrl,
     appUrl,

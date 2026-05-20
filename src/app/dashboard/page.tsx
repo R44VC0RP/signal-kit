@@ -77,6 +77,7 @@ export default async function DashboardPage() {
         </section>
         <DashboardClient
           initialTokens={data.tokens}
+          accounts={data.accounts}
           events={data.events}
           wsUrl={data.wsUrl}
           appUrl={data.appUrl}

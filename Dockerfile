@@ -5,6 +5,7 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
 COPY packages/client/package.json ./packages/client/
+COPY packages/cli/package.json ./packages/cli/
 RUN npm ci
 
 FROM deps AS builder

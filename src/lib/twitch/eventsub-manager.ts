@@ -117,6 +117,8 @@ class EventSubManager {
     if (messageType === "notification") {
       relayHub.publish(connection.userId, {
         type: message.payload?.subscription?.type ?? "eventsub.notification",
+        provider: "twitch",
+        account: { provider: "twitch", providerAccountId: connection.userId },
         subscription: message.payload?.subscription,
         event: message.payload?.event,
         receivedAt: new Date().toISOString(),

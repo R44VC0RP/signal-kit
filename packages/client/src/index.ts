@@ -1,21 +1,33 @@
 /**
  * @signal-kit/client
  *
- * Minimal WebSocket client for Signal Kit. Subscribe to Twitch EventSub
- * notifications using a relay token. Works in browsers, Bun, and Node 22+.
+ * Minimal WebSocket client for Signal Kit. Subscribe to Twitch EventSub and
+ * YouTube Live Chat notifications using a relay token. Works in browsers,
+ * Bun, and Node 22+.
  */
 
 export type SignalKitMessage<E = unknown> = {
-  /** Twitch EventSub subscription type, e.g. "channel.cheer". Also "signal_kit.ready". */
+  /** Provider event type, e.g. "channel.cheer" or "youtube.live_chat.message". */
   type: string;
-  /** The Twitch EventSub subscription metadata. */
+  /** Event source provider, e.g. "twitch" or "youtube". */
+  provider?: string;
+  /** Connected provider account metadata. */
+  account?: {
+    id?: string;
+    provider?: string;
+    providerAccountId?: string;
+    login?: string;
+    displayName?: string;
+    [key: string]: unknown;
+  };
+  /** The provider subscription/chat metadata. */
   subscription?: {
     id?: string;
     type?: string;
     version?: string;
     [key: string]: unknown;
   };
-  /** The raw Twitch event payload. */
+  /** The raw provider event payload. */
   event?: E;
   /** ISO 8601 timestamp when Signal Kit received the message. */
   receivedAt: string;

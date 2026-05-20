@@ -1,29 +1,27 @@
 {
-  "name": "@signal-kit/client",
-  "version": "0.1.2",
-  "description": "Tiny WebSocket client for Signal Kit. Subscribe to livestream provider notifications from any JavaScript runtime.",
+  "name": "@signal-kit/cli",
+  "version": "0.1.0",
+  "description": "CLI event stream for Signal Kit Twitch EventSub relay tokens.",
   "license": "MIT",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "bin": {
+    "signal-kit": "dist/index.js",
+    "signalkit": "dist/index.js"
+  },
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     }
-  },
-  "browser": {
-    "./dist/index.cjs": "./dist/index.global.js",
-    "./dist/index.js": "./dist/index.global.js"
   },
   "files": [
     "dist",
     "README.md"
   ],
   "scripts": {
-    "build": "tsup && node scripts/copy-iife.mjs",
+    "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "tsup"
@@ -35,17 +33,22 @@
     "twitch",
     "eventsub",
     "websocket",
-    "signal-kit",
-    "streaming",
-    "overlay"
+    "cli",
+    "signal-kit"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/R44VC0RP/signal-kit.git",
-    "directory": "packages/client"
+    "directory": "packages/cli"
   },
   "homepage": "https://signal.ryan.ceo",
+  "dependencies": {
+    "@signal-kit/client": "^0.1.2",
+    "ws": "^8.20.1"
+  },
   "devDependencies": {
+    "@types/node": "^20",
+    "@types/ws": "^8.18.1",
     "tsup": "^8.3.6",
     "typescript": "^5"
   }

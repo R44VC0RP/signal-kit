@@ -48,11 +48,11 @@ function Hero() {
     <section>
       <div className="mx-auto w-full max-w-3xl px-6 pt-16 pb-10 sm:pt-24">
         <h1 className="max-w-[28ch] text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          Twitch events as one developer-friendly WebSocket.
+          Stream events as one developer-friendly WebSocket.
         </h1>
         <p className="mt-5 max-w-[60ch] text-pretty text-neutral-600">
-          Sign in with Twitch, get a relay token, and pipe every follow, sub, cheer, redemption,
-          raid, and chat event into overlays, agents, or anything else you build.
+          Sign in with Twitch, connect YouTube, get a relay token, and pipe chat, subs,
+          cheers, redemptions, Super Chats, and live messages into whatever you build.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
           <a
@@ -76,6 +76,7 @@ function Hero() {
 function LivePreview() {
   const events = [
     { type: "channel.cheer", user: "ryan", note: "100 bits", time: "12s" },
+    { type: "youtube.live_chat.super_chat", user: "jules", note: '"keep building"', time: "18s" },
     { type: "channel.subscribe", user: "morgan", note: "tier 1", time: "24s" },
     { type: "channel.follow", user: "alex", note: "", time: "38s" },
     { type: "channel.chat.message", user: "ki", note: '"GG"', time: "1m" },
@@ -89,7 +90,7 @@ function LivePreview() {
           live preview
         </p>
         <p className="mt-3 max-w-[60ch] text-pretty text-sm text-neutral-600">
-          A sample of events streaming over a Signal Kit relay token. Same JSON Twitch sends,
+          A sample of events streaming over a Signal Kit relay token. Raw provider JSON,
           delivered through one WebSocket.
         </p>
         <div className="mt-6 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm shadow-violet-200/40 ring-1 ring-black/5">
@@ -143,6 +144,13 @@ events.on("channel.cheer", ({ event }) => {
   });
 });
 
+events.on("youtube.live_chat.super_chat", ({ event }) => {
+  overlay.superChat({
+    user: event.authorDetails?.displayName,
+    message: event.snippet?.displayMessage,
+  });
+});
+
 events.connect();`;
 
   return (
@@ -166,15 +174,15 @@ function Prose() {
         </h2>
         <div className="mt-5 max-w-[68ch] space-y-4 text-pretty text-neutral-700">
           <p>
-            Signal Kit is a small piece of infrastructure between you and Twitch EventSub. Sign in
-            once and the app manages the EventSub WebSocket on your behalf, refreshes tokens, and
-            resubscribes to topics whenever Twitch closes a session.
+            Signal Kit is a small piece of infrastructure between you and livestream provider APIs.
+            Sign in once and the app manages Twitch EventSub plus YouTube Live Chat token refresh
+            and polling on your behalf.
           </p>
           <p>
             On the other side, you get a single relay WebSocket. Drop a token into an overlay, a
             local agent, or a hobby script. Notifications stream through with the raw{" "}
             <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">event</code>{" "}
-            payload Twitch sent. No vendor JSON shapes, no alert templates.
+            payload each provider sent. No vendor JSON shapes, no alert templates.
           </p>
           <p>
             It is self-hostable, runs in Docker, and stores credentials encrypted in MySQL. There is
@@ -198,7 +206,7 @@ function Faq() {
     },
     {
       q: "Which events are supported?",
-      a: "Every EventSub topic Twitch lets you subscribe to with the granted scopes. The dashboard shows what is ready and what needs a scope.",
+      a: "Every EventSub topic Twitch lets you subscribe to with the granted scopes, plus YouTube Live Chat messages and fan-funding chat events while a broadcast is active.",
     },
     {
       q: "Can I self-host?",
@@ -268,5 +276,4 @@ function SiteFooter() {
     </footer>
   );
 }
-
 

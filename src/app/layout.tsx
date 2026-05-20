@@ -10,7 +10,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Signal Kit",
   description:
-    "Twitch EventSub as one developer-friendly WebSocket. OAuth once, get a relay token, build whatever you want.",
+    "Twitch EventSub and YouTube Live Chat as one developer-friendly WebSocket. OAuth once, get a relay token, build whatever you want.",
 };
 
 export default function RootLayout({

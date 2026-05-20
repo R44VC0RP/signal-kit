@@ -6,6 +6,7 @@ import { randomToken } from "@/lib/crypto";
 import { eventSubManager } from "@/lib/twitch/eventsub-manager";
 import { authenticateOverlayToken } from "@/lib/ws/auth";
 import { relayHub } from "@/lib/ws/relay";
+import { youtubeLiveManager } from "@/lib/youtube/live-manager";
 
 const dev = process.env.NODE_ENV !== "production";
 const bindHost = process.env.BIND_HOST ?? "0.0.0.0";
@@ -70,6 +71,7 @@ async function main() {
     console.log(`Signal Kit ready on http://${bindHost}:${port}`);
     if (process.env.DATABASE_URL) {
       eventSubManager.start();
+      youtubeLiveManager.start();
     } else {
       console.warn("Signal Kit started without DATABASE_URL; EventSub manager is paused.");
     }

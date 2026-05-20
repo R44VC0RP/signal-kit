@@ -4,8 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "cli": "node ../cli/dist/index.js --no-color",
     "test:sdk": "node --env-file=.env test-sdk.mjs",
     "test:sdk-invalid": "node --env-file=.env test-sdk-invalid.mjs",
+    "test:cli": "node ../cli/dist/index.js --no-color",
+    "test:cli:smoke": "node ../cli/dist/index.js --no-color --duration 8s",
     "test:browser": "node --env-file=.env test-browser.mjs",
     "test:negative": "node --env-file=.env test-negative.mjs"
   },

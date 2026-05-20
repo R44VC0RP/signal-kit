@@ -48,15 +48,15 @@ function Intro() {
           Docs
         </p>
         <h1 className="mt-4 max-w-[28ch] text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          Build with Twitch events.
+          Build with Twitch and YouTube Live events.
         </h1>
         <p className="mt-5 max-w-[60ch] text-pretty text-neutral-600">
           The relay exposes a single authenticated WebSocket. Messages are JSON. The{" "}
           <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
             event
           </code>{" "}
-          field is the raw Twitch EventSub payload, and the message type matches the EventSub
-          subscription type.
+          field is the raw provider payload. Twitch messages use EventSub payloads. YouTube
+          messages use Live Chat API resources.
         </p>
       </div>
     </section>
@@ -101,6 +101,10 @@ function QuickStart() {
     document.body.dataset.bits = event.bits;
   });
 
+  events.on("youtube.live_chat.super_chat", ({ event }) => {
+    console.log(event.snippet.displayMessage);
+  });
+
   events.connect();
 </script>`;
 
@@ -112,7 +116,7 @@ const events = new SignalKit({
 });
 
 events.on("*", (message) => {
-  console.log(message.type, message.event);
+  console.log(message.provider, message.type, message.event);
 });
 
 events.connect();`;
@@ -131,7 +135,7 @@ events.connect();`;
           <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
             on(type, handler)
           </code>{" "}
-          subscribes to a specific EventSub type, or pass{" "}
+          subscribes to a specific provider event type, or pass{" "}
           <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
             &quot;*&quot;
           </code>{" "}
@@ -160,19 +164,26 @@ events.connect();`;
 
 function MessageShape() {
   const payload = `{
-  "type": "channel.cheer",
+  "type": "youtube.live_chat.message",
+  "provider": "youtube",
+  "account": {
+    "provider": "youtube",
+    "displayName": "Creator"
+  },
   "subscription": {
-    "id": "...",
-    "type": "channel.cheer",
-    "version": "1"
+    "type": "youtube.live_chat",
+    "liveChatId": "...",
+    "broadcastId": "..."
   },
   "event": {
-    "user_id": "1234",
-    "user_name": "viewer",
-    "broadcaster_user_id": "5678",
-    "bits": 100,
-    "message": "PogChamp",
-    "is_anonymous": false
+    "id": "...",
+    "snippet": {
+      "type": "textMessageEvent",
+      "displayMessage": "hello chat"
+    },
+    "authorDetails": {
+      "displayName": "viewer"
+    }
   },
   "receivedAt": "2026-05-15T00:00:00.000Z"
 }`;
@@ -187,11 +198,11 @@ function MessageShape() {
           One envelope, one event.
         </h2>
         <p className="mt-3 max-w-[60ch] text-pretty text-neutral-600">
-          The relay never reshapes Twitch payloads. The{" "}
+          The relay keeps provider payloads raw. The{" "}
           <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
             event
           </code>{" "}
-          field is exactly what Twitch sends. Use{" "}
+          field is exactly what Twitch or YouTube sends. Use{" "}
           <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
             type
           </code>{" "}
@@ -213,12 +224,37 @@ function Catalog() {
           Event catalog
         </p>
         <h2 className="mt-3 max-w-[28ch] text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-          Everything Signal Kit subscribes to.
+          Twitch EventSub catalog.
         </h2>
         <p className="mt-3 max-w-[60ch] text-pretty text-neutral-600">
           Subscriptions are created when the granted Twitch scopes cover them. The dashboard shows
-          which events are ready and which need a scope.
+          which events are ready and which need a scope. YouTube Live Chat events are discovered
+          automatically from active broadcasts after connecting YouTube.
         </p>
+        <div className="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+          <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
+            YouTube live event types
+          </p>
+          <p className="mt-2 text-sm text-neutral-600">
+            The live poller emits events like{" "}
+            <code className="rounded bg-white px-1 py-0.5 font-mono text-xs text-violet-800">
+              youtube.live_chat.message
+            </code>
+            ,{" "}
+            <code className="rounded bg-white px-1 py-0.5 font-mono text-xs text-violet-800">
+              youtube.live_chat.super_chat
+            </code>
+            , and{" "}
+            <code className="rounded bg-white px-1 py-0.5 font-mono text-xs text-violet-800">
+              youtube.live_chat.super_sticker
+            </code>
+            . Use{" "}
+            <code className="rounded bg-white px-1 py-0.5 font-mono text-xs text-violet-800">
+              message.provider
+            </code>{" "}
+            to separate Twitch from YouTube in shared relay streams.
+          </p>
+        </div>
         <dl className="mt-8 divide-y divide-neutral-200 border-t border-neutral-200">
           {EVENT_CATALOG.map((item) => (
             <div key={`${item.type}-${item.version}`} className="py-4">
@@ -259,5 +295,4 @@ function DocsFooter() {
     </footer>
   );
 }
-
 
