@@ -8,34 +8,53 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 
-export const twitchUsers = mysqlTable("twitch_users", {
+export const appUsers = mysqlTable("app_users", {
   id: varchar("id", { length: 64 }).primaryKey(),
-  login: varchar("login", { length: 128 }).notNull(),
   displayName: varchar("display_name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }),
   profileImageUrl: text("profile_image_url"),
-  accessTokenEncrypted: text("access_token_encrypted").notNull(),
-  refreshTokenEncrypted: text("refresh_token_encrypted").notNull(),
-  tokenExpiresAt: timestamp("token_expires_at"),
-  scopes: json("scopes").$type<string[]>().notNull(),
-  connectedAt: timestamp("connected_at").defaultNow().notNull(),
+  primaryProvider: varchar("primary_provider", { length: 32 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .notNull()
     .$onUpdate(() => new Date()),
 });
 
+export const twitchUsers = mysqlTable(
+  "twitch_users",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    appUserId: varchar("app_user_id", { length: 64 }),
+    login: varchar("login", { length: 128 }).notNull(),
+    displayName: varchar("display_name", { length: 255 }).notNull(),
+    email: varchar("email", { length: 255 }),
+    profileImageUrl: text("profile_image_url"),
+    accessTokenEncrypted: text("access_token_encrypted").notNull(),
+    refreshTokenEncrypted: text("refresh_token_encrypted").notNull(),
+    tokenExpiresAt: timestamp("token_expires_at"),
+    scopes: json("scopes").$type<string[]>().notNull(),
+    connectedAt: timestamp("connected_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    appUserIdx: index("twitch_users_app_user_idx").on(table.appUserId),
+  }),
+);
+
 export const appSessions = mysqlTable(
   "app_sessions",
   {
     id: varchar("id", { length: 128 }).primaryKey(),
-    twitchUserId: varchar("twitch_user_id", { length: 64 })
-      .notNull()
-      .references(() => twitchUsers.id, { onDelete: "cascade" }),
+    appUserId: varchar("app_user_id", { length: 64 }),
+    twitchUserId: varchar("twitch_user_id", { length: 64 }),
     expiresAt: timestamp("expires_at").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
+    appUserIdx: index("app_sessions_app_user_idx").on(table.appUserId),
     userIdx: index("app_sessions_user_idx").on(table.twitchUserId),
   }),
 );
@@ -44,7 +63,8 @@ export const connectedAccounts = mysqlTable(
   "connected_accounts",
   {
     id: varchar("id", { length: 64 }).primaryKey(),
-    ownerTwitchUserId: varchar("owner_twitch_user_id", { length: 64 }).notNull(),
+    appUserId: varchar("app_user_id", { length: 64 }),
+    ownerTwitchUserId: varchar("owner_twitch_user_id", { length: 64 }),
     provider: varchar("provider", { length: 32 }).notNull(),
     providerAccountId: varchar("provider_account_id", { length: 128 }).notNull(),
     login: varchar("login", { length: 128 }).notNull(),
@@ -64,8 +84,13 @@ export const connectedAccounts = mysqlTable(
       .$onUpdate(() => new Date()),
   },
   (table) => ({
+    appUserIdx: index("connected_accounts_app_user_idx").on(table.appUserId),
     ownerIdx: index("connected_accounts_owner_idx").on(table.ownerTwitchUserId),
     providerIdx: index("connected_accounts_provider_idx").on(table.provider),
+    uniqueAppProvider: uniqueIndex("connected_accounts_unique_app_provider_idx").on(
+      table.appUserId,
+      table.provider,
+    ),
     uniqueProviderAccount: uniqueIndex("connected_accounts_unique_provider_account_idx").on(
       table.ownerTwitchUserId,
       table.provider,
@@ -78,9 +103,8 @@ export const overlayTokens = mysqlTable(
   "overlay_tokens",
   {
     id: varchar("id", { length: 64 }).primaryKey(),
-    twitchUserId: varchar("twitch_user_id", { length: 64 })
-      .notNull()
-      .references(() => twitchUsers.id, { onDelete: "cascade" }),
+    appUserId: varchar("app_user_id", { length: 64 }),
+    twitchUserId: varchar("twitch_user_id", { length: 64 }),
     tokenHash: varchar("token_hash", { length: 64 }).notNull(),
     label: varchar("label", { length: 120 }).notNull(),
     lastUsedAt: timestamp("last_used_at"),
@@ -88,6 +112,7 @@ export const overlayTokens = mysqlTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
+    appUserIdx: index("overlay_tokens_app_user_idx").on(table.appUserId),
     userIdx: index("overlay_tokens_user_idx").on(table.twitchUserId),
     tokenHashIdx: uniqueIndex("overlay_tokens_token_hash_idx").on(table.tokenHash),
   }),

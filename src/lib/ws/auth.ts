@@ -15,5 +15,6 @@ export async function authenticateOverlayToken(rawToken: string) {
   }
 
   await getDb().update(overlayTokens).set({ lastUsedAt: new Date() }).where(eq(overlayTokens.id, token.id));
-  return { userId: token.twitchUserId, tokenId: token.id, label: token.label };
+  const userId = token.appUserId ?? token.twitchUserId;
+  return userId ? { userId, tokenId: token.id, label: token.label } : null;
 }

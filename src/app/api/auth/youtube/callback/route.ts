@@ -1,11 +1,12 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { connectedAccounts } from "@/db/schema";
 import { getAppUrl } from "@/lib/app-url";
+import { ensureAppUser, findAppUserIdForConnectedAccount } from "@/lib/auth/app-users";
 import { encryptSecret, randomToken, safeEqual } from "@/lib/crypto";
-import { getCurrentUser } from "@/lib/session";
+import { createSession, getCurrentUser, SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
 import { exchangeCodeForGoogleToken, getMyYouTubeChannel } from "@/lib/youtube/api";
 import { youtubeLiveManager } from "@/lib/youtube/live-manager";
 
@@ -23,12 +24,8 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${appUrl}/dashboard?error=youtube_oauth_state`);
   }
 
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.redirect(`${appUrl}/dashboard?error=auth_required`);
-  }
-
   try {
+    const user = await getCurrentUser();
     const token = await exchangeCodeForGoogleToken(code, `${appUrl}/api/auth/youtube/callback`);
     const channel = await getMyYouTubeChannel(token.access_token);
     const scopes = token.scope?.split(" ").filter(Boolean) ?? [];
@@ -38,15 +35,20 @@ export async function GET(request: Request) {
       channel.snippet?.thumbnails?.medium?.url ??
       channel.snippet?.thumbnails?.default?.url ??
       null;
+    const appUserId = await ensureAppUser({
+      id: user?.id ?? (await findAppUserIdForConnectedAccount("youtube", channel.id)),
+      displayName: user?.displayName ?? channel.snippet?.title ?? channel.id,
+      profileImageUrl: user?.profileImageUrl ?? profileImageUrl,
+      primaryProvider: user?.primaryProvider ?? "youtube",
+    });
 
     const [existing] = await getDb()
       .select({ id: connectedAccounts.id, refreshTokenEncrypted: connectedAccounts.refreshTokenEncrypted })
       .from(connectedAccounts)
       .where(
         and(
-          eq(connectedAccounts.ownerTwitchUserId, user.id),
           eq(connectedAccounts.provider, "youtube"),
-          eq(connectedAccounts.providerAccountId, channel.id),
+          or(eq(connectedAccounts.providerAccountId, channel.id), eq(connectedAccounts.appUserId, appUserId)),
         ),
       )
       .limit(1);
@@ -63,7 +65,8 @@ export async function GET(request: Request) {
       .insert(connectedAccounts)
       .values({
         id: accountId,
-        ownerTwitchUserId: user.id,
+        appUserId,
+        ownerTwitchUserId: user?.twitchUserId ?? null,
         provider: "youtube",
         providerAccountId: channel.id,
         login: channel.snippet?.customUrl ?? channel.snippet?.title ?? channel.id,
@@ -78,6 +81,9 @@ export async function GET(request: Request) {
       .onDuplicateKeyUpdate({
         set: {
           login: channel.snippet?.customUrl ?? channel.snippet?.title ?? channel.id,
+          appUserId,
+          ownerTwitchUserId: user?.twitchUserId ?? null,
+          providerAccountId: channel.id,
           displayName: channel.snippet?.title ?? channel.id,
           profileImageUrl,
           accessTokenEncrypted: encryptSecret(token.access_token),
@@ -89,7 +95,9 @@ export async function GET(request: Request) {
       });
 
     await youtubeLiveManager.ensureAccount(accountId);
+    const session = await createSession(appUserId, user?.twitchUserId);
     cookieStore.delete(YOUTUBE_OAUTH_STATE_COOKIE);
+    cookieStore.set(SESSION_COOKIE, session.id, sessionCookieOptions(session.expiresAt));
     return NextResponse.redirect(`${appUrl}/dashboard?connected=youtube`);
   } catch (error) {
     console.error("[youtube] oauth callback failed", error);

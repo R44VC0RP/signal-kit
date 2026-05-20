@@ -60,6 +60,7 @@ type Highlighted = {
 export function DashboardClient({
   initialTokens,
   accounts,
+  hasTwitch,
   events,
   wsUrl,
   appUrl,
@@ -68,6 +69,7 @@ export function DashboardClient({
 }: {
   initialTokens: TokenRow[];
   accounts: ConnectedAccount[];
+  hasTwitch: boolean;
   events: DashboardEvent[];
   wsUrl: string;
   appUrl: string;
@@ -123,7 +125,7 @@ export function DashboardClient({
         </div>
       ) : null}
 
-      <Accounts accounts={accounts} />
+      <Accounts accounts={accounts} hasTwitch={hasTwitch} />
       <Tokens
         tokens={tokens}
         newToken={newToken}
@@ -139,7 +141,7 @@ export function DashboardClient({
   );
 }
 
-function Accounts({ accounts }: { accounts: ConnectedAccount[] }) {
+function Accounts({ accounts, hasTwitch }: { accounts: ConnectedAccount[]; hasTwitch: boolean }) {
   return (
     <section className="border-b border-neutral-200">
       <div className="mx-auto w-full max-w-6xl px-6 pt-12 pb-16">
@@ -156,12 +158,22 @@ function Accounts({ accounts }: { accounts: ConnectedAccount[] }) {
               the same WebSocket tokens as Twitch.
             </p>
           </div>
-          <a
-            href="/api/auth/youtube/start"
-            className="inline-flex items-center rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white ring-1 ring-neutral-950 hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
-          >
-            Connect YouTube
-          </a>
+          <div className="flex flex-wrap gap-3">
+            {!hasTwitch ? (
+              <a
+                href="/api/auth/twitch/start"
+                className="inline-flex items-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+              >
+                Connect Twitch
+              </a>
+            ) : null}
+            <a
+              href="/api/auth/youtube/start"
+              className="inline-flex items-center rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white ring-1 ring-neutral-950 hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+            >
+              Connect YouTube
+            </a>
+          </div>
         </div>
 
         <ul role="list" className="mt-8 divide-y divide-neutral-200 border-t border-neutral-200">

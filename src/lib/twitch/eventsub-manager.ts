@@ -26,6 +26,7 @@ type TwitchEventSubMessage = {
 
 type ManagedConnection = {
   userId: string;
+  appUserId: string;
   ws?: WebSocket;
   reconnectTimer?: NodeJS.Timeout;
   sessionId?: string;
@@ -53,12 +54,15 @@ class EventSubManager {
   }
 
   async syncAllUsers() {
-    const users = await getDb().select({ id: twitchUsers.id }).from(twitchUsers);
-    await Promise.all(users.map((user) => this.ensureUser(user.id)));
+    const users = await getDb().select({ id: twitchUsers.id, appUserId: twitchUsers.appUserId }).from(twitchUsers);
+    await Promise.all(users.map((user) => this.ensureUser(user.id, user.appUserId ?? user.id)));
   }
 
-  async ensureUser(userId: string) {
+  async ensureUser(userId: string, appUserId = userId) {
     const existing = this.connections.get(userId);
+    if (existing) {
+      existing.appUserId = appUserId;
+    }
     if (
       existing?.ws &&
       (existing.ws.readyState === WebSocket.CONNECTING || existing.ws.readyState === WebSocket.OPEN)
@@ -69,7 +73,7 @@ class EventSubManager {
       return;
     }
 
-    const connection: ManagedConnection = existing ?? { userId };
+    const connection: ManagedConnection = existing ?? { userId, appUserId };
     this.connections.set(userId, connection);
     this.connect(connection, "wss://eventsub.wss.twitch.tv/ws");
   }
@@ -115,7 +119,7 @@ class EventSubManager {
     }
 
     if (messageType === "notification") {
-      relayHub.publish(connection.userId, {
+      relayHub.publish(connection.appUserId, {
         type: message.payload?.subscription?.type ?? "eventsub.notification",
         provider: "twitch",
         account: { provider: "twitch", providerAccountId: connection.userId },

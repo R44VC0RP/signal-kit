@@ -171,7 +171,7 @@ class YouTubeLiveManager {
         if (!managed.initialized) {
           continue;
         }
-        delivered += relayHub.publish(account.ownerTwitchUserId, {
+        delivered += relayHub.publish(account.appUserId ?? account.ownerTwitchUserId ?? account.id, {
           type: eventTypeForMessage(item),
           provider: "youtube",
           account: relayAccount(account),
@@ -199,7 +199,7 @@ class YouTubeLiveManager {
         .where(eq(connectedAccounts.id, accountId));
 
       if (response.offlineAt) {
-        relayHub.publish(account.ownerTwitchUserId, {
+        relayHub.publish(account.appUserId ?? account.ownerTwitchUserId ?? account.id, {
           type: "youtube.live_chat.ended",
           provider: "youtube",
           account: relayAccount(account),

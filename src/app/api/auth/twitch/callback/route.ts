@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { twitchUsers } from "@/db/schema";
 import { getAppUrl } from "@/lib/app-url";
+import { ensureAppUser, findAppUserIdForTwitch } from "@/lib/auth/app-users";
 import { encryptSecret, safeEqual } from "@/lib/crypto";
-import { createSession, SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
+import { createSession, getCurrentUser, SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
 import { exchangeCodeForToken, getTwitchUser, validateTwitchToken } from "@/lib/twitch/api";
 import { syncDesiredSubscriptionsForUser } from "@/lib/twitch/subscriptions";
 
@@ -28,10 +29,19 @@ export async function GET(request: Request) {
 
   const scopes = validation.scopes ?? token.scope ?? [];
   const tokenExpiresAt = new Date(Date.now() + token.expires_in * 1000);
+  const currentUser = await getCurrentUser();
+  const appUserId = await ensureAppUser({
+    id: currentUser?.id ?? (await findAppUserIdForTwitch(profile.id)) ?? profile.id,
+    displayName: currentUser?.displayName ?? profile.display_name,
+    profileImageUrl: currentUser?.profileImageUrl ?? profile.profile_image_url,
+    primaryProvider: currentUser?.primaryProvider ?? "twitch",
+  });
+
   await getDb()
     .insert(twitchUsers)
     .values({
       id: profile.id,
+      appUserId,
       login: profile.login,
       displayName: profile.display_name,
       email: profile.email,
@@ -44,6 +54,7 @@ export async function GET(request: Request) {
     .onDuplicateKeyUpdate({
       set: {
         login: profile.login,
+        appUserId,
         displayName: profile.display_name,
         email: profile.email,
         profileImageUrl: profile.profile_image_url,
@@ -55,7 +66,7 @@ export async function GET(request: Request) {
     });
 
   await syncDesiredSubscriptionsForUser(profile.id);
-  const session = await createSession(profile.id);
+  const session = await createSession(appUserId, profile.id);
   cookieStore.delete("signal_kit_oauth_state");
   cookieStore.set(SESSION_COOKIE, session.id, sessionCookieOptions(session.expiresAt));
 

@@ -2,18 +2,12 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getAppUrl } from "@/lib/app-url";
 import { randomToken } from "@/lib/crypto";
-import { getCurrentUser } from "@/lib/session";
 import { getGoogleClientId } from "@/lib/youtube/api";
 import { DEFAULT_YOUTUBE_SCOPES } from "@/lib/youtube/scopes";
 
 const YOUTUBE_OAUTH_STATE_COOKIE = "signal_kit_youtube_oauth_state";
 
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.redirect(`${getAppUrl(request)}/dashboard?error=auth_required`);
-  }
-
   const appUrl = getAppUrl(request);
   const state = randomToken(24);
   const cookieStore = await cookies();

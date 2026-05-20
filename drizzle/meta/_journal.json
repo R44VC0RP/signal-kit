@@ -15,6 +15,13 @@
       "when": 1779317586246,
       "tag": "0001_strange_may_parker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1779320124978,
+      "tag": "0002_generic_app_users",
+      "breakpoints": true
     }
   ]
 }

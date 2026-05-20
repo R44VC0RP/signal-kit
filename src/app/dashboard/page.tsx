@@ -18,12 +18,11 @@ export default async function DashboardPage() {
                 Sign in
               </p>
               <h1 className="mt-4 max-w-[28ch] text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-                Connect Twitch to start the relay.
+                Connect Twitch or YouTube to start the relay.
               </h1>
               <p className="mt-5 max-w-[60ch] text-pretty text-neutral-600">
-                Signal Kit will redirect you through Twitch OAuth. The app requests broad read
-                scopes so it can subscribe to every EventSub topic Twitch allows for your channel.
-                Tokens are stored encrypted and never leave the server.
+                Start with Twitch EventSub or YouTube Live Chat. You can link the other provider
+                from the dashboard later. Tokens are stored encrypted and never leave the server.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <a
@@ -31,6 +30,12 @@ export default async function DashboardPage() {
                   className="inline-flex items-center justify-center rounded-md bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
                 >
                   Continue with Twitch
+                </a>
+                <a
+                  href="/api/auth/youtube/start"
+                  className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                >
+                  Continue with YouTube
                 </a>
                 <Link
                   href="/docs"
@@ -62,7 +67,8 @@ export default async function DashboardPage() {
                 {user.displayName}
               </h1>
               <p className="mt-2 font-mono text-sm text-neutral-500">
-                @{user.login} · <span className="tabular-nums">{user.scopes.length}</span> scopes granted
+                {user.twitchLogin ? `@${user.twitchLogin}` : user.primaryProvider} ·{" "}
+                <span className="tabular-nums">{user.twitchScopes.length}</span> Twitch scopes granted
               </p>
             </div>
             <form action="/api/auth/logout" method="post">
@@ -78,6 +84,7 @@ export default async function DashboardPage() {
         <DashboardClient
           initialTokens={data.tokens}
           accounts={data.accounts}
+          hasTwitch={data.hasTwitch}
           events={data.events}
           wsUrl={data.wsUrl}
           appUrl={data.appUrl}

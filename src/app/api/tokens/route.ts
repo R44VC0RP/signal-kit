@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb } from "@/db";
@@ -23,7 +23,7 @@ export async function GET() {
       revokedAt: overlayTokens.revokedAt,
     })
     .from(overlayTokens)
-    .where(eq(overlayTokens.twitchUserId, user.id));
+    .where(or(eq(overlayTokens.appUserId, user.id), eq(overlayTokens.twitchUserId, user.id)));
 
   return NextResponse.json({ tokens });
 }
@@ -38,7 +38,8 @@ export async function POST(request: Request) {
   const rawToken = `sk_live_${randomToken(32)}`;
   const row = {
     id: randomToken(24),
-    twitchUserId: user.id,
+    appUserId: user.id,
+    twitchUserId: user.twitchUserId,
     tokenHash: tokenHash(rawToken),
     label: body.label,
   };

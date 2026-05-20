@@ -21,7 +21,9 @@ export async function GET() {
     return NextResponse.json({ events: EVENT_CATALOG, youtubeLiveEvents: YOUTUBE_LIVE_EVENTS });
   }
   return NextResponse.json({
-    events: eventCatalogForUser({ id: user.id, scopes: user.scopes }),
+    events: user.twitchUserId
+      ? eventCatalogForUser({ id: user.twitchUserId, scopes: user.twitchScopes })
+      : EVENT_CATALOG,
     youtubeLiveEvents: YOUTUBE_LIVE_EVENTS,
   });
 }
