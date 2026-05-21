@@ -48,15 +48,16 @@ function Intro() {
           Docs
         </p>
         <h1 className="mt-4 max-w-[28ch] text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          Build with Twitch and YouTube Live events.
+          Build with Twitch, YouTube, or both.
         </h1>
         <p className="mt-5 max-w-[60ch] text-pretty text-neutral-600">
-          The relay exposes a single authenticated WebSocket. Messages are JSON. The{" "}
+          Signal Kit exposes one authenticated WebSocket for whichever providers you connect.
+          Messages are JSON. The{" "}
           <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
             event
           </code>{" "}
-          field is the raw provider payload. Twitch messages use EventSub payloads. YouTube
-          messages use Live Chat API resources.
+          field is the raw provider payload. Twitch uses EventSub payloads. YouTube uses Live Chat
+          API resources from active broadcasts.
         </p>
       </div>
     </section>
@@ -135,7 +136,15 @@ events.connect();`;
           <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
             on(type, handler)
           </code>{" "}
-          subscribes to a specific provider event type, or pass{" "}
+          subscribes to a specific provider event type. Use Twitch types like{" "}
+          <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
+            channel.cheer
+          </code>{" "}
+          or YouTube types like{" "}
+          <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
+            youtube.live_chat.message
+          </code>
+          , or pass{" "}
           <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
             &quot;*&quot;
           </code>{" "}
@@ -202,7 +211,7 @@ function MessageShape() {
           <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
             event
           </code>{" "}
-          field is exactly what Twitch or YouTube sends. Use{" "}
+          field is exactly what the source provider sends. Use{" "}
           <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">
             type
           </code>{" "}
@@ -224,19 +233,18 @@ function Catalog() {
           Event catalog
         </p>
         <h2 className="mt-3 max-w-[28ch] text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-          Twitch EventSub catalog.
+          Provider event catalog.
         </h2>
         <p className="mt-3 max-w-[60ch] text-pretty text-neutral-600">
-          Subscriptions are created when the granted Twitch scopes cover them. The dashboard shows
-          which events are ready and which need a scope. YouTube Live Chat events are discovered
-          automatically from active broadcasts after connecting YouTube.
+          Twitch events are managed as EventSub subscriptions when the granted scopes cover them.
+          YouTube events come from Live Chat on active broadcasts after connecting YouTube.
         </p>
         <div className="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
           <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
-            YouTube live event types
+            YouTube Live Chat
           </p>
           <p className="mt-2 text-sm text-neutral-600">
-            The live poller emits events like{" "}
+            YouTube can be used on its own or alongside Twitch. The live poller emits events like{" "}
             <code className="rounded bg-white px-1 py-0.5 font-mono text-xs text-violet-800">
               youtube.live_chat.message
             </code>
@@ -255,6 +263,9 @@ function Catalog() {
             to separate Twitch from YouTube in shared relay streams.
           </p>
         </div>
+        <p className="mt-8 font-mono text-xs tracking-wide text-neutral-500 uppercase">
+          Twitch EventSub
+        </p>
         <dl className="mt-8 divide-y divide-neutral-200 border-t border-neutral-200">
           {EVENT_CATALOG.map((item) => (
             <div key={`${item.type}-${item.version}`} className="py-4">
@@ -295,4 +306,3 @@ function DocsFooter() {
     </footer>
   );
 }
-

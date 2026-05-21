@@ -61,14 +61,13 @@ export default async function DashboardPage() {
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 pt-12 pb-8 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
-                Channel
+                Workspace
               </p>
               <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
                 {user.displayName}
               </h1>
               <p className="mt-2 font-mono text-sm text-neutral-500">
-                {user.twitchLogin ? `@${user.twitchLogin}` : user.primaryProvider} ·{" "}
-                <span className="tabular-nums">{user.twitchScopes.length}</span> Twitch scopes granted
+                {user.primaryProvider} login · {user.twitchLogin ? `@${user.twitchLogin}` : "Twitch not connected"}
               </p>
             </div>
             <form action="/api/auth/logout" method="post">

@@ -151,11 +151,11 @@ function Accounts({ accounts, hasTwitch }: { accounts: ConnectedAccount[]; hasTw
               Connected accounts
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Twitch plus YouTube Live
+              Connect either platform, or both
             </h2>
             <p className="mt-2 max-w-[62ch] text-pretty text-neutral-600">
-              YouTube support watches active live broadcasts and relays live chat events through
-              the same WebSocket tokens as Twitch.
+              Twitch EventSub and YouTube Live Chat share the same relay token. Use one platform
+              independently, or connect both and route events by provider.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -205,7 +205,7 @@ function Accounts({ accounts, hasTwitch }: { accounts: ConnectedAccount[]; hasTw
                     </span>
                   </div>
                   <div className="mt-1 truncate font-mono text-xs text-neutral-500">
-                    {account.provider === "youtube" ? "live chat relay" : "eventsub relay"} · {account.scopes.length} scopes
+                    {account.provider === "youtube" ? "YouTube Live Chat" : "Twitch EventSub"} · {account.scopes.length} scopes
                   </div>
                   {account.lastError ? (
                     <div className="mt-2 max-w-[72ch] truncate font-mono text-xs text-red-700" title={account.lastError}>
@@ -225,7 +225,7 @@ function Accounts({ accounts, hasTwitch }: { accounts: ConnectedAccount[]; hasTw
                     </div>
                   </>
                 ) : (
-                  <div>connected owner</div>
+                  <div>Twitch EventSub connected</div>
                 )}
               </div>
             </li>
@@ -594,11 +594,11 @@ function Events({
               Subscriptions
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-              EventSub state
+              Twitch EventSub state
             </h2>
             <p className="mt-2 max-w-[60ch] text-pretty text-neutral-600">
-              Every event Signal Kit can subscribe to for this channel, plus its current state on
-              the Twitch session.
+              Twitch subscriptions are managed through EventSub. YouTube Live Chat runs separately
+              from active broadcasts and does not appear in this table.
             </p>
           </div>
           <button

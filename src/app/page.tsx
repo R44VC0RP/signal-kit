@@ -8,6 +8,7 @@ export default function Home() {
       <SiteHeader />
       <main className="flex-1">
         <Hero />
+        <ProviderModes />
         <LivePreview />
         <CodeSection />
         <Prose />
@@ -48,11 +49,12 @@ function Hero() {
     <section>
       <div className="mx-auto w-full max-w-3xl px-6 pt-16 pb-10 sm:pt-24">
         <h1 className="max-w-[28ch] text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          Stream events as one developer-friendly WebSocket.
+          One event stream for Twitch, YouTube, or both.
         </h1>
         <p className="mt-5 max-w-[60ch] text-pretty text-neutral-600">
-          Sign in with Twitch, connect YouTube, get a relay token, and pipe chat, subs,
-          cheers, redemptions, Super Chats, and live messages into whatever you build.
+          Start with the platform you use today. Connect Twitch EventSub, YouTube Live Chat, or
+          both, then pipe subs, cheers, redemptions, Super Chats, and live messages into whatever
+          you build.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
           <a
@@ -61,12 +63,59 @@ function Hero() {
           >
             Continue with Twitch
           </a>
+          <a
+            href="/api/auth/youtube/start"
+            className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+          >
+            Continue with YouTube
+          </a>
           <Link
             href="/docs"
             className="text-sm font-semibold text-neutral-950 underline-offset-4 hover:underline"
           >
             Read the docs <span aria-hidden="true">→</span>
           </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProviderModes() {
+  const modes = [
+    {
+      label: "Twitch only",
+      title: "EventSub without webhook plumbing",
+      body: "Follows, subs, Bits, raids, redemptions, polls, predictions, goals, charity, ads, chat, and more through one relay token.",
+    },
+    {
+      label: "YouTube only",
+      title: "Live Chat without a custom poller",
+      body: "Messages, Super Chats, Super Stickers, memberships, moderation events, and live-chat lifecycle events while your broadcast is active.",
+    },
+    {
+      label: "Twitch + YouTube",
+      title: "One socket for multi-platform streams",
+      body: "Connect both accounts and receive normalized envelopes with raw provider payloads. Route by type or provider in your overlay, bot, or local agent.",
+    },
+  ];
+
+  return (
+    <section>
+      <div className="mx-auto w-full max-w-3xl px-6 pb-16 sm:pb-20">
+        <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
+          Pick your setup
+        </p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          {modes.map((mode) => (
+            <article key={mode.label} className="rounded-xl border border-neutral-200 bg-white p-4">
+              <p className="font-mono text-xs tracking-wide text-violet-700 uppercase">{mode.label}</p>
+              <h2 className="mt-3 text-base font-semibold tracking-tight text-neutral-950">
+                {mode.title}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-neutral-600">{mode.body}</p>
+            </article>
+          ))}
         </div>
       </div>
     </section>
@@ -90,8 +139,8 @@ function LivePreview() {
           live preview
         </p>
         <p className="mt-3 max-w-[60ch] text-pretty text-sm text-neutral-600">
-          A sample of events streaming over a Signal Kit relay token. Raw provider JSON,
-          delivered through one WebSocket.
+          A mixed sample over one relay token. Twitch and YouTube keep their raw provider payloads,
+          with a shared envelope for routing.
         </p>
         <div className="mt-6 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm shadow-violet-200/40 ring-1 ring-black/5">
           <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-4 py-2 text-xs text-neutral-600">
@@ -175,8 +224,8 @@ function Prose() {
         <div className="mt-5 max-w-[68ch] space-y-4 text-pretty text-neutral-700">
           <p>
             Signal Kit is a small piece of infrastructure between you and livestream provider APIs.
-            Sign in once and the app manages Twitch EventSub plus YouTube Live Chat token refresh
-            and polling on your behalf.
+            Sign in with Twitch or YouTube, connect the other platform when you need it, and let the
+            app manage provider tokens, EventSub sessions, and YouTube Live Chat polling.
           </p>
           <p>
             On the other side, you get a single relay WebSocket. Drop a token into an overlay, a
@@ -197,12 +246,12 @@ function Prose() {
 function Faq() {
   const items = [
     {
-      q: "Do I need to install anything on Twitch?",
-      a: "No. You authorize the Signal Kit app via Twitch OAuth. The app then subscribes to EventSub topics for your channel using the WebSocket transport.",
+      q: "Do I need both Twitch and YouTube?",
+      a: "No. You can use Twitch by itself, YouTube by itself, or connect both accounts to the same relay token.",
     },
     {
-      q: "Is my Twitch access token exposed to overlays?",
-      a: "No. Overlays connect with a relay token issued by the dashboard. Twitch credentials never leave the server.",
+      q: "Are provider tokens exposed to overlays?",
+      a: "No. Overlays connect with a relay token issued by the dashboard. Twitch and YouTube credentials never leave the server.",
     },
     {
       q: "Which events are supported?",
@@ -236,7 +285,7 @@ function Outro() {
     <section>
       <div className="mx-auto w-full max-w-3xl px-6 pb-24">
         <h2 className="max-w-[28ch] text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-          Hook into your stream the way you want.
+          Hook into the platforms you stream on.
         </h2>
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
           <a
@@ -244,6 +293,12 @@ function Outro() {
             className="inline-flex items-center justify-center rounded-md bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
           >
             Continue with Twitch
+          </a>
+          <a
+            href="/api/auth/youtube/start"
+            className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+          >
+            Continue with YouTube
           </a>
           <Link
             href="/docs"
@@ -276,4 +331,3 @@ function SiteFooter() {
     </footer>
   );
 }
-

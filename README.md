@@ -1,11 +1,12 @@
 # Signal Kit
 
-Twitch EventSub and YouTube Live Chat as one clean WebSocket for overlays, AI agents, and custom stream tools.
+Twitch EventSub, YouTube Live Chat, or both as one clean WebSocket for overlays, AI agents, and custom stream tools.
 
 ## What It Does
 
-- Manual Twitch OAuth with broad read scopes.
-- Google OAuth for linked YouTube channels.
+- Manual Twitch OAuth with broad read scopes. Twitch can be used standalone.
+- Google OAuth for YouTube Live Chat. YouTube can be used standalone.
+- Optional combined Twitch plus YouTube relay under one token.
 - Encrypted provider token storage in MySQL/PlanetScale via Drizzle.
 - Background Twitch EventSub WebSocket manager.
 - Background YouTube active-broadcast/live-chat poller.
