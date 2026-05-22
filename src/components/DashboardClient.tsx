@@ -57,6 +57,8 @@ type Highlighted = {
   nodeExample: string;
 };
 
+type DashboardPanel = "accounts" | "broadcast" | "tokens" | "subscriptions";
+
 type BroadcastSettings = {
   twitch?: {
     connected: boolean;
@@ -111,6 +113,7 @@ export function DashboardClient({
   const [tokens, setTokens] = useState(initialTokens);
   const [newToken, setNewToken] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [activePanel, setActivePanel] = useState<DashboardPanel>("broadcast");
 
   async function createToken() {
     setStatus("Creating token...");
@@ -157,20 +160,75 @@ export function DashboardClient({
         </div>
       ) : null}
 
-      <Accounts accounts={accounts} hasTwitch={hasTwitch} />
-      <BroadcastDetails onStatus={setStatus} />
-      <Tokens
-        tokens={tokens}
-        newToken={newToken}
-        wsUrl={wsUrl}
-        appUrl={appUrl}
-        snippets={snippets}
-        highlighted={highlighted}
-        onCreate={createToken}
-        onRevoke={revokeToken}
-      />
-      <Events events={events} onSync={syncSubscriptions} />
+      <div className="border-b border-neutral-200 bg-neutral-50/70">
+        <div className="mx-auto grid w-full max-w-6xl gap-5 px-6 py-6 lg:grid-cols-[10.5rem_minmax(0,1fr)] lg:items-start">
+          <DashboardTabs
+            activePanel={activePanel}
+            onChange={setActivePanel}
+            counts={{ accounts: accounts.length, tokens: tokens.length, subscriptions: events.length }}
+          />
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm shadow-violet-200/30 ring-1 ring-black/5">
+            {activePanel === "accounts" ? <Accounts accounts={accounts} hasTwitch={hasTwitch} /> : null}
+            {activePanel === "broadcast" ? <BroadcastDetails onStatus={setStatus} /> : null}
+            {activePanel === "tokens" ? (
+              <Tokens
+                tokens={tokens}
+                newToken={newToken}
+                wsUrl={wsUrl}
+                appUrl={appUrl}
+                snippets={snippets}
+                highlighted={highlighted}
+                onCreate={createToken}
+                onRevoke={revokeToken}
+              />
+            ) : null}
+            {activePanel === "subscriptions" ? <Events events={events} onSync={syncSubscriptions} /> : null}
+          </div>
+        </div>
+      </div>
     </>
+  );
+}
+
+function DashboardTabs({
+  activePanel,
+  onChange,
+  counts,
+}: {
+  activePanel: DashboardPanel;
+  onChange: (panel: DashboardPanel) => void;
+  counts: { accounts: number; tokens: number; subscriptions: number };
+}) {
+  const tabs: Array<{ id: DashboardPanel; label: string; meta?: string }> = [
+    { id: "accounts", label: "Accounts", meta: String(counts.accounts) },
+    { id: "broadcast", label: "Broadcast" },
+    { id: "tokens", label: "Tokens", meta: String(counts.tokens) },
+    { id: "subscriptions", label: "Twitch Events", meta: String(counts.subscriptions) },
+  ];
+
+  return (
+    <nav aria-label="Dashboard sections" className="lg:sticky lg:top-20">
+      <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+        {tabs.map((tab) => {
+          const active = tab.id === activePanel;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onChange(tab.id)}
+              className={
+                active
+                  ? "inline-flex shrink-0 items-center justify-between gap-3 rounded-full bg-white px-3 py-2 text-sm text-neutral-950 ring-1 ring-neutral-200"
+                  : "inline-flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2 text-sm text-neutral-600 hover:bg-white hover:text-neutral-950 hover:ring-1 hover:ring-neutral-200"
+              }
+            >
+              <span>{tab.label}</span>
+              {tab.meta ? <span className="font-mono text-xs text-neutral-400">{tab.meta}</span> : null}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
@@ -298,8 +356,8 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
   }
 
   return (
-    <section className="border-b border-neutral-200">
-      <div className="mx-auto w-full max-w-6xl px-6 pt-12 pb-16">
+    <section>
+      <div className="p-5 sm:p-6">
         <div>
           <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
             Broadcast details
@@ -491,8 +549,8 @@ function LabelledTextarea({
 
 function Accounts({ accounts, hasTwitch }: { accounts: ConnectedAccount[]; hasTwitch: boolean }) {
   return (
-    <section className="border-b border-neutral-200">
-      <div className="mx-auto w-full max-w-6xl px-6 pt-12 pb-16">
+    <section>
+      <div className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
@@ -604,8 +662,8 @@ function Tokens({
   onRevoke: (id: string) => void;
 }) {
   return (
-    <section className="border-b border-neutral-200">
-      <div className="mx-auto w-full max-w-6xl px-6 pt-12 pb-16">
+    <section>
+      <div className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
@@ -935,7 +993,7 @@ function Events({
 
   return (
     <section>
-      <div className="mx-auto w-full max-w-6xl px-6 pt-12 pb-24">
+      <div className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
