@@ -177,11 +177,11 @@ export function DashboardClient({
 function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => void }) {
   const [settings, setSettings] = useState<BroadcastSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [useSharedTitle, setUseSharedTitle] = useState(true);
+  const [sharedTitle, setSharedTitle] = useState("");
   const [twitchTitle, setTwitchTitle] = useState("");
-  const [twitchCategory, setTwitchCategory] = useState("");
   const [youtubeTitle, setYoutubeTitle] = useState("");
   const [youtubeDescription, setYoutubeDescription] = useState("");
-  const [youtubeCategoryId, setYoutubeCategoryId] = useState("");
   const [youtubePrivacy, setYoutubePrivacy] = useState<"public" | "unlisted" | "private">("private");
 
   async function loadSettings() {
@@ -195,11 +195,10 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
     }
     setSettings(payload);
     setTwitchTitle(payload.twitch?.channel?.title ?? "");
-    setTwitchCategory(payload.twitch?.channel?.game_name ?? "");
     setYoutubeTitle(payload.youtube?.video?.title ?? "");
     setYoutubeDescription(payload.youtube?.video?.description ?? "");
-    setYoutubeCategoryId(payload.youtube?.video?.categoryId ?? "");
     setYoutubePrivacy(payload.youtube?.video?.privacyStatus ?? "private");
+    setSharedTitle(payload.twitch?.channel?.title ?? payload.youtube?.video?.title ?? "");
   }
 
   useEffect(() => {
@@ -217,26 +216,57 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
         }
         setSettings(payload);
         setTwitchTitle(payload.twitch?.channel?.title ?? "");
-        setTwitchCategory(payload.twitch?.channel?.game_name ?? "");
         setYoutubeTitle(payload.youtube?.video?.title ?? "");
         setYoutubeDescription(payload.youtube?.video?.description ?? "");
-        setYoutubeCategoryId(payload.youtube?.video?.categoryId ?? "");
         setYoutubePrivacy(payload.youtube?.video?.privacyStatus ?? "private");
+        setSharedTitle(payload.twitch?.channel?.title ?? payload.youtube?.video?.title ?? "");
       });
     return () => {
       cancelled = true;
     };
   }, [onStatus]);
 
+  async function saveSharedTitles() {
+    if (!sharedTitle.trim()) {
+      onStatus("Enter a shared title first.");
+      return;
+    }
+
+    onStatus("Updating connected provider titles...");
+    const jobs: Promise<Response>[] = [];
+    if (settings?.twitch?.canUpdate) {
+      jobs.push(postBroadcastSettings({ provider: "twitch", title: sharedTitle }));
+    }
+    if (settings?.youtube?.canUpdate && settings.youtube.video) {
+      jobs.push(postBroadcastSettings({ provider: "youtube", broadcastId: settings.youtube.video.id, title: sharedTitle }));
+    }
+
+    if (jobs.length === 0) {
+      onStatus("No connected providers can update titles yet. Reconnect providers to grant write scopes.");
+      return;
+    }
+
+    const responses = await Promise.all(jobs);
+    const failed = responses.find((response) => !response.ok);
+    if (failed) {
+      const payload = await failed.json().catch(() => ({}));
+      onStatus(payload.error ?? "One or more title updates failed.");
+      return;
+    }
+
+    onStatus("Connected provider titles updated.");
+    await loadSettings();
+  }
+
   async function saveTwitch() {
-    onStatus("Updating Twitch broadcast details...");
+    onStatus("Updating Twitch title...");
     const response = await fetch("/api/broadcast-settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider: "twitch", title: twitchTitle, categoryName: twitchCategory }),
+      body: JSON.stringify({ provider: "twitch", title: twitchTitle }),
     });
     const payload = await response.json();
-    onStatus(response.ok ? "Twitch broadcast details updated." : (payload.error ?? "Twitch update failed."));
+    onStatus(response.ok ? "Twitch title updated." : (payload.error ?? "Twitch update failed."));
     if (response.ok) {
       await loadSettings();
     }
@@ -255,9 +285,8 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
       body: JSON.stringify({
         provider: "youtube",
         broadcastId,
-        title: youtubeTitle,
+        ...(useSharedTitle ? {} : { title: youtubeTitle }),
         description: youtubeDescription,
-        categoryId: youtubeCategoryId,
         privacyStatus: youtubePrivacy,
       }),
     });
@@ -279,26 +308,62 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
             Update stream metadata from Signal Kit
           </h2>
           <p className="mt-2 max-w-[64ch] text-pretty text-neutral-600">
-            Change Twitch title/category and YouTube title, description, category, and privacy from
-            the dashboard. Reconnect a provider if it needs the newer write scopes.
+            Update a shared title across connected providers by default. Uncheck the shared-title
+            option to split Twitch and YouTube titles. YouTube description and privacy stay separate.
           </p>
         </div>
 
         {loading ? <p className="mt-8 text-sm text-neutral-500">Loading broadcast details...</p> : null}
 
+        <div className="mt-8 rounded-xl border border-neutral-200 bg-neutral-50 p-5">
+          <label className="flex items-start gap-3 text-sm font-medium text-neutral-800">
+            <input
+              type="checkbox"
+              checked={useSharedTitle}
+              onChange={(event) => setUseSharedTitle(event.target.checked)}
+              className="mt-1 size-4 rounded border-neutral-300 text-violet-600"
+            />
+            <span>
+              Use one shared title for Twitch and YouTube
+              <span className="mt-1 block font-normal text-neutral-600">
+                Default on. Turn this off when each platform needs its own title.
+              </span>
+            </span>
+          </label>
+          {useSharedTitle ? (
+            <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <LabelledInput label="Shared title" value={sharedTitle} onChange={setSharedTitle} />
+              <button
+                type="button"
+                onClick={saveSharedTitles}
+                className="inline-flex items-center justify-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700"
+              >
+                Save title to connected providers
+              </button>
+            </div>
+          ) : null}
+        </div>
+
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
           <ProviderPanel title="Twitch" connected={Boolean(settings?.twitch?.connected)}>
             {settings?.twitch?.needsReconnect ? <ReconnectNotice provider="Twitch" href="/api/auth/twitch/start" /> : null}
-            <LabelledInput label="Title" value={twitchTitle} onChange={setTwitchTitle} disabled={!settings?.twitch?.canUpdate} />
-            <LabelledInput label="Category" value={twitchCategory} onChange={setTwitchCategory} disabled={!settings?.twitch?.canUpdate} placeholder="Science & Technology" />
-            <button
-              type="button"
-              onClick={saveTwitch}
-              disabled={!settings?.twitch?.canUpdate}
-              className="mt-4 inline-flex items-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Save Twitch
-            </button>
+            {useSharedTitle ? (
+              <p className="text-sm text-neutral-600">
+                Current title: <span className="font-medium text-neutral-950">{settings?.twitch?.channel?.title ?? "Untitled"}</span>
+              </p>
+            ) : (
+              <>
+                <LabelledInput label="Twitch title" value={twitchTitle} onChange={setTwitchTitle} disabled={!settings?.twitch?.canUpdate} />
+                <button
+                  type="button"
+                  onClick={saveTwitch}
+                  disabled={!settings?.twitch?.canUpdate}
+                  className="mt-4 inline-flex items-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Save Twitch title
+                </button>
+              </>
+            )}
           </ProviderPanel>
 
           <ProviderPanel title="YouTube" connected={Boolean(settings?.youtube?.connected)}>
@@ -306,9 +371,14 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
             {settings?.youtube?.connected && !settings.youtube.video ? (
               <p className="text-sm text-neutral-500">No active or upcoming YouTube broadcast found.</p>
             ) : null}
-            <LabelledInput label="Title" value={youtubeTitle} onChange={setYoutubeTitle} disabled={!settings?.youtube?.canUpdate || !settings?.youtube?.video} />
+            {useSharedTitle ? (
+              <p className="text-sm text-neutral-600">
+                Current title: <span className="font-medium text-neutral-950">{settings?.youtube?.video?.title ?? "Untitled"}</span>
+              </p>
+            ) : (
+              <LabelledInput label="YouTube title" value={youtubeTitle} onChange={setYoutubeTitle} disabled={!settings?.youtube?.canUpdate || !settings?.youtube?.video} />
+            )}
             <LabelledTextarea label="Description" value={youtubeDescription} onChange={setYoutubeDescription} disabled={!settings?.youtube?.canUpdate || !settings?.youtube?.video} />
-            <LabelledInput label="Category ID" value={youtubeCategoryId} onChange={setYoutubeCategoryId} disabled={!settings?.youtube?.canUpdate || !settings?.youtube?.video} placeholder="20" />
             <label className="mt-4 block text-sm font-medium text-neutral-700">
               Privacy
               <select
@@ -335,6 +405,14 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
       </div>
     </section>
   );
+}
+
+function postBroadcastSettings(body: Record<string, unknown>) {
+  return fetch("/api/broadcast-settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
 
 function ProviderPanel({ title, connected, children }: { title: string; connected: boolean; children: ReactNode }) {
