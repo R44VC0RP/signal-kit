@@ -19,12 +19,32 @@ export type YouTubeLiveBroadcast = {
   id: string;
   snippet?: {
     title?: string;
+    description?: string;
     liveChatId?: string;
     scheduledStartTime?: string;
     actualStartTime?: string;
   };
   status?: {
     lifeCycleStatus?: string;
+  };
+};
+
+export type YouTubeVideo = {
+  id: string;
+  snippet?: {
+    title?: string;
+    description?: string;
+    categoryId?: string;
+    tags?: string[];
+    defaultLanguage?: string;
+  };
+  status?: {
+    privacyStatus?: "public" | "unlisted" | "private";
+    embeddable?: boolean;
+    license?: string;
+    publicStatsViewable?: boolean;
+    selfDeclaredMadeForKids?: boolean;
+    containsSyntheticMedia?: boolean;
   };
 };
 
@@ -130,15 +150,80 @@ export async function getMyYouTubeChannel(accessToken: string) {
 }
 
 export async function listActiveLiveBroadcasts(accessToken: string) {
+  const broadcasts = await listOwnedLiveBroadcasts(accessToken);
+  return broadcasts.filter((broadcast) => {
+    const status = broadcast.status?.lifeCycleStatus;
+    return status === "live" || status === "liveStarting" || status === "testing" || status === "testStarting";
+  });
+}
+
+export async function listOwnedLiveBroadcasts(accessToken: string) {
   const url = new URL(`${YOUTUBE_API_BASE}/liveBroadcasts`);
   url.searchParams.set("part", "id,snippet,status");
   url.searchParams.set("broadcastType", "all");
   url.searchParams.set("mine", "true");
   url.searchParams.set("maxResults", "50");
   const response = await youtubeFetch<{ items?: YouTubeLiveBroadcast[] }>(accessToken, url);
-  return (response.items ?? []).filter((broadcast) => {
-    const status = broadcast.status?.lifeCycleStatus;
-    return status === "live" || status === "liveStarting" || status === "testing" || status === "testStarting";
+  return response.items ?? [];
+}
+
+export async function getVideo(accessToken: string, videoId: string) {
+  const url = new URL(`${YOUTUBE_API_BASE}/videos`);
+  url.searchParams.set("part", "snippet,status");
+  url.searchParams.set("id", videoId);
+  const response = await youtubeFetch<{ items?: YouTubeVideo[] }>(accessToken, url);
+  return response.items?.[0] ?? null;
+}
+
+export async function updateVideo(
+  accessToken: string,
+  video: YouTubeVideo,
+  updates: {
+    title?: string;
+    description?: string;
+    categoryId?: string;
+    privacyStatus?: "public" | "unlisted" | "private";
+  },
+) {
+  const part = ["snippet"];
+  if (updates.privacyStatus) {
+    part.push("status");
+  }
+
+  const body: YouTubeVideo = {
+    id: video.id,
+    snippet: {
+      title: updates.title ?? video.snippet?.title ?? "Untitled broadcast",
+      description: updates.description ?? video.snippet?.description ?? "",
+      categoryId: updates.categoryId ?? video.snippet?.categoryId ?? "20",
+      ...(video.snippet?.tags ? { tags: video.snippet.tags } : {}),
+      ...(video.snippet?.defaultLanguage ? { defaultLanguage: video.snippet.defaultLanguage } : {}),
+    },
+  };
+
+  if (updates.privacyStatus) {
+    body.status = {
+      privacyStatus: updates.privacyStatus,
+      ...(typeof video.status?.embeddable === "boolean" ? { embeddable: video.status.embeddable } : {}),
+      ...(video.status?.license ? { license: video.status.license } : {}),
+      ...(typeof video.status?.publicStatsViewable === "boolean"
+        ? { publicStatsViewable: video.status.publicStatsViewable }
+        : {}),
+      ...(typeof video.status?.selfDeclaredMadeForKids === "boolean"
+        ? { selfDeclaredMadeForKids: video.status.selfDeclaredMadeForKids }
+        : {}),
+      ...(typeof video.status?.containsSyntheticMedia === "boolean"
+        ? { containsSyntheticMedia: video.status.containsSyntheticMedia }
+        : {}),
+    };
+  }
+
+  const url = new URL(`${YOUTUBE_API_BASE}/videos`);
+  url.searchParams.set("part", part.join(","));
+  return youtubeFetch<YouTubeVideo>(accessToken, url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
 }
 
@@ -162,10 +247,11 @@ function googleFetch<T>(url: string, init: RequestInit) {
   return parseGoogleResponse<T>(fetch(url, init));
 }
 
-function youtubeFetch<T>(accessToken: string, url: URL) {
+function youtubeFetch<T>(accessToken: string, url: URL, init: RequestInit = {}) {
   return parseGoogleResponse<T>(
     fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      ...init,
+      headers: { Authorization: `Bearer ${accessToken}`, ...init.headers },
     }),
   );
 }

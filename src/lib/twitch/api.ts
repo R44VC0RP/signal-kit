@@ -29,6 +29,26 @@ export type TwitchSubscriptionRequest = {
   sessionId: string;
 };
 
+export type TwitchChannelInformation = {
+  broadcaster_id: string;
+  broadcaster_login: string;
+  broadcaster_name: string;
+  broadcaster_language: string;
+  game_id: string;
+  game_name: string;
+  title: string;
+  delay?: number;
+  tags?: string[];
+  content_classification_labels?: string[];
+  is_branded_content?: boolean;
+};
+
+export type TwitchCategory = {
+  id: string;
+  name: string;
+  box_art_url: string;
+};
+
 const TWITCH_ID_BASE = "https://id.twitch.tv/oauth2";
 const TWITCH_API_BASE = "https://api.twitch.tv/helix";
 
@@ -106,6 +126,43 @@ export async function createEventSubSubscription(accessToken: string, request: T
       }),
     },
   );
+}
+
+export async function getChannelInformation(accessToken: string, broadcasterId: string) {
+  const url = new URL(`${TWITCH_API_BASE}/channels`);
+  url.searchParams.set("broadcaster_id", broadcasterId);
+  const response = await twitchFetch<{ data: TwitchChannelInformation[] }>(url.toString(), {
+    headers: twitchHeaders(accessToken),
+  });
+  return response.data[0] ?? null;
+}
+
+export async function modifyChannelInformation(
+  accessToken: string,
+  broadcasterId: string,
+  body: { title?: string; game_id?: string; broadcaster_language?: string; tags?: string[] },
+) {
+  const url = new URL(`${TWITCH_API_BASE}/channels`);
+  url.searchParams.set("broadcaster_id", broadcasterId);
+  return twitchFetch<void>(url.toString(), {
+    method: "PATCH",
+    headers: {
+      ...twitchHeaders(accessToken),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    allowEmpty: true,
+  });
+}
+
+export async function searchTwitchCategories(accessToken: string, query: string) {
+  const url = new URL(`${TWITCH_API_BASE}/search/categories`);
+  url.searchParams.set("query", query);
+  url.searchParams.set("first", "20");
+  const response = await twitchFetch<{ data: TwitchCategory[] }>(url.toString(), {
+    headers: twitchHeaders(accessToken),
+  });
+  return response.data;
 }
 
 function twitchHeaders(accessToken: string) {

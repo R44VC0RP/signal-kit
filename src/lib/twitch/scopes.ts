@@ -1,6 +1,7 @@
 export const DEFAULT_TWITCH_SCOPES = [
   "bits:read",
   "channel:bot",
+  "channel:manage:broadcast",
   "channel:read:ads",
   "channel:read:charity",
   "channel:read:goals",

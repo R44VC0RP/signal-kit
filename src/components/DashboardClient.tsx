@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 type TokenRow = {
   id: string;
@@ -55,6 +55,38 @@ type Highlighted = {
   scriptTag: string;
   browserExample: string;
   nodeExample: string;
+};
+
+type BroadcastSettings = {
+  twitch?: {
+    connected: boolean;
+    canUpdate?: boolean;
+    needsReconnect?: boolean;
+    channel?: {
+      title: string;
+      game_id: string;
+      game_name: string;
+      broadcaster_language: string;
+    } | null;
+  };
+  youtube?: {
+    connected: boolean;
+    canUpdate?: boolean;
+    needsReconnect?: boolean;
+    broadcasts?: Array<{
+      id: string;
+      title: string;
+      lifeCycleStatus: string;
+      scheduledStartTime: string | null;
+    }>;
+    video?: {
+      id: string;
+      title: string;
+      description: string;
+      categoryId: string;
+      privacyStatus: "public" | "unlisted" | "private";
+    } | null;
+  };
 };
 
 export function DashboardClient({
@@ -126,6 +158,7 @@ export function DashboardClient({
       ) : null}
 
       <Accounts accounts={accounts} hasTwitch={hasTwitch} />
+      <BroadcastDetails onStatus={setStatus} />
       <Tokens
         tokens={tokens}
         newToken={newToken}
@@ -138,6 +171,243 @@ export function DashboardClient({
       />
       <Events events={events} onSync={syncSubscriptions} />
     </>
+  );
+}
+
+function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => void }) {
+  const [settings, setSettings] = useState<BroadcastSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [twitchTitle, setTwitchTitle] = useState("");
+  const [twitchCategory, setTwitchCategory] = useState("");
+  const [youtubeTitle, setYoutubeTitle] = useState("");
+  const [youtubeDescription, setYoutubeDescription] = useState("");
+  const [youtubeCategoryId, setYoutubeCategoryId] = useState("");
+  const [youtubePrivacy, setYoutubePrivacy] = useState<"public" | "unlisted" | "private">("private");
+
+  async function loadSettings() {
+    setLoading(true);
+    const response = await fetch("/api/broadcast-settings");
+    const payload = await response.json();
+    setLoading(false);
+    if (!response.ok) {
+      onStatus(payload.error ?? "Could not load broadcast settings.");
+      return;
+    }
+    setSettings(payload);
+    setTwitchTitle(payload.twitch?.channel?.title ?? "");
+    setTwitchCategory(payload.twitch?.channel?.game_name ?? "");
+    setYoutubeTitle(payload.youtube?.video?.title ?? "");
+    setYoutubeDescription(payload.youtube?.video?.description ?? "");
+    setYoutubeCategoryId(payload.youtube?.video?.categoryId ?? "");
+    setYoutubePrivacy(payload.youtube?.video?.privacyStatus ?? "private");
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/broadcast-settings")
+      .then(async (response) => ({ response, payload: await response.json() }))
+      .then(({ response, payload }) => {
+        if (cancelled) {
+          return;
+        }
+        setLoading(false);
+        if (!response.ok) {
+          onStatus(payload.error ?? "Could not load broadcast settings.");
+          return;
+        }
+        setSettings(payload);
+        setTwitchTitle(payload.twitch?.channel?.title ?? "");
+        setTwitchCategory(payload.twitch?.channel?.game_name ?? "");
+        setYoutubeTitle(payload.youtube?.video?.title ?? "");
+        setYoutubeDescription(payload.youtube?.video?.description ?? "");
+        setYoutubeCategoryId(payload.youtube?.video?.categoryId ?? "");
+        setYoutubePrivacy(payload.youtube?.video?.privacyStatus ?? "private");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [onStatus]);
+
+  async function saveTwitch() {
+    onStatus("Updating Twitch broadcast details...");
+    const response = await fetch("/api/broadcast-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: "twitch", title: twitchTitle, categoryName: twitchCategory }),
+    });
+    const payload = await response.json();
+    onStatus(response.ok ? "Twitch broadcast details updated." : (payload.error ?? "Twitch update failed."));
+    if (response.ok) {
+      await loadSettings();
+    }
+  }
+
+  async function saveYouTube() {
+    const broadcastId = settings?.youtube?.video?.id;
+    if (!broadcastId) {
+      onStatus("No editable YouTube broadcast found.");
+      return;
+    }
+    onStatus("Updating YouTube broadcast details...");
+    const response = await fetch("/api/broadcast-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        provider: "youtube",
+        broadcastId,
+        title: youtubeTitle,
+        description: youtubeDescription,
+        categoryId: youtubeCategoryId,
+        privacyStatus: youtubePrivacy,
+      }),
+    });
+    const payload = await response.json();
+    onStatus(response.ok ? "YouTube broadcast details updated." : (payload.error ?? "YouTube update failed."));
+    if (response.ok) {
+      await loadSettings();
+    }
+  }
+
+  return (
+    <section className="border-b border-neutral-200">
+      <div className="mx-auto w-full max-w-6xl px-6 pt-12 pb-16">
+        <div>
+          <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
+            Broadcast details
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+            Update stream metadata from Signal Kit
+          </h2>
+          <p className="mt-2 max-w-[64ch] text-pretty text-neutral-600">
+            Change Twitch title/category and YouTube title, description, category, and privacy from
+            the dashboard. Reconnect a provider if it needs the newer write scopes.
+          </p>
+        </div>
+
+        {loading ? <p className="mt-8 text-sm text-neutral-500">Loading broadcast details...</p> : null}
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+          <ProviderPanel title="Twitch" connected={Boolean(settings?.twitch?.connected)}>
+            {settings?.twitch?.needsReconnect ? <ReconnectNotice provider="Twitch" href="/api/auth/twitch/start" /> : null}
+            <LabelledInput label="Title" value={twitchTitle} onChange={setTwitchTitle} disabled={!settings?.twitch?.canUpdate} />
+            <LabelledInput label="Category" value={twitchCategory} onChange={setTwitchCategory} disabled={!settings?.twitch?.canUpdate} placeholder="Science & Technology" />
+            <button
+              type="button"
+              onClick={saveTwitch}
+              disabled={!settings?.twitch?.canUpdate}
+              className="mt-4 inline-flex items-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Save Twitch
+            </button>
+          </ProviderPanel>
+
+          <ProviderPanel title="YouTube" connected={Boolean(settings?.youtube?.connected)}>
+            {settings?.youtube?.needsReconnect ? <ReconnectNotice provider="YouTube" href="/api/auth/youtube/start" /> : null}
+            {settings?.youtube?.connected && !settings.youtube.video ? (
+              <p className="text-sm text-neutral-500">No active or upcoming YouTube broadcast found.</p>
+            ) : null}
+            <LabelledInput label="Title" value={youtubeTitle} onChange={setYoutubeTitle} disabled={!settings?.youtube?.canUpdate || !settings?.youtube?.video} />
+            <LabelledTextarea label="Description" value={youtubeDescription} onChange={setYoutubeDescription} disabled={!settings?.youtube?.canUpdate || !settings?.youtube?.video} />
+            <LabelledInput label="Category ID" value={youtubeCategoryId} onChange={setYoutubeCategoryId} disabled={!settings?.youtube?.canUpdate || !settings?.youtube?.video} placeholder="20" />
+            <label className="mt-4 block text-sm font-medium text-neutral-700">
+              Privacy
+              <select
+                value={youtubePrivacy}
+                onChange={(event) => setYoutubePrivacy(event.target.value as "public" | "unlisted" | "private")}
+                disabled={!settings?.youtube?.canUpdate || !settings?.youtube?.video}
+                className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-950 disabled:bg-neutral-100 disabled:text-neutral-500"
+              >
+                <option value="public">Public</option>
+                <option value="unlisted">Unlisted</option>
+                <option value="private">Private</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={saveYouTube}
+              disabled={!settings?.youtube?.canUpdate || !settings?.youtube?.video}
+              className="mt-4 inline-flex items-center rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white ring-1 ring-neutral-950 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Save YouTube
+            </button>
+          </ProviderPanel>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProviderPanel({ title, connected, children }: { title: string; connected: boolean; children: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-neutral-200 bg-white p-5">
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+        <span className={`font-mono text-xs uppercase ${connected ? "text-emerald-700" : "text-neutral-500"}`}>
+          {connected ? "connected" : "not connected"}
+        </span>
+      </div>
+      {connected ? children : <p className="text-sm text-neutral-500">Connect {title} to manage its broadcast details.</p>}
+    </div>
+  );
+}
+
+function ReconnectNotice({ provider, href }: { provider: string; href: string }) {
+  return (
+    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+      Reconnect {provider} to grant metadata update scopes. <a href={href} className="font-semibold underline">Reconnect</a>
+    </div>
+  );
+}
+
+function LabelledInput({
+  label,
+  value,
+  onChange,
+  disabled,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <label className="mt-4 block text-sm font-medium text-neutral-700">
+      {label}
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled}
+        placeholder={placeholder}
+        className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-950 disabled:bg-neutral-100 disabled:text-neutral-500"
+      />
+    </label>
+  );
+}
+
+function LabelledTextarea({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="mt-4 block text-sm font-medium text-neutral-700">
+      {label}
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled}
+        rows={4}
+        className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-950 disabled:bg-neutral-100 disabled:text-neutral-500"
+      />
+    </label>
   );
 }
 
