@@ -153,21 +153,21 @@ export function DashboardClient({
   return (
     <>
       {status ? (
-        <div className="border-b border-neutral-200 bg-neutral-50">
-          <div className="mx-auto w-full max-w-6xl px-6 py-3 font-mono text-xs text-neutral-700">
+        <div className="fixed right-4 bottom-4 z-50 max-w-[calc(100vw-2rem)] rounded-full border border-neutral-200 bg-white/95 px-4 py-2 font-mono text-xs text-neutral-700 shadow-lg shadow-neutral-950/10 backdrop-blur sm:right-6 sm:bottom-6">
+          <div className="max-w-[32rem] truncate">
             {status}
           </div>
         </div>
       ) : null}
 
-      <div className="border-b border-neutral-200 bg-neutral-50/70">
-        <div className="mx-auto grid w-full max-w-6xl gap-5 px-6 py-6 lg:grid-cols-[10.5rem_minmax(0,1fr)] lg:items-start">
+      <div className="border-b border-neutral-200 bg-[#f7f5f1]">
+        <div className="mx-auto grid w-full max-w-6xl gap-5 px-6 py-6 lg:grid-cols-[11rem_minmax(0,1fr)] lg:items-start lg:py-8">
           <DashboardTabs
             activePanel={activePanel}
             onChange={setActivePanel}
             counts={{ accounts: accounts.length, tokens: tokens.length, subscriptions: events.length }}
           />
-          <div className="min-w-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm shadow-violet-200/30 ring-1 ring-black/5">
+          <div className="min-h-[42rem] min-w-0 overflow-hidden rounded-[1.35rem] border border-neutral-200 bg-white shadow-sm shadow-neutral-950/[0.04] ring-1 ring-black/[0.03]">
             {activePanel === "accounts" ? <Accounts accounts={accounts} hasTwitch={hasTwitch} /> : null}
             {activePanel === "broadcast" ? <BroadcastDetails onStatus={setStatus} /> : null}
             {activePanel === "tokens" ? (
@@ -208,7 +208,7 @@ function DashboardTabs({
 
   return (
     <nav aria-label="Dashboard sections" className="lg:sticky lg:top-20">
-      <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+      <div className="flex gap-2 overflow-x-auto rounded-full border border-neutral-200 bg-white/70 p-1 shadow-sm shadow-neutral-950/[0.03] lg:flex-col lg:overflow-visible lg:rounded-[1.25rem] lg:p-1.5">
         {tabs.map((tab) => {
           const active = tab.id === activePanel;
           return (
@@ -218,12 +218,16 @@ function DashboardTabs({
               onClick={() => onChange(tab.id)}
               className={
                 active
-                  ? "inline-flex shrink-0 items-center justify-between gap-3 rounded-full bg-white px-3 py-2 text-sm text-neutral-950 ring-1 ring-neutral-200"
-                  : "inline-flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2 text-sm text-neutral-600 hover:bg-white hover:text-neutral-950 hover:ring-1 hover:ring-neutral-200"
+                  ? "inline-flex shrink-0 items-center justify-between gap-3 rounded-full bg-neutral-950 px-3 py-2 text-sm text-white lg:bg-white lg:text-neutral-950 lg:ring-1 lg:ring-neutral-200"
+                  : "inline-flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2 text-sm text-neutral-600 hover:bg-white hover:text-neutral-950"
               }
             >
               <span>{tab.label}</span>
-              {tab.meta ? <span className="font-mono text-xs text-neutral-400">{tab.meta}</span> : null}
+              {tab.meta ? (
+                <span className={active ? "font-mono text-xs text-white/55 lg:text-neutral-400" : "font-mono text-xs text-neutral-400"}>
+                  {tab.meta}
+                </span>
+              ) : null}
             </button>
           );
         })}
@@ -371,9 +375,16 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
           </p>
         </div>
 
-        {loading ? <p className="mt-8 text-sm text-neutral-500">Loading broadcast details...</p> : null}
+        {loading ? (
+          <div className="mt-8 grid gap-6 lg:grid-cols-2" aria-hidden="true">
+            <PanelSkeleton />
+            <PanelSkeleton />
+          </div>
+        ) : null}
 
-        <div className="mt-8 rounded-xl border border-neutral-200 bg-neutral-50 p-5">
+        {!loading ? (
+        <>
+        <div className="mt-8 rounded-xl border border-neutral-200 bg-[#faf9f6] p-5">
           <label className="flex items-start gap-3 text-sm font-medium text-neutral-800">
             <input
               type="checkbox"
@@ -460,8 +471,21 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
             </button>
           </ProviderPanel>
         </div>
+        </>
+        ) : null}
       </div>
     </section>
+  );
+}
+
+function PanelSkeleton() {
+  return (
+    <div className="min-h-[21rem] rounded-xl border border-neutral-200 bg-white p-5">
+      <div className="h-4 w-24 rounded-full bg-neutral-100" />
+      <div className="mt-6 h-10 rounded-md bg-neutral-100" />
+      <div className="mt-4 h-10 rounded-md bg-neutral-100" />
+      <div className="mt-4 h-24 rounded-md bg-neutral-100" />
+    </div>
   );
 }
 
