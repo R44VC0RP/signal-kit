@@ -27,7 +27,7 @@ async function main() {
 
   const options = parseArgs(process.argv.slice(2));
   if (!options.token) {
-    printHelp("Missing relay token. Set SIGNALKIT_TOKEN in .env or pass --token sk_live_...");
+    printHelp("Missing API key. Set SIGNALKIT_TOKEN in .env or pass --token sk_live_...");
     process.exit(1);
   }
 
@@ -250,14 +250,14 @@ function printHelp(error?: string) {
   }
   console.log(`Usage: signal-kit [options]
 
-Streams Signal Kit relay events to stdout.
+Streams Signal Kit events (Twitch, YouTube, X) to stdout.
 
 Environment:
-  SIGNALKIT_TOKEN       Relay token. Also accepts SIGNAL_KIT_TOKEN and WEBSOCKET_TOKEN.
+  SIGNALKIT_TOKEN       API key. Also accepts SIGNAL_KIT_TOKEN and WEBSOCKET_TOKEN.
   SIGNALKIT_URL         Relay URL. Defaults to ${DEFAULT_URL}. Also accepts SIGNAL_KIT_URL.
 
 Options:
-  -t, --token <token>   Relay token. Overrides env.
+  -t, --token <token>   API key. Overrides env.
   -u, --url <url>       Relay URL. Overrides env.
       --types <list>    Comma-separated event type filter.
       --json            Print one JSON object per line.

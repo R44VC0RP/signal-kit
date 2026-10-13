@@ -1,6 +1,6 @@
 # @signal-kit/cli
 
-Stream Signal Kit Twitch EventSub relay messages in a terminal.
+Stream your [Signal Kit](https://signal.ryan.ceo) events (Twitch, YouTube, X) in a terminal.
 
 ## Install
 
@@ -10,7 +10,7 @@ npm install -g @signal-kit/cli
 
 ## Configure
 
-The CLI automatically loads `.env` from the current working directory.
+Create an API key in the [dashboard](https://signal.ryan.ceo/dashboard/keys). The CLI loads `.env` from the current directory.
 
 ```env
 SIGNALKIT_TOKEN=sk_live_...
@@ -40,9 +40,9 @@ signal-kit --token sk_live_...
 signal-kit --url wss://signal.ryan.ceo/ws
 signal-kit --json
 signal-kit --raw
-signal-kit --types channel.chat.message,channel.cheer
+signal-kit --types tip,chat.message      # normalized kinds or raw types like channel.cheer
 signal-kit --duration 30s
 signal-kit --no-color
 ```
 
-The default output is a compact human-readable stream. Use `--json` for one JSON object per line or `--raw` for the full relay payload.
+The default output is one line per event (platform, kind, who, amount, message). Use `--json` for one JSON event per line or `--raw` for pretty-printed events.
