@@ -1,0 +1,55 @@
+name: Publish packages
+
+# Publishes @signal-kit/client or @signal-kit/cli to npm with trusted publishing (OIDC):
+# no npm token is stored anywhere. Bump the package's version, push to main, then run this
+# workflow from the Actions tab (or push a tag like client-v1.0.1 / cli-v0.1.1).
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to publish
+        required: true
+        type: choice
+        options: [client, cli]
+  push:
+    tags: ["client-v*", "cli-v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - run: npm install -g npm@latest
+      - uses: oven-sh/setup-bun@v2
+      - name: Pick the package
+        id: pkg
+        run: |
+          name="${{ inputs.package }}"
+          if [ -z "$name" ]; then name="${GITHUB_REF_NAME%%-v*}"; fi
+          echo "dir=packages/$name" >> "$GITHUB_OUTPUT"
+      - run: bun install --frozen-lockfile
+      # The CLI depends on the client's built types, so the client is always built first.
+      - run: bun run --filter '@signal-kit/client' build
+      - run: bun run build
+        working-directory: ${{ steps.pkg.outputs.dir }}
+      - name: Publish unless this version is already on npm
+        working-directory: ${{ steps.pkg.outputs.dir }}
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "$name@$version is already published; bump the version first."
+            exit 0
+          fi
+          npm publish --access public --provenance
