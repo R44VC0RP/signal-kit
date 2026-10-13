@@ -1,0 +1,1 @@
+ALTER TABLE `overlays` ADD `last_test_at` timestamp(3);

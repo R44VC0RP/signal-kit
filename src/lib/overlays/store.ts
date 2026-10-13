@@ -50,7 +50,7 @@ export async function toView(row: OverlayRow): Promise<OverlayView> {
 }
 
 export async function listOverlays(userId: string) {
-  return getDb().select().from(overlays).where(eq(overlays.userId, userId)).orderBy(asc(overlays.createdAt));
+  return getDb().select().from(overlays).where(eq(overlays.userId, userId)).orderBy(asc(overlays.createdAt), asc(overlays.type));
 }
 
 export async function getOverlay(userId: string, id: string) {
@@ -112,4 +112,8 @@ export async function deleteOverlay(row: OverlayRow) {
 
 export async function markOverlaySeen(id: string) {
   await getDb().update(overlays).set({ lastSeenAt: new Date() }).where(eq(overlays.id, id));
+}
+
+export async function markOverlayTested(id: string) {
+  await getDb().update(overlays).set({ lastTestAt: new Date() }).where(eq(overlays.id, id));
 }

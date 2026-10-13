@@ -14,6 +14,7 @@ const icon = (d: ReactNode) => (
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: icon(<path d="M3 10.5L12 3l9 7.5V21H3z" />) },
   { href: "/dashboard/connections", label: "Connections", count: "connections", icon: icon(<path d="M9 17H7A5 5 0 017 7h2M15 7h2a5 5 0 010 10h-2M8 12h8" />) },
+  { href: "/dashboard/overlays", label: "Overlays", count: "overlays", icon: icon(<><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 13l9 5 9-5" /></>) },
   { href: "/dashboard/keys", label: "API keys", count: "keys", icon: icon(<><circle cx="7.5" cy="15.5" r="4.5" /><path d="M10.7 12.3L20 3M17 6l3 3" /></>) },
   { href: "/dashboard/events", label: "Events", icon: icon(<path d="M3 12h4l3-8 4 16 3-8h4" />) },
 ] as const;
@@ -23,7 +24,7 @@ export function Sidebar({
   counts,
 }: {
   user: { name: string; email: string; image: string | null };
-  counts: { connections: number; keys: number };
+  counts: { connections: number; keys: number; overlays: number };
 }) {
   const pathname = usePathname();
   const initials = user.name

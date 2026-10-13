@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOverlay } from "@/lib/overlays/store";
+import { getOverlay, markOverlayTested } from "@/lib/overlays/store";
 import { SAMPLE_BUTTONS, sampleEvent, type SampleKind } from "@/lib/overlays/samples";
 import { requireUser } from "@/lib/session";
 import { relayHub } from "@/lib/ws/relay";
@@ -20,5 +20,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = (await request.json().catch(() => ({}))) as { kind?: unknown };
   const kind = SAMPLE_BUTTONS.find((button) => button.kind === body.kind)?.kind ?? (row.type === "chat" ? "chat.message" : "follow");
   const delivered = relayHub.publish(user.id, sampleEvent(kind as SampleKind), { overlaysOnly: true });
+  if (relayHub.overlayClients(row.id).length > 0) {
+    await markOverlayTested(row.id);
+  }
   return NextResponse.json({ ok: true, kind, delivered, live: relayHub.overlayClients(row.id).length > 0 });
 }

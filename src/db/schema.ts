@@ -245,6 +245,8 @@ export const overlays = mysqlTable(
     tokenHash: varchar("token_hash", { length: 64 }).notNull(),
     tokenEncrypted: text("token_encrypted").notNull(),
     lastSeenAt: timestamp("last_seen_at", { fsp: 3 }),
+    /** When a test alert last reached this overlay in a streaming app (onboarding checklist). */
+    lastTestAt: timestamp("last_test_at", { fsp: 3 }),
     createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { fsp: 3 })
       .defaultNow()

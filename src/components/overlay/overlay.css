@@ -1,18 +1,29 @@
 /*
- * On-stream overlay styles. Three presets via [data-style]: signal (on-brand dark glass),
- * clean (no panel, white text with shadow) and bold (big, high contrast).
- * Sizes use em so the "scale" setting (--sk-scale) resizes everything together.
+ * On-stream overlay styles.
+ * Streamer choices arrive as CSS variables (--sko-font, --sko-text, --sko-accent, --sko-panel,
+ * --sko-radius, --sk-scale, --sko-duration); presets in [data-style] decide structure:
+ *   signal: dark panel, hairline, countdown bar, accent amounts
+ *   clean:  no panel, large type with a soft shadow, centred
+ *   bold:   thick black outlines, hard shadows, a slight tilt, accent-filled money alerts
+ * Browser sources can't blur what's behind them, so nothing relies on backdrop-filter.
+ * Sizes use em (1em = 16px at 100% on a 1080p canvas) so "size" scales everything together.
+ * Streamer custom CSS is applied after this file and can target any .sko-* class.
  */
 
 .sko-root {
+  --sko-font: var(--font-hubot), sans-serif;
+  --sko-text: #f5f5f5;
   --sko-accent: #3d6bff;
-  --sko-accent-text: #a9bfff;
+  --sko-panel: rgb(12 12 12 / 84%);
+  --sko-radius: 1.125em;
+  --sko-duration: 6s;
+  --sko-numbers: var(--font-mona), sans-serif;
   position: absolute;
   inset: 0;
   overflow: hidden;
-  font-family: var(--font-mona), system-ui, sans-serif;
+  font-family: var(--sko-font);
   font-size: calc(16px * var(--sk-scale, 1));
-  color: #f5f5f5;
+  color: var(--sko-text);
   -webkit-font-smoothing: antialiased;
   pointer-events: none;
 }
@@ -29,16 +40,39 @@
   font-weight: 700;
   color: #fff;
   background: #2a2a2a;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
 }
 .sko-avatar-alert {
-  width: 3.5em;
-  height: 3.5em;
-  font-size: 1.15em;
+  width: 4.75em;
+  height: 4.75em;
+  font-size: 1em;
+}
+.sko-avatar-alert:is(span) {
+  font-size: 1.6em;
+  width: 2.97em;
+  height: 2.97em;
 }
 .sko-avatar-chat {
-  width: 1.75em;
-  height: 1.75em;
-  font-size: 0.8em;
+  width: 2.125em;
+  height: 2.125em;
+  font-size: 0.85em;
+}
+.sko-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+}
+.sko-avatar-platform {
+  position: absolute;
+  right: -0.25em;
+  bottom: -0.25em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2em;
+  height: 2em;
+  border-radius: 999px;
+  background: #0e0e0e;
 }
 
 /* ---- Alerts ---- */
@@ -47,84 +81,182 @@
   position: absolute;
   inset: 0;
   display: flex;
+  padding: 6em 3em;
   justify-content: center;
-  padding: 4.5em 2em;
-}
-.sko-alert-stage[data-position="top"] {
   align-items: flex-start;
 }
-.sko-alert-stage[data-position="center"] {
+.sko-alert-stage[data-position$="left"] {
+  justify-content: flex-start;
+}
+.sko-alert-stage[data-position$="right"] {
+  justify-content: flex-end;
+}
+.sko-alert-stage[data-position="left"],
+.sko-alert-stage[data-position="center"],
+.sko-alert-stage[data-position="right"] {
   align-items: center;
 }
-.sko-alert-stage[data-position="bottom"] {
+.sko-alert-stage[data-position^="bottom"] {
   align-items: flex-end;
 }
 
-.sko-alert {
+.sko-alert-wrap {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1.1em;
-  max-width: 44em;
-  padding: 1.1em 1.6em 1.1em 1.1em;
-  animation: sko-alert-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  gap: 0.9em;
+  max-width: 60em;
+  animation: sko-in-slide 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.sko-alert[data-leaving] {
-  animation: sko-alert-out 450ms cubic-bezier(0.7, 0, 0.84, 0) both;
+.sko-alert-wrap[data-leaving] {
+  animation: sko-out-slide 260ms ease-in both;
+}
+[data-animation="fade"] .sko-alert-wrap {
+  animation: sko-in-fade 400ms ease-out both;
+}
+[data-animation="fade"] .sko-alert-wrap[data-leaving] {
+  animation: sko-out-fade 350ms ease-in both;
+}
+[data-animation="pop"] .sko-alert-wrap {
+  animation: sko-in-pop 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+[data-animation="pop"] .sko-alert-wrap[data-leaving] {
+  animation: sko-out-pop 220ms ease-in both;
+}
+[data-animation="none"] .sko-alert-wrap {
+  animation: none;
+}
+[data-animation="none"] .sko-alert-wrap[data-leaving] {
+  animation: none;
+  opacity: 0;
+}
+
+.sko-alert-image {
+  max-width: 24em;
+  max-height: 13em;
+  object-fit: contain;
+}
+
+.sko-alert {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 1.375em;
+  padding: 1.375em 2.25em 1.5em 1.375em;
+  overflow: hidden;
+  border-radius: var(--sko-radius);
+  background: var(--sko-panel);
 }
 .sko-alert-body {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 0.2em;
+  gap: 0.3em;
 }
 .sko-alert-eyebrow {
   display: flex;
   align-items: center;
   gap: 0.45em;
   font-family: var(--font-martian), ui-monospace, monospace;
-  font-size: 0.72em;
+  font-size: 0.875em;
+  line-height: 1.3;
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--sko-accent-text);
+  color: var(--sko-accent);
 }
 .sko-alert-title {
-  font-family: var(--font-hubot), var(--font-mona), sans-serif;
-  font-size: 1.85em;
-  line-height: 1.15;
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-size: 2.375em;
+  line-height: 1.16;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   text-wrap: balance;
 }
+.sko-name {
+  font-weight: 700;
+}
+.sko-amount {
+  font-family: var(--sko-numbers);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--sko-accent);
+}
+.sko-verified {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  margin-left: 0.25em;
+  vertical-align: -0.08em;
+}
+.sko-verified svg {
+  width: 0.85em;
+  height: 0.85em;
+}
+.sko-chat-meta .sko-verified {
+  margin-left: -0.1em;
+  font-size: 1.0625em;
+}
+.sko-verified-check {
+  font-size: 0.7em;
+  opacity: 0.8;
+}
 .sko-alert-detail {
-  font-size: 1.05em;
-  color: #c9c9c9;
+  font-size: 1.25em;
+  opacity: 0.75;
 }
 .sko-alert-message {
-  margin-top: 0.35em;
-  font-size: 1.1em;
-  line-height: 1.35;
-  color: #e8e8e8;
+  margin-top: 0.2em;
+  font-family: var(--font-mona), var(--sko-font);
+  font-size: 1.375em;
+  line-height: 1.36;
+  opacity: 0.88;
   text-wrap: pretty;
 }
+.sko-alert-countdown {
+  display: none;
+}
 
-@keyframes sko-alert-in {
+@keyframes sko-in-slide {
   from {
     opacity: 0;
-    transform: translateY(-0.9em) scale(0.96);
+    transform: translateY(-1em) scale(0.98);
     filter: blur(6px);
   }
-  to {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
 }
-@keyframes sko-alert-out {
+@keyframes sko-out-slide {
   to {
     opacity: 0;
-    transform: translateY(-0.5em) scale(0.98);
-    filter: blur(4px);
+    transform: translateY(-0.5em);
+  }
+}
+@keyframes sko-in-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sko-out-fade {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes sko-in-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-6deg);
+  }
+}
+@keyframes sko-out-pop {
+  to {
+    opacity: 0;
+    transform: scale(0.92) translateY(1.5em);
+  }
+}
+@keyframes sko-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
   }
 }
 
@@ -136,17 +268,29 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  gap: 0.45em;
-  padding: 0.9em;
-  mask-image: linear-gradient(to bottom, transparent 0, #000 3em);
+  padding: 0.75em;
+}
+.sko-chat[data-newest="top"] {
+  justify-content: flex-start;
+}
+.sko-chat-box {
+  display: flex;
+  max-height: 100%;
+  flex-direction: column;
+  /* When messages overflow, the oldest ones are clipped, never the newest. */
+  justify-content: flex-end;
+  gap: 1.125em;
+  overflow: hidden;
+}
+.sko-chat[data-newest="top"] .sko-chat-box {
+  justify-content: flex-start;
 }
 .sko-chat-line {
   display: flex;
   align-items: flex-start;
-  gap: 0.6em;
-  padding: 0.55em 0.75em;
-  animation: sko-chat-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  transition: opacity 600ms ease;
+  gap: 0.75em;
+  animation: sko-line-in 220ms ease-out both;
+  transition: opacity 400ms ease;
 }
 .sko-chat-line[data-fading] {
   opacity: 0;
@@ -160,7 +304,7 @@
 .sko-chat-meta {
   display: flex;
   align-items: center;
-  gap: 0.4em;
+  gap: 0.375em;
   min-width: 0;
 }
 .sko-chat-platform {
@@ -169,41 +313,52 @@
 }
 .sko-chat-name {
   overflow: hidden;
-  font-size: 0.85em;
+  font-size: 1.0625em;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--sko-accent-text);
+  color: var(--sko-accent);
+}
+.sko-chat-amount {
+  flex-shrink: 0;
+  font-family: var(--font-martian), ui-monospace, monospace;
+  font-size: 0.875em;
+  color: var(--sko-accent);
 }
 .sko-chat-text {
-  font-size: 0.95em;
-  line-height: 1.4;
+  font-size: 1.1875em;
+  line-height: 1.37;
   overflow-wrap: anywhere;
 }
 .sko-badge {
   flex-shrink: 0;
-  padding: 0.1em 0.4em;
+  padding: 0.15em 0.4em;
   border-radius: 0.3em;
-  font-family: var(--font-martian), ui-monospace, monospace;
-  font-size: 0.6em;
-  letter-spacing: 0.04em;
+  font-family: var(--font-mona), sans-serif;
+  font-size: 0.6875em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: #d6d6d6;
-  background: rgb(255 255 255 / 10%);
+  color: #fff;
+  background: rgb(255 255 255 / 16%);
 }
 .sko-badge[data-badge="moderator"] {
-  color: #9ff0b5;
-  background: rgb(61 203 99 / 18%);
+  background: #00ad03;
+}
+.sko-badge[data-badge="subscriber"] {
+  background: #9146ff;
+}
+.sko-badge[data-badge="member"] {
+  background: #2ba640;
 }
 .sko-badge[data-badge="broadcaster"],
 .sko-badge[data-badge="owner"] {
-  color: #ffb3ae;
-  background: rgb(255 77 67 / 18%);
+  background: #e91916;
 }
-@keyframes sko-chat-in {
+@keyframes sko-line-in {
   from {
     opacity: 0;
-    transform: translateY(0.6em);
+    transform: translateY(0.5em);
   }
 }
 
@@ -214,15 +369,17 @@
   inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4em;
-  padding: 0.9em;
+  gap: 0.5em;
+  padding: 0.75em;
 }
 .sko-list-item {
   display: flex;
   align-items: center;
-  gap: 0.6em;
-  padding: 0.6em 0.8em;
-  animation: sko-chat-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  gap: 0.7em;
+  padding: 0.7em 0.9em;
+  border-radius: calc(var(--sko-radius) * 0.7);
+  background: var(--sko-panel);
+  animation: sko-line-in 220ms ease-out both;
 }
 .sko-list-body {
   min-width: 0;
@@ -232,138 +389,266 @@
 }
 .sko-list-title {
   overflow: hidden;
-  font-size: 0.9em;
+  font-size: 1em;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .sko-list-detail {
-  font-size: 0.75em;
-  color: #b5b5b5;
+  font-size: 0.8em;
+  opacity: 0.7;
 }
 .sko-list-platform {
   display: inline-flex;
   flex-shrink: 0;
 }
 
-/* ---- Preset: signal (dark glass, hairline, cobalt) ---- */
+/* ================= Preset: signal ================= */
 
-[data-style="signal"] .sko-alert,
-[data-style="signal"] .sko-chat-line,
+[data-style="signal"] .sko-alert {
+  border: 1px solid rgb(255 255 255 / 10%);
+  box-shadow: 0 1.5em 4em rgb(0 0 0 / 45%);
+}
+[data-style="signal"] .sko-alert-title > span:not([class]) {
+  opacity: 0.72;
+}
+[data-style="signal"] .sko-alert-countdown {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--sko-accent);
+  transform-origin: left;
+  animation: sko-countdown var(--sko-duration) linear both;
+}
+[data-style="signal"] .sko-chat-box {
+  padding: 1.375em 1.5em;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: var(--sko-radius);
+  background: var(--sko-panel);
+  box-shadow: 0 1.5em 4em rgb(0 0 0 / 40%);
+}
+[data-style="signal"] .sko-chat-line[data-highlight] {
+  margin: 0 -0.875em;
+  padding: 0.75em 0.875em;
+  border-radius: calc(var(--sko-radius) * 0.66);
+  background: color-mix(in srgb, var(--sko-accent) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--sko-accent);
+}
 [data-style="signal"] .sko-list-item {
   border: 1px solid rgb(255 255 255 / 9%);
-  border-radius: 1em;
-  background: rgb(10 10 12 / 78%);
-  box-shadow:
-    0 0.6em 2.4em rgb(0 0 0 / 35%),
-    inset 0 1px 0 rgb(255 255 255 / 6%);
-  backdrop-filter: blur(14px);
-}
-[data-style="signal"] .sko-alert {
-  border-radius: 1.25em;
-  box-shadow:
-    0 0.8em 3em rgb(0 0 0 / 45%),
-    inset 0 1px 0 rgb(255 255 255 / 7%),
-    inset 3px 0 0 var(--sko-accent);
-}
-[data-style="signal"] .sko-chat-line {
-  border-radius: 0.85em;
+  box-shadow: 0 0.6em 2em rgb(0 0 0 / 35%);
 }
 
-/* ---- Preset: clean (no panels, crisp text) ---- */
+/* ================= Preset: clean ================= */
 
 [data-style="clean"] {
   text-shadow:
-    0 1px 2px rgb(0 0 0 / 80%),
-    0 0 12px rgb(0 0 0 / 55%);
+    0 2px 3px rgb(0 0 0 / 60%),
+    0 8px 32px rgb(0 0 0 / 55%);
 }
 [data-style="clean"] .sko-alert {
   flex-direction: column;
+  gap: 0.875em;
+  padding: 0;
+  overflow: visible;
   text-align: center;
-  gap: 0.6em;
+}
+[data-style="clean"] .sko-alert-body {
+  align-items: center;
 }
 [data-style="clean"] .sko-alert-eyebrow {
-  justify-content: center;
-  color: #fff;
+  display: none;
+}
+[data-style="clean"] .sko-avatar-alert {
+  width: 4em;
+  height: 4em;
+  box-shadow:
+    0 0 0 3px rgb(255 255 255 / 95%),
+    0 0.5em 1.5em rgb(0 0 0 / 40%);
+}
+[data-style="clean"] .sko-avatar-alert:is(span) {
+  width: 2.5em;
+  height: 2.5em;
+}
+[data-style="clean"] .sko-avatar-platform {
+  width: 1.65em;
+  height: 1.65em;
+  background: #fff;
 }
 [data-style="clean"] .sko-alert-title {
-  font-size: 2.3em;
+  font-size: 3.25em;
+  line-height: 1.15;
+  font-weight: 400;
+  letter-spacing: -0.025em;
 }
-[data-style="clean"] .sko-avatar {
-  box-shadow: 0 0.2em 1em rgb(0 0 0 / 50%);
+[data-style="clean"] .sko-amount {
+  color: inherit;
 }
-[data-style="clean"] .sko-chat-line,
-[data-style="clean"] .sko-list-item {
-  padding: 0.25em 0.2em;
+[data-style="clean"] .sko-alert-message {
+  font-family: var(--sko-font);
+  font-size: 1.625em;
+  font-weight: 600;
+  opacity: 1;
+}
+[data-style="clean"] .sko-alert-message::before {
+  content: "\201C";
+}
+[data-style="clean"] .sko-alert-message::after {
+  content: "\201D";
+}
+[data-style="clean"] .sko-chat-box {
+  gap: 1em;
 }
 [data-style="clean"] .sko-chat-name {
+  font-size: 1.375em;
+  font-weight: 700;
+}
+[data-style="clean"] .sko-chat-text {
+  font-size: 1.375em;
+  font-weight: 500;
+}
+[data-style="clean"] .sko-chat-amount {
+  padding: 0 0.5em;
+  border-radius: 0.4em;
+  font-family: var(--sko-font);
+  font-weight: 700;
   color: #fff;
+  background: color-mix(in srgb, var(--sko-accent) 90%, transparent);
+  text-shadow: none;
 }
 [data-style="clean"] .sko-badge {
   text-shadow: none;
 }
 
-/* ---- Preset: bold (big, high contrast, playful) ---- */
+/* ================= Preset: bold ================= */
 
-[data-style="bold"] {
-  --sko-accent: #2f5df5;
+[data-style="bold"] .sko-alert-wrap {
+  rotate: -2deg;
 }
 [data-style="bold"] .sko-alert {
-  padding: 1.2em 2em 1.2em 1.2em;
-  border-radius: 1.4em;
+  gap: 1.625em;
+  padding: 1.75em 2.75em 1.75em 1.75em;
+  overflow: visible;
+  border: 3px solid #0a0a0a;
+  box-shadow: 0.625em 0.625em 0 #0a0a0a;
+}
+[data-style="bold"] .sko-alert[data-money] {
+  color: #fff;
   background: var(--sko-accent);
-  box-shadow:
-    0 0.35em 0 rgb(0 0 0 / 35%),
-    0 1em 3em rgb(47 93 245 / 40%);
-  animation-name: sko-alert-pop;
-  animation-duration: 600ms;
-  animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 [data-style="bold"] .sko-alert-eyebrow {
-  color: rgb(255 255 255 / 80%);
-}
-[data-style="bold"] .sko-alert-title {
-  font-size: 2.2em;
+  position: absolute;
+  top: -1.4em;
+  left: -0.9em;
+  padding: 0.3em 0.75em;
+  border: 3px solid #0a0a0a;
+  border-radius: 0.75em;
+  font-family: var(--sko-font);
+  font-size: 1.5em;
   font-weight: 800;
-}
-[data-style="bold"] .sko-alert-detail,
-[data-style="bold"] .sko-alert-message {
+  letter-spacing: 0;
   color: #fff;
+  background: var(--sko-accent);
+  box-shadow: 0.2em 0.2em 0 #0a0a0a;
+  rotate: -5deg;
+}
+[data-style="bold"] .sko-alert[data-money] .sko-alert-eyebrow {
+  color: #0a0a0a;
+  background: #fff;
 }
 [data-style="bold"] .sko-avatar-alert {
-  outline: 0.2em solid #fff;
+  width: 6em;
+  height: 6em;
+  border: 3px solid #0a0a0a;
 }
-[data-style="bold"] .sko-chat-line,
-[data-style="bold"] .sko-list-item {
-  border-radius: 0.6em;
+[data-style="bold"] .sko-avatar-alert:is(span) {
+  width: 3.75em;
+  height: 3.75em;
+}
+[data-style="bold"] .sko-avatar-platform {
+  width: 2.375em;
+  height: 2.375em;
+  border: 3px solid #0a0a0a;
   background: #fff;
-  color: #0b0b0b;
-  box-shadow: 0 0.25em 0 rgb(0 0 0 / 30%);
 }
-[data-style="bold"] .sko-chat-name {
-  color: var(--sko-accent);
+[data-style="bold"] .sko-alert-title {
+  font-size: 2.75em;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+[data-style="bold"] .sko-name {
   font-weight: 800;
 }
-[data-style="bold"] .sko-list-detail {
-  color: #555;
+[data-style="bold"] .sko-amount {
+  color: inherit;
 }
-[data-style="bold"] .sko-badge {
+[data-style="bold"] .sko-alert-message {
+  font-family: var(--sko-font);
+  font-weight: 700;
+  opacity: 1;
+}
+[data-style="bold"] .sko-chat-box {
+  gap: 1.25em;
+  overflow: visible;
+}
+[data-style="bold"] .sko-chat-line {
+  position: relative;
+  padding: 1.6em 1.125em 0.75em;
+  border: 3px solid #0a0a0a;
+  border-radius: 1em 1em 1em 0.375em;
+  background: var(--sko-panel);
+  box-shadow: 0.3125em 0.3125em 0 #0a0a0a;
+  animation: sko-bubble-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: bottom left;
+}
+[data-style="bold"] .sko-chat-line[data-highlight] {
   color: #fff;
-  background: #0b0b0b;
+  background: var(--sko-accent);
 }
-@keyframes sko-alert-pop {
-  0% {
+[data-style="bold"] .sko-chat-meta {
+  position: absolute;
+  top: -0.9em;
+  left: 0.6em;
+  padding: 0.25em 0.7em 0.25em 0.55em;
+  border: 2.5px solid #0a0a0a;
+  border-radius: 0.55em;
+  color: #fff;
+  background: #0a0a0a;
+  rotate: -2deg;
+}
+[data-style="bold"] .sko-chat-line[data-platform="twitch"] .sko-chat-meta {
+  background: #9146ff;
+}
+[data-style="bold"] .sko-chat-line[data-platform="youtube"] .sko-chat-meta {
+  background: #ff0000;
+}
+[data-style="bold"] .sko-chat-name {
+  font-weight: 800;
+  color: #fff !important;
+}
+[data-style="bold"] .sko-chat-amount {
+  color: #fff;
+}
+[data-style="bold"] .sko-chat-text {
+  font-weight: 600;
+}
+[data-style="bold"] .sko-list-item {
+  border: 3px solid #0a0a0a;
+  box-shadow: 0.3em 0.3em 0 #0a0a0a;
+}
+@keyframes sko-bubble-in {
+  from {
     opacity: 0;
-    transform: scale(0.6) rotate(-3deg);
-  }
-  100% {
-    opacity: 1;
-    transform: none;
+    transform: scale(0.9);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sko-alert,
+  .sko-alert-wrap,
   .sko-chat-line,
   .sko-list-item {
     animation-duration: 1ms !important;
