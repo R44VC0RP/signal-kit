@@ -266,8 +266,8 @@ function Panel({ children, className = "" }: { children: ReactNode; className?: 
 function JsonLine({ children, indent = 0, highlight = false }: { children: ReactNode; indent?: number; highlight?: boolean }) {
   return (
     <div
-      className={`border-l-2 pr-5 ${highlight ? "border-(--accent) bg-(--selected)" : "border-transparent"}`}
-      style={{ paddingLeft: `calc(18px + ${indent * 2}ch)` }}
+      className={`pr-5 ${highlight ? "bg-(--selected)" : ""}`}
+      style={{ paddingLeft: `calc(20px + ${indent * 2}ch)` }}
     >
       {children}
     </div>

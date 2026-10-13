@@ -229,7 +229,7 @@ export function EventLog({
             return (
               <div
                 key={row.id}
-                className={`flex h-10 items-center gap-3.5 border-t border-(--line) px-2.5 ${fresh ? "bg-(--selected) shadow-[inset_3px_0_0_var(--accent)]" : ""}`}
+                className={`flex h-10 items-center gap-3.5 border-t border-(--line) px-2.5 ${fresh ? "bg-(--selected)" : ""}`}
               >
                 <span className="sk-mono w-17.5 shrink-0 text-[11px] text-(--text-3)">
                   {new Date(row.time).toLocaleTimeString("en", { hour12: false })}
