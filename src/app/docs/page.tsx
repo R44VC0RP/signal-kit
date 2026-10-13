@@ -78,12 +78,12 @@ const FIELDS: [string, string][] = [
 ];
 
 const KINDS: [string, string, string][] = [
-  ["chat.message", "A chat message", "Twitch, YouTube"],
-  ["chat.message.deleted", "A chat message was removed", "YouTube"],
+  ["chat.message", "A chat message", "Twitch, YouTube, X"],
+  ["chat.message.deleted", "A chat message was removed", "YouTube, X"],
   ["chat.notification", "Chat notices such as announcements and resubs", "Twitch"],
   ["chat.settings", "Slow mode, followers-only and similar changed", "Twitch"],
-  ["follow", "Someone followed", "Twitch"],
-  ["subscription", "New sub, resub, membership, milestone or received gift", "Twitch, YouTube"],
+  ["follow", "Someone followed", "Twitch, X"],
+  ["subscription", "New sub, resub, membership, milestone or received gift", "Twitch, YouTube, X"],
   ["subscription.gift", "Someone gifted subs or memberships (data.count)", "Twitch, YouTube"],
   ["subscription.end", "A subscription ended", "Twitch"],
   ["tip", "Bits, Super Chats, Super Stickers, gifts and charity donations, with amount", "Twitch, YouTube"],
@@ -97,8 +97,8 @@ const KINDS: [string, string, string][] = [
   ["shoutout", "A shoutout was sent or received", "Twitch"],
   ["ad_break", "An ad break started", "Twitch"],
   ["moderation", "A user was banned or timed out", "YouTube"],
-  ["stream.online", "The stream went live", "Twitch"],
-  ["stream.offline", "The stream or chat ended", "Twitch, YouTube"],
+  ["stream.online", "The stream went live", "Twitch, X"],
+  ["stream.offline", "The stream or chat ended", "Twitch, YouTube, X"],
   ["stream.update", "Title, category or language changed", "Twitch"],
   ["other", "Anything not mapped yet; check raw.type", "All"],
 ];
@@ -125,8 +125,7 @@ export default function DocsPage() {
           <section className="flex flex-col gap-4 pt-12 sm:pt-20">
             <h1 className="sk-brand text-[36px] leading-10 font-semibold tracking-[-0.03em] text-(--text) sm:text-[44px] sm:leading-12">Docs</h1>
             <p className="max-w-145 text-base leading-[25px] text-pretty text-(--text-2)">
-              Connect once and receive every event from your Twitch and YouTube channels in one format. X arrives once X enables livestream
-              access.
+              Connect once and receive every event from your Twitch, YouTube and X channels in one format.
             </p>
             <nav className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-(--text-3)">
               {SECTIONS.map(([id, label]) => (

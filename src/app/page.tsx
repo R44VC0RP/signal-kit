@@ -102,11 +102,7 @@ export default function HomePage() {
             <ul className="mt-10 flex flex-wrap items-center gap-5 sm:mt-11 sm:gap-6">
               <PlatformItem platform="twitch" name="Twitch" />
               <PlatformItem platform="youtube" name="YouTube" />
-              <PlatformItem platform="x" name="X">
-                <span className="sk-mono rounded-sm border border-(--line-strong) px-1.5 py-0.75 text-[10px] leading-3 tracking-[0.04em] text-(--text-3)">
-                  soon
-                </span>
-              </PlatformItem>
+              <PlatformItem platform="x" name="X" />
             </ul>
           </section>
 
