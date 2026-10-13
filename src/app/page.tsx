@@ -51,7 +51,7 @@ const TONE: Record<Tone, string> = {
 const OUTPUT: { platform: Platform; name: string; rest: string }[] = [
   { platform: "youtube", name: "mira.codes", rest: "sent $20.00" },
   { platform: "twitch", name: "pixelpilot", rest: "sent 500 bits" },
-  { platform: "twitch", name: "devon_k", rest: "does the SDK work in Bun?" },
+  { platform: "x", name: "devon_k", rest: "does the SDK work in Bun?" },
 ];
 
 const EXAMPLES: { platform: Platform; label: string; actor: string; message: string; amount: [string, string, string] }[] = [
@@ -61,7 +61,7 @@ const EXAMPLES: { platform: Platform; label: string; actor: string; message: str
 
 const DETAILS = [
   ["Replay on reconnect", "Events are kept for 24 hours. When the SDK reconnects it replays what you missed, without duplicates."],
-  ["Push, not polling", "Twitch arrives through EventSub conduits, YouTube chat through the streamList gRPC push API."],
+  ["Push, not polling", "Twitch arrives through EventSub conduits, YouTube chat through the streamList gRPC push API, and X through the X Activity API."],
   ["Every channel you run", "Connect several accounts per platform. Each event says which channel it came from."],
   ["A CLI for the terminal", "The same events, streamed to your terminal while you build."],
 ];

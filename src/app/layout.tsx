@@ -15,7 +15,7 @@ const martianMono = Martian_Mono({ variable: "--font-martian", subsets: ["latin"
 export const metadata: Metadata = {
   title: "Signal Kit",
   description:
-    "Twitch EventSub, YouTube Live Chat, or both as one developer-friendly WebSocket. OAuth once, get a relay token, build whatever you want.",
+    "Live stream events from Twitch, YouTube and X, normalized into one format and delivered over a single WebSocket.",
 };
 
 export default function RootLayout({

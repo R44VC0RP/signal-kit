@@ -53,6 +53,18 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
+      <h2>X data</h2>
+      <ul>
+        <li>
+          If you connect an X account, we read your live broadcasts and their chat, and the new followers and subscribers of that
+          account, so we can deliver them to your own tools. We never post, send chat messages or change anything on your X account.
+        </li>
+        <li>
+          You can revoke Signal Kit&apos;s access at any time in X under{" "}
+          <a href="https://x.com/settings/connected_apps">Settings › Connected apps</a>, or by disconnecting X in the Signal Kit dashboard.
+        </li>
+      </ul>
+
       <h2>How we use your data</h2>
       <ul>
         <li>To sign you in and keep your connected accounts working.</li>
