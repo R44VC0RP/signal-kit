@@ -5,8 +5,9 @@ import { chatters, connections, streamChatters, streams, type Platform } from "@
 import { getConnectionAccessToken } from "@/lib/connections/tokens";
 import type { SignalKitEvent } from "@/lib/events/types";
 import { helixApp } from "@/lib/twitch/helix-app";
+import { relayHub } from "@/lib/ws/relay";
 import { getLiveStreamingDetails } from "@/lib/youtube/api";
-import { countEvent, emptyPlatform, emptySummary, minute, sampleViewers, trimSupporters, type StreamSummary } from "./summary";
+import { countEvent, emptyPlatform, emptySummary, minute, sampleViewers, trimSupporters, type LiveSnapshot, type StreamSummary } from "./summary";
 
 /**
  * Turns the live event flow into a history of streams.
@@ -66,6 +67,33 @@ class StreamTracker {
   /** The user's live stream, if any (for the dashboard). */
   liveStreamId(userId: string) {
     return this.active.get(userId)?.id ?? null;
+  }
+
+  /** What viewer-count overlays show: live or not, since when, latest viewers per platform. */
+  snapshot(userId: string): LiveSnapshot {
+    const stream = this.active.get(userId);
+    if (!stream) {
+      return { live: false, startedAt: null, viewers: {} };
+    }
+    const viewers: LiveSnapshot["viewers"] = {};
+    for (const [platform, stats] of Object.entries(stream.summary.platforms)) {
+      if (!stats?.live) {
+        continue;
+      }
+      // The most recent sample within the last few minutes.
+      for (let i = stream.summary.timeline.length - 1; i >= Math.max(0, stream.summary.timeline.length - 5); i -= 1) {
+        const value = stream.summary.timeline[i]?.v[platform as Platform];
+        if (value !== undefined) {
+          viewers[platform as Platform] = value;
+          break;
+        }
+      }
+    }
+    return { live: true, startedAt: stream.startedAt, viewers };
+  }
+
+  private publishSnapshot(userId: string) {
+    relayHub.publish(userId, { type: "signal_kit.overlay.stream", stream: this.snapshot(userId) }, { overlaysOnly: true });
   }
 
   /** Called for every ingested event. */
@@ -149,6 +177,7 @@ class StreamTracker {
     if (!wasLive) {
       stream.dirty = true;
       await this.save(stream);
+      this.publishSnapshot(userId);
       console.log(`[streams] ${platform} live for ${userId} (stream ${stream.id})`);
     }
     return stream;
@@ -182,6 +211,7 @@ class StreamTracker {
     }
     await getDb().update(streams).set({ endedAt: at, title: stream.title, summary: stream.summary }).where(eq(streams.id, stream.id));
     this.active.delete(stream.userId);
+    this.publishSnapshot(stream.userId);
     console.log(`[streams] stream ${stream.id} ended`);
   }
 
@@ -367,6 +397,7 @@ class StreamTracker {
           stream.summary.platforms.twitch!.category = entry.game_name;
           sampleViewers(stream.summary, stream.startedAt, "twitch", entry.viewer_count);
           stream.dirty = true;
+          this.publishSnapshot(row.userId);
           return;
         }
         const stream = this.active.get(row.userId);
@@ -399,6 +430,7 @@ class StreamTracker {
           if (Number.isFinite(viewers)) {
             sampleViewers(stream.summary, stream.startedAt, "youtube", viewers);
             stream.dirty = true;
+            this.publishSnapshot(stream.userId);
           }
         });
       } catch (error) {

@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { OverlayRenderer } from "@/components/overlay/Overlays";
+import type { PublicLiveTools } from "@/lib/live/types";
 import type { PublicStats } from "@/lib/overlays/stats-core";
+import type { CreditsData, LiveSnapshot } from "@/lib/streams/summary";
 import type { SignalKitEvent } from "@/lib/events/types";
 import { OVERLAY_PLACEMENT, overlayTypeInfo, type AnySettings, type OverlayType } from "@/lib/overlays/settings";
 
@@ -19,7 +21,13 @@ export function PreviewStage({
   stats,
   overlayId,
   background,
+  tools,
+  stream,
+  credits,
 }: {
+  tools?: PublicLiveTools | null;
+  stream?: LiveSnapshot | null;
+  credits?: CreditsData | null;
   type: OverlayType;
   settings: AnySettings;
   events: SignalKitEvent[];
@@ -63,9 +71,9 @@ export function PreviewStage({
           <div className="absolute inset-0 bg-[repeating-conic-gradient(#202020_0%_25%,#2b2b2b_0%_50%)] bg-[length:48px_48px]" />
         )}
         <div className="absolute" style={box}>
-          <OverlayRenderer type={type} settings={settings} events={events} stats={stats} overlayId={overlayId} />
+          <OverlayRenderer type={type} settings={settings} events={events} stats={stats} overlayId={overlayId} tools={tools} stream={stream} credits={credits} />
         </div>
-        {type !== "alerts" && type !== "emotewall" ? <div className="pointer-events-none absolute rounded-[6px] outline-2 outline-white/10 outline-dashed" style={box} /> : null}
+        {type !== "alerts" && type !== "emotewall" && type !== "credits" ? <div className="pointer-events-none absolute rounded-[6px] outline-2 outline-white/10 outline-dashed" style={box} /> : null}
       </div>
     </div>
   );

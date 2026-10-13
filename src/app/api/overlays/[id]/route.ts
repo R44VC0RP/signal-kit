@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStats } from "@/lib/overlays/stats";
+import { streamTracker } from "@/lib/streams/tracker";
 import { publicStats } from "@/lib/overlays/stats-core";
 import { deleteOverlay, getOverlay, toView, updateOverlay } from "@/lib/overlays/store";
 import { requireUser } from "@/lib/session";
@@ -18,7 +19,7 @@ export async function GET(request: Request, { params }: Params) {
   }
   // Stats let the customizer preview goals and labels with real numbers.
   const stats = publicStats(await getStats(user.id));
-  return NextResponse.json({ overlay: { ...(await toView(row)), live: relayHub.overlayClients(row.id).length > 0 }, stats });
+  return NextResponse.json({ overlay: { ...(await toView(row)), live: relayHub.overlayClients(row.id).length > 0 }, stats, stream: streamTracker.snapshot(user.id) });
 }
 
 export async function PATCH(request: Request, { params }: Params) {

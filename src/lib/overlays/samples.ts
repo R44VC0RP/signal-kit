@@ -145,3 +145,71 @@ export function sampleEvent(kind: SampleKind, seed = Math.floor(Math.random() * 
     event: {},
   };
 }
+
+// ---- Live tools, stream and credits samples (previews when nothing is running) ---------------
+
+export function sampleLiveTools(): import("@/lib/live/types").PublicLiveTools {
+  const now = Date.now();
+  const at = (ago: number) => new Date(now - ago * 1000).toISOString();
+  const person = (name: string, platform: EventPlatform) => ({ key: `${platform}:${name}`, name, platform });
+  return {
+    poll: {
+      id: "sample",
+      question: "What should we play next?",
+      options: [
+        { label: "Elden Ring", votes: 42 },
+        { label: "Balatro", votes: 67 },
+        { label: "Minecraft hardcore", votes: 23 },
+      ],
+      totalVotes: 132,
+      status: "open",
+      startedAt: at(40),
+      endsAt: new Date(now + 80_000).toISOString(),
+    },
+    giveaway: {
+      id: "sample",
+      title: "Steam key giveaway",
+      keyword: "!enter",
+      status: "open",
+      entries: 214,
+      recent: [person("mira.codes", "youtube"), person("PixelPilot", "twitch"), person("devon_k", "x"), person("lowlatency", "twitch")],
+      winners: [],
+      startedAt: at(120),
+    },
+    queue: {
+      open: true,
+      title: "Viewer games",
+      current: { ...person("StreamerGuild", "twitch"), at: at(300) },
+      entries: [person("Ana Ruiz", "youtube"), person("nightowl", "x"), person("PixelPilot", "twitch"), person("devon_k", "x")].map((entry, index) => ({ ...entry, at: at(200 - index * 30) })),
+    },
+    highlight: {
+      id: "sample",
+      platform: "twitch",
+      name: "PixelPilot",
+      color: "#9acd32",
+      message: "this overlay setup took me two minutes Kappa",
+      messageParts: [
+        { type: "text", text: "this overlay setup took me two minutes " },
+        { type: "emote", name: "Kappa", url: "https://static-cdn.jtvnw.net/emoticons/v2/25/static/dark/3.0", animated: false, source: "twitch" },
+      ],
+      at: new Date(now).toISOString(),
+    },
+  };
+}
+
+export function sampleStream(): import("@/lib/streams/summary").LiveSnapshot {
+  return { live: true, startedAt: new Date(Date.now() - (83 * 60 + 12) * 1000).toISOString(), viewers: { twitch: 128, youtube: 41 } };
+}
+
+export function sampleCredits(): import("@/lib/streams/summary").CreditsData {
+  return {
+    streamTitle: "Building stream overlays live",
+    followers: ["mira.codes", "devon_k", "nightowl", "sol.dev", "kai_plays", "tessbuilds"],
+    subscribers: ["PixelPilot", "lowlatency", "Ana Ruiz"],
+    gifters: [{ name: "StreamerGuild", count: 5 }],
+    cheers: [{ name: "bitsy", amount: "500 bits" }],
+    tips: [{ name: "superfan", amount: "$20.00" }],
+    raiders: [{ name: "coolstreamer", viewers: 45 }],
+    chatters: ["PixelPilot", "mira.codes", "devon_k", "lowlatency", "Ana Ruiz", "nightowl", "StreamerGuild", "kai_plays", "tessbuilds", "sol.dev"],
+  };
+}

@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import type { SignalKitEvent } from "@/lib/events/types";
 import type { AnySettings, OverlayType } from "@/lib/overlays/settings";
+import type { PublicLiveTools } from "@/lib/live/types";
 import type { PublicStats } from "@/lib/overlays/stats-core";
+import type { CreditsData, LiveSnapshot } from "@/lib/streams/summary";
 import { OverlayRenderer, type OverlayEvent } from "./Overlays";
 
 const MAX_EVENTS = 200;
@@ -18,6 +20,9 @@ export function OverlayRuntime({ token, overlayId, type, initialSettings }: { to
   const [events, setEvents] = useState<OverlayEvent[]>([]);
   const [history, setHistory] = useState<OverlayEvent[]>([]);
   const [stats, setStats] = useState<PublicStats | null>(null);
+  const [tools, setTools] = useState<PublicLiveTools | null>(null);
+  const [stream, setStream] = useState<LiveSnapshot | null>(null);
+  const [credits, setCredits] = useState<CreditsData | null>(null);
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
@@ -29,7 +34,9 @@ export function OverlayRuntime({ token, overlayId, type, initialSettings }: { to
     const connect = () => {
       ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?overlay=${encodeURIComponent(token)}`);
       ws.onmessage = (message) => {
-        let parsed: (Partial<SignalKitEvent> & { type?: string; settings?: AnySettings; stats?: PublicStats; history?: SignalKitEvent[] }) | null = null;
+        let parsed:
+          | (Partial<SignalKitEvent> & { type?: string; settings?: AnySettings; stats?: PublicStats; history?: SignalKitEvent[]; tools?: PublicLiveTools; stream?: LiveSnapshot; credits?: CreditsData | null })
+          | null = null;
         try {
           parsed = JSON.parse(String(message.data));
         } catch {
@@ -52,6 +59,17 @@ export function OverlayRuntime({ token, overlayId, type, initialSettings }: { to
             setStats(parsed.stats);
           }
           setHistory(Array.isArray(parsed.history) ? parsed.history : []);
+          setTools(parsed.tools ?? null);
+          setStream(parsed.stream ?? null);
+          setCredits(parsed.credits ?? null);
+          return;
+        }
+        if (parsed.type === "signal_kit.overlay.live_tools" && parsed.tools) {
+          setTools(parsed.tools);
+          return;
+        }
+        if (parsed.type === "signal_kit.overlay.stream" && parsed.stream) {
+          setStream(parsed.stream);
           return;
         }
         if (parsed.type === "signal_kit.overlay.stats" && parsed.stats) {
@@ -91,5 +109,5 @@ export function OverlayRuntime({ token, overlayId, type, initialSettings }: { to
       </p>
     );
   }
-  return <OverlayRenderer type={type} settings={settings} events={events} history={history} stats={stats} overlayId={overlayId} />;
+  return <OverlayRenderer type={type} settings={settings} events={events} history={history} stats={stats} overlayId={overlayId} tools={tools} stream={stream} credits={credits} />;
 }

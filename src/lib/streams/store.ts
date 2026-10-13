@@ -1,7 +1,7 @@
 import { and, desc, eq, gte, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { chatters, streamChatters, streams } from "@/db/schema";
-import { totals, type StreamSummary } from "./summary";
+import { totals, type CreditsData, type StreamSummary } from "./summary";
 
 /** Reads for the Streams dashboard (and, later, recap emails). */
 
@@ -110,4 +110,39 @@ export async function streamsSince(userId: string, since: Date) {
     .where(and(eq(streams.userId, userId), gte(streams.startedAt, since)))
     .orderBy(desc(streams.startedAt));
   return rows.map(toRow);
+}
+
+/** Names for end-of-stream credits: the live stream, or the one that just ended (within 12 h). */
+export async function streamCredits(userId: string): Promise<CreditsData | null> {
+  const [latest] = await listStreams(userId, 1);
+  if (!latest || (latest.endedAt && Date.now() - Date.parse(latest.endedAt) > 12 * 3_600_000)) {
+    return null;
+  }
+  const unique = (names: string[]) => [...new Set(names)];
+  const moments = latest.summary.highlights;
+  const of = (kind: string) => moments.filter((moment) => moment.kind === kind);
+  const gifts = new Map<string, number>();
+  for (const moment of of("subscription.gift")) {
+    gifts.set(moment.name, (gifts.get(moment.name) ?? 0) + (Number.parseInt(moment.detail ?? "1", 10) || 1));
+  }
+  const chatterRows = await getDb()
+    .select({ name: streamChatters.name })
+    .from(streamChatters)
+    .where(eq(streamChatters.streamId, latest.id))
+    .orderBy(desc(streamChatters.messages))
+    .limit(60);
+  return {
+    streamTitle: latest.title,
+    followers: unique(of("follow").map((moment) => moment.name)),
+    subscribers: unique(of("subscription").map((moment) => moment.name)),
+    gifters: [...gifts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
+    cheers: of("tip")
+      .filter((moment) => moment.detail?.endsWith("bits"))
+      .map((moment) => ({ name: moment.name, amount: moment.detail ?? "" })),
+    tips: of("tip")
+      .filter((moment) => !moment.detail?.endsWith("bits"))
+      .map((moment) => ({ name: moment.name, amount: moment.detail ?? "" })),
+    raiders: of("raid").map((moment) => ({ name: moment.name, viewers: Number.parseInt(moment.detail ?? "0", 10) || 0 })),
+    chatters: unique(chatterRows.map((row) => row.name)),
+  };
 }

@@ -325,3 +325,13 @@ export const chatters = mysqlTable(
   },
   (table) => [primaryKey({ columns: [table.userId, table.platform, table.chatterId] }), index("chatters_user_messages_idx").on(table.userId, table.messages)],
 );
+
+/** Live chat tools per user: the current poll, giveaway, viewer queue and pinned chat message. */
+export const liveTools = mysqlTable("live_tools", {
+  userId: varchar("user_id", { length: 36 }).primaryKey(),
+  state: json("state").$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});

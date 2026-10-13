@@ -6,8 +6,11 @@ import { clientIpOf } from "@/lib/client-ip";
 import { randomToken } from "@/lib/crypto";
 import { isEventId } from "@/lib/events/ids";
 import { eventsSince, MAX_REPLAY, recentEvents } from "@/lib/events/ingest";
+import { liveToolsHub } from "@/lib/live/tools";
 import { publicStats } from "@/lib/overlays/stats-core";
 import { getStats } from "@/lib/overlays/stats";
+import { streamCredits } from "@/lib/streams/store";
+import { streamTracker } from "@/lib/streams/tracker";
 import { findOverlayByToken, markOverlaySeen } from "@/lib/overlays/store";
 import { authenticateApiKey, authenticateSession } from "./auth";
 import { relayHub } from "./relay";
@@ -45,7 +48,7 @@ export function startRelayHeartbeat() {
   }, HEARTBEAT_MS);
 }
 
-type Auth = { userId: string; keyId: string; label: string; overlayId?: string } | null;
+type Auth = { userId: string; keyId: string; label: string; overlayId?: string; overlayType?: string } | null;
 
 export function handleRelayUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer) {
   const url = new URL(req.url ?? "/", "http://relay.local");
@@ -67,7 +70,7 @@ export function handleRelayUpgrade(req: IncomingMessage, socket: Duplex, head: B
         }
         await start(
           ws,
-          overlay ? { userId: overlay.userId, keyId: `overlay:${overlay.id}`, label: overlay.name, overlayId: overlay.id } : null,
+          overlay ? { userId: overlay.userId, keyId: `overlay:${overlay.id}`, label: overlay.name, overlayId: overlay.id, overlayType: overlay.type } : null,
           null,
           "Overlay URL was reset or deleted",
         );
@@ -171,7 +174,7 @@ async function start(ws: WebSocket, auth: Auth, since: string | null, failure: s
     }),
   );
   if (auth.overlayId) {
-    void sendOverlayInit(ws, auth.userId);
+    void sendOverlayInit(ws, auth.userId, auth.overlayType);
   }
   if (!replay) {
     return;
@@ -202,13 +205,18 @@ async function start(ws: WebSocket, auth: Auth, since: string | null, failure: s
 }
 
 /** Overlays start with the current stats (goals, labels) and recent events (event list, ticker). */
-async function sendOverlayInit(ws: WebSocket, userId: string) {
+async function sendOverlayInit(ws: WebSocket, userId: string, overlayType?: string) {
   try {
-    const [stats, recent] = await Promise.all([getStats(userId), recentEvents(userId, { limit: 60 })]);
+    const [stats, recent, tools, credits] = await Promise.all([
+      getStats(userId),
+      recentEvents(userId, { limit: 60 }),
+      liveToolsHub.snapshot(userId),
+      overlayType === "credits" ? streamCredits(userId) : Promise.resolve(null),
+    ]);
     if (ws.readyState === WebSocket.OPEN) {
       // Overlays never read the raw platform payloads; leave them out to keep the message small.
       const history = recent.events.reverse().map((event) => ({ ...event, raw: undefined, event: undefined }));
-      ws.send(JSON.stringify({ type: "signal_kit.overlay.init", stats: publicStats(stats), history }));
+      ws.send(JSON.stringify({ type: "signal_kit.overlay.init", stats: publicStats(stats), history, tools, stream: streamTracker.snapshot(userId), credits }));
     }
   } catch (error) {
     console.error("[relay] overlay init failed", error);

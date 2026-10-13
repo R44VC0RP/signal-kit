@@ -64,6 +64,13 @@
       "when": 1791923733542,
       "tag": "0008_stream_history",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1791924868591,
+      "tag": "0009_live_tools",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,13 @@ import {
   type AlertTemplate,
   type AnySettings,
   type ChatSettings,
+  type CreditsSettings,
+  type GiveawaySettings,
+  type HighlightSettings,
+  type PollSettings,
+  type QueueSettings,
+  type TwitchActivitySettings,
+  type ViewersSettings,
   type EmoteWallSettings,
   type EventListSettings,
   type GoalSettings,
@@ -51,6 +58,20 @@ export function TypeSettings({ type, settings, update, overlayId }: { type: Over
       return <EmoteWallTypeSettings settings={settings as EmoteWallSettings} update={update} />;
     case "ticker":
       return <TickerTypeSettings settings={settings as TickerSettings} update={update} />;
+    case "poll":
+      return <PollTypeSettings settings={settings as PollSettings} update={update} />;
+    case "giveaway":
+      return <GiveawayTypeSettings settings={settings as GiveawaySettings} update={update} />;
+    case "queue":
+      return <QueueTypeSettings settings={settings as QueueSettings} update={update} />;
+    case "highlight":
+      return <HighlightTypeSettings settings={settings as HighlightSettings} update={update} />;
+    case "viewers":
+      return <ViewersTypeSettings settings={settings as ViewersSettings} update={update} />;
+    case "credits":
+      return <CreditsTypeSettings settings={settings as CreditsSettings} update={update} />;
+    case "twitch":
+      return <TwitchTypeSettings settings={settings as TwitchActivitySettings} update={update} />;
   }
 }
 
@@ -642,5 +663,168 @@ function EmoteWallTypeSettings({ settings: s, update }: { settings: EmoteWallSet
         </Field>
       </Group>
     </>
+  );
+}
+
+// ---- Live tools, viewers, credits, Twitch activity -----------------------------------------
+
+function TextSize({ value, onChange, max = 60 }: { value: number; onChange: (value: number) => void; max?: number }) {
+  return (
+    <Field label="Text size">
+      <Slider value={value} min={10} max={max} step={1} format={px} onChange={onChange} />
+    </Field>
+  );
+}
+
+function PollTypeSettings({ settings: s, update }: { settings: PollSettings; update: Update }) {
+  return (
+    <Group title="Poll">
+      <TextSize value={s.fontSize} onChange={(fontSize) => update({ ...s, fontSize })} />
+      <Field label="Instructions">
+        <TextField value={s.instructions} onChange={(instructions) => update({ ...s, instructions })} />
+      </Field>
+      <div className="flex flex-col gap-2.5">
+        <ColorField label="Bar" value={s.barColor} onChange={(barColor) => update({ ...s, barColor })} />
+        <ColorField label="Bar background" value={s.barBackground} onChange={(barBackground) => update({ ...s, barBackground })} />
+      </div>
+      <Toggle label="Show percentages" checked={s.showPercent} onChange={(showPercent) => update({ ...s, showPercent })} />
+      <Toggle label="Show vote counts" checked={s.showVotes} onChange={(showVotes) => update({ ...s, showVotes })} />
+      <Field label="Keep results on screen for">
+        <Slider value={s.resultSec} min={0} max={300} step={10} format={(v) => (v === 0 ? "Until cleared" : `${v}s`)} onChange={(resultSec) => update({ ...s, resultSec })} />
+      </Field>
+    </Group>
+  );
+}
+
+function GiveawayTypeSettings({ settings: s, update }: { settings: GiveawaySettings; update: Update }) {
+  return (
+    <Group title="Giveaway">
+      <TextSize value={s.fontSize} onChange={(fontSize) => update({ ...s, fontSize })} />
+      <Field label="Instructions" hint="{keyword} is the entry word">
+        <TextField value={s.instructions} onChange={(instructions) => update({ ...s, instructions })} />
+      </Field>
+      <Toggle label="Show number of entries" checked={s.showEntries} onChange={(showEntries) => update({ ...s, showEntries })} />
+      <Toggle label="Fanfare when a winner is drawn" checked={s.sound} onChange={(sound) => update({ ...s, sound })} />
+      {s.sound ? (
+        <Field label="Volume">
+          <Slider value={s.volume} min={0} max={1} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(volume) => update({ ...s, volume })} />
+        </Field>
+      ) : null}
+    </Group>
+  );
+}
+
+function QueueTypeSettings({ settings: s, update }: { settings: QueueSettings; update: Update }) {
+  return (
+    <Group title="Queue">
+      <TextSize value={s.fontSize} onChange={(fontSize) => update({ ...s, fontSize })} />
+      <Field label="Instructions">
+        <TextField value={s.instructions} onChange={(instructions) => update({ ...s, instructions })} />
+      </Field>
+      <Field label="Show up to">
+        <Slider value={s.maxShown} min={1} max={20} step={1} format={(v) => `${v}`} onChange={(maxShown) => update({ ...s, maxShown })} />
+      </Field>
+      <Toggle label="Platform logos" checked={s.showPlatform} onChange={(showPlatform) => update({ ...s, showPlatform })} />
+      <Toggle label="Hide while the queue is closed" checked={s.hideWhenClosed} onChange={(hideWhenClosed) => update({ ...s, hideWhenClosed })} />
+    </Group>
+  );
+}
+
+function HighlightTypeSettings({ settings: s, update }: { settings: HighlightSettings; update: Update }) {
+  return (
+    <Group title="Pinned message">
+      <TextSize value={s.fontSize} onChange={(fontSize) => update({ ...s, fontSize })} max={72} />
+      <Field label="Animation">
+        <SelectField value={s.animation} options={options(ANIMATIONS_IN)} onChange={(animation) => update({ ...s, animation })} />
+      </Field>
+      <Toggle label="Avatar" checked={s.showAvatar} onChange={(showAvatar) => update({ ...s, showAvatar })} />
+      <Toggle label="Platform logo" checked={s.showPlatform} onChange={(showPlatform) => update({ ...s, showPlatform })} />
+      <Field label="Hide after">
+        <Slider value={s.autoHideSec} min={0} max={120} step={5} format={(v) => (v === 0 ? "Until unpinned" : `${v}s`)} onChange={(autoHideSec) => update({ ...s, autoHideSec })} />
+      </Field>
+    </Group>
+  );
+}
+
+function ViewersTypeSettings({ settings: s, update }: { settings: ViewersSettings; update: Update }) {
+  return (
+    <Group title="Viewer count">
+      <Field label="Show">
+        <Segmented
+          value={s.mode}
+          options={[
+            { value: "total", label: "Combined" },
+            { value: "split", label: "Per platform" },
+          ]}
+          onChange={(mode) => update({ ...s, mode })}
+        />
+      </Field>
+      <TextSize value={s.fontSize} onChange={(fontSize) => update({ ...s, fontSize })} max={96} />
+      <Field label="Label">
+        <TextField value={s.label} onChange={(label) => update({ ...s, label })} placeholder="viewers" />
+      </Field>
+      <Field label="Align">
+        <Segmented
+          value={s.align}
+          options={[
+            { value: "left", label: "Left" },
+            { value: "center", label: "Center" },
+            { value: "right", label: "Right" },
+          ]}
+          onChange={(align) => update({ ...s, align })}
+        />
+      </Field>
+      <Toggle label="Live dot" checked={s.showLiveDot} onChange={(showLiveDot) => update({ ...s, showLiveDot })} />
+      <Toggle label="Uptime" checked={s.showUptime} onChange={(showUptime) => update({ ...s, showUptime })} />
+      <p className="text-xs leading-[18px] text-(--text-3)">Twitch and YouTube viewers update every minute. X doesn&apos;t share viewer counts.</p>
+    </Group>
+  );
+}
+
+const CREDIT_SECTIONS: { key: keyof CreditsSettings["sections"]; label: string }[] = [
+  { key: "followers", label: "New followers" },
+  { key: "subscribers", label: "Subscribers" },
+  { key: "gifters", label: "Gifted subs" },
+  { key: "cheers", label: "Cheers" },
+  { key: "tips", label: "Tips" },
+  { key: "raiders", label: "Raiders" },
+  { key: "chatters", label: "Chatters" },
+];
+
+function CreditsTypeSettings({ settings: s, update }: { settings: CreditsSettings; update: Update }) {
+  return (
+    <>
+      <Group title="Credits">
+        <Field label="Title">
+          <TextField value={s.title} onChange={(title) => update({ ...s, title })} />
+        </Field>
+        <TextSize value={s.fontSize} onChange={(fontSize) => update({ ...s, fontSize })} max={72} />
+        <Field label="Scroll speed">
+          <Slider value={s.speed} min={20} max={300} step={10} format={(v) => `${v}px/s`} onChange={(speed) => update({ ...s, speed })} />
+        </Field>
+        <Toggle label="Loop" checked={s.loop} onChange={(loop) => update({ ...s, loop })} />
+        <p className="text-xs leading-[18px] text-(--text-3)">Shows the current stream, or the one that just ended. Put it on your ending scene.</p>
+      </Group>
+      <Group title="Sections">
+        {CREDIT_SECTIONS.map(({ key, label }) => (
+          <Toggle key={key} label={label} checked={s.sections[key]} onChange={(checked) => update({ ...s, sections: { ...s.sections, [key]: checked } })} />
+        ))}
+      </Group>
+    </>
+  );
+}
+
+function TwitchTypeSettings({ settings: s, update }: { settings: TwitchActivitySettings; update: Update }) {
+  return (
+    <Group title="Twitch activity">
+      <TextSize value={s.fontSize} onChange={(fontSize) => update({ ...s, fontSize })} />
+      <Toggle label="Hype trains" checked={s.showHypeTrain} onChange={(showHypeTrain) => update({ ...s, showHypeTrain })} />
+      <Toggle label="Twitch polls" checked={s.showPolls} onChange={(showPolls) => update({ ...s, showPolls })} />
+      <Toggle label="Predictions" checked={s.showPredictions} onChange={(showPredictions) => update({ ...s, showPredictions })} />
+      <div className="flex flex-col gap-2.5">
+        <ColorField label="Bar" value={s.barColor} onChange={(barColor) => update({ ...s, barColor })} />
+        <ColorField label="Bar background" value={s.barBackground} onChange={(barBackground) => update({ ...s, barBackground })} />
+      </div>
+    </Group>
   );
 }

@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gt, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { connections, events, type Platform } from "@/db/schema";
+import { liveToolsHub } from "@/lib/live/tools";
 import { recordStats } from "@/lib/overlays/stats";
 import { streamTracker } from "@/lib/streams/tracker";
 import { relayHub } from "@/lib/ws/relay";
@@ -69,6 +70,7 @@ export async function ingestEvent(
   relayHub.publish(source.userId, event);
   void recordStats(source.userId, event);
   void streamTracker.record(source.userId, source.connectionId, event);
+  liveToolsHub.onEvent(source.userId, event);
   touchConnection(source.connectionId);
   return event;
 }
@@ -146,4 +148,25 @@ function validDate(value: unknown) {
 function isDuplicate(error: unknown) {
   const cause = (error as { cause?: { code?: string } })?.cause ?? error;
   return (cause as { code?: string })?.code === "ER_DUP_ENTRY";
+}
+
+/** One stored event of a user's, by id (e.g. a chat message to pin on stream). */
+export async function getEvent(userId: string, id: string) {
+  const [row] = await getDb()
+    .select({ envelope: events.envelope })
+    .from(events)
+    .where(and(eq(events.userId, userId), eq(events.id, id)))
+    .limit(1);
+  return (row?.envelope as SignalKitEvent | undefined) ?? null;
+}
+
+/** A user's latest chat messages, newest last. */
+export async function recentChat(userId: string, limit = 60) {
+  const rows = await getDb()
+    .select({ envelope: events.envelope })
+    .from(events)
+    .where(and(eq(events.userId, userId), eq(events.kind, "chat.message")))
+    .orderBy(desc(events.id))
+    .limit(limit);
+  return rows.map((row) => row.envelope as SignalKitEvent).reverse();
 }

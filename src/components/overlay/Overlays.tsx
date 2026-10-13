@@ -12,6 +12,13 @@ import {
   type AnySettings,
   type Appearance,
   type ChatSettings,
+  type CreditsSettings,
+  type GiveawaySettings,
+  type HighlightSettings,
+  type PollSettings,
+  type QueueSettings,
+  type TwitchActivitySettings,
+  type ViewersSettings,
   type EmoteWallSettings,
   type EventListSettings,
   type GoalSettings,
@@ -19,9 +26,12 @@ import {
   type OverlayType,
   type TickerSettings,
 } from "@/lib/overlays/settings";
+import type { PublicLiveTools } from "@/lib/live/types";
 import type { PublicStats } from "@/lib/overlays/stats-core";
+import type { CreditsData, LiveSnapshot } from "@/lib/streams/summary";
 import { alertText, defaultNameColor, hasBlockedWord, isBot, isMuted, matchesAlert, nameColor, shortAction, templateParts } from "./describe";
 import { MessageText } from "./MessageText";
+import { CreditsWidget, GiveawayWidget, HighlightWidget, PollWidget, QueueWidget, TwitchActivityWidget, ViewersWidget } from "./live-widgets";
 import { EmoteWall, GoalWidget, LabelWidget, Ticker } from "./widgets";
 import "./animations.css";
 import "./overlay.css";
@@ -50,6 +60,9 @@ export function OverlayRenderer({
   history = EMPTY,
   stats = null,
   overlayId = "",
+  tools = null,
+  stream = null,
+  credits = null,
 }: {
   type: OverlayType;
   settings: AnySettings;
@@ -57,6 +70,9 @@ export function OverlayRenderer({
   history?: OverlayEvent[];
   stats?: PublicStats | null;
   overlayId?: string;
+  tools?: PublicLiveTools | null;
+  stream?: LiveSnapshot | null;
+  credits?: CreditsData | null;
 }) {
   const style = {
     "--sk-scale": settings.scale,
@@ -88,8 +104,22 @@ export function OverlayRenderer({
         <LabelWidget settings={settings as LabelSettings} stats={stats} events={events} />
       ) : type === "emotewall" ? (
         <EmoteWall settings={settings as EmoteWallSettings} events={events} />
-      ) : (
+      ) : type === "ticker" ? (
         <Ticker settings={settings as TickerSettings} events={all} />
+      ) : type === "poll" ? (
+        <PollWidget settings={settings as PollSettings} tools={tools} />
+      ) : type === "giveaway" ? (
+        <GiveawayWidget settings={settings as GiveawaySettings} tools={tools} />
+      ) : type === "queue" ? (
+        <QueueWidget settings={settings as QueueSettings} tools={tools} />
+      ) : type === "highlight" ? (
+        <HighlightWidget settings={settings as HighlightSettings} tools={tools} />
+      ) : type === "viewers" ? (
+        <ViewersWidget settings={settings as ViewersSettings} stream={stream} />
+      ) : type === "credits" ? (
+        <CreditsWidget settings={settings as CreditsSettings} credits={credits} />
+      ) : (
+        <TwitchActivityWidget settings={settings as TwitchActivitySettings} events={all} />
       )}
     </div>
   );

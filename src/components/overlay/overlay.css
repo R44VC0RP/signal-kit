@@ -1263,3 +1263,359 @@
     transform: rotate(var(--spin));
   }
 }
+
+/* ================= Live tools: shared box ================= */
+
+.sko-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  padding: 0.9em 1em;
+  font-size: calc(var(--sko-size, 1.375) * 1em);
+  font-weight: var(--sko-weight);
+  border-radius: var(--sko-radius);
+  background: var(--sko-panel);
+}
+[data-style="signal"] .sko-box {
+  border: 1px solid rgb(255 255 255 / 10%);
+}
+[data-style="bold"] .sko-box {
+  border: 3px solid #0a0a0a;
+  box-shadow: 0.3em 0.3em 0 #0a0a0a;
+}
+.sko-box-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1em;
+}
+.sko-box-title {
+  font-size: 1.1em;
+  line-height: 1.25;
+}
+.sko-box-meta {
+  flex-shrink: 0;
+  font-size: 0.7em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+.sko-box-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  font-size: 0.7em;
+  opacity: 0.85;
+}
+
+/* Poll (and Twitch polls/predictions/hype train) */
+.sko-poll {
+  position: absolute;
+  inset: 0 0 auto;
+}
+.sko-poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+.sko-poll-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  min-height: 1.9em;
+  padding: 0 0.6em;
+  overflow: hidden;
+  border-radius: calc(var(--sko-radius) * 0.6);
+  background: var(--sko-bar-bg);
+}
+.sko-poll-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--sko-bar);
+  transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sko-poll-label,
+.sko-poll-value {
+  position: relative;
+  font-size: 0.85em;
+}
+.sko-poll-value {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.sko-poll-number {
+  display: inline-block;
+  min-width: 1.3em;
+  color: var(--sko-accent);
+}
+.sko-poll-option[data-winning] .sko-poll-bar {
+  box-shadow: 0 0 0 2px var(--sko-accent);
+}
+
+/* Giveaway */
+.sko-giveaway {
+  position: absolute;
+  inset: 0 0 auto;
+  text-align: center;
+}
+.sko-giveaway-open,
+.sko-giveaway-winner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.4em 0 0.2em;
+}
+.sko-giveaway-cta {
+  font-size: 1.15em;
+  color: var(--sko-accent);
+}
+.sko-giveaway-recent {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25em 0.8em;
+  font-size: 0.75em;
+  opacity: 0.85;
+}
+.sko-giveaway-label {
+  font-size: 0.75em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.sko-giveaway-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-size: 1.8em;
+  color: var(--sko-accent);
+}
+.sko-giveaway-reel {
+  height: 2.6em;
+  overflow: hidden;
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+}
+.sko-giveaway-reel-track {
+  display: flex;
+  flex-direction: column;
+  animation: sko-reel 2.6s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.sko-giveaway-reel-track > span {
+  height: 2.6em;
+  line-height: 2.6em;
+  font-size: 1em;
+}
+@keyframes sko-reel {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-66%);
+  }
+}
+
+/* Viewer queue */
+.sko-queue {
+  position: absolute;
+  inset: 0 0 auto;
+}
+.sko-queue-current {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.45em 0.6em;
+  border-radius: calc(var(--sko-radius) * 0.6);
+  background: color-mix(in srgb, var(--sko-accent) 25%, transparent);
+}
+.sko-queue-label {
+  font-size: 0.7em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sko-accent);
+}
+.sko-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sko-queue-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  animation-duration: 0.4s;
+}
+.sko-queue-pos {
+  min-width: 1.4em;
+  font-variant-numeric: tabular-nums;
+  color: var(--sko-accent);
+}
+.sko-queue-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chat highlight */
+.sko-highlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  padding: 0.8em 1em;
+  font-size: calc(var(--sko-size, 1.75) * 1em);
+  font-weight: var(--sko-weight);
+  border-radius: var(--sko-radius);
+  background: var(--sko-panel);
+  animation-duration: 0.6s;
+  animation-fill-mode: both;
+}
+.sko-highlight-avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.4em;
+  height: 2.4em;
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--sko-accent);
+}
+.sko-highlight-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+}
+.sko-highlight-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-size: 0.75em;
+  color: var(--sko-accent);
+}
+.sko-highlight-text {
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+/* Viewer count */
+.sko-viewers {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0 0.5em;
+  font-size: calc(var(--sko-size, 2) * 1em);
+  font-weight: var(--sko-weight);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: var(--sko-panel);
+  border-radius: var(--sko-radius);
+}
+.sko-viewers[data-align="center"] {
+  justify-content: center;
+}
+.sko-viewers[data-align="right"] {
+  justify-content: flex-end;
+}
+.sko-viewers-dot {
+  width: 0.4em;
+  height: 0.4em;
+  border-radius: 999px;
+  background: #777;
+}
+.sko-viewers[data-live] .sko-viewers-dot {
+  background: #ff3b3b;
+  box-shadow: 0 0 0.4em #ff3b3b;
+  animation: sko-pulse-letter 2s infinite;
+}
+.sko-viewers-part {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+.sko-viewers-label {
+  font-size: 0.6em;
+  opacity: 0.85;
+}
+.sko-viewers-uptime {
+  margin-left: 0.3em;
+  font-size: 0.6em;
+  opacity: 0.75;
+}
+
+/* Credits */
+.sko-credits {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--sko-panel);
+}
+.sko-credits-roll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.4em;
+  padding: 0 10%;
+  font-size: calc(var(--sko-size, 1.875) * 1em);
+  font-weight: var(--sko-weight);
+  text-align: center;
+  animation-name: sko-credits;
+  animation-timing-function: linear;
+}
+@keyframes sko-credits {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-100% - 1080px));
+  }
+}
+.sko-credits-title {
+  font-size: 1.8em;
+  color: var(--sko-accent);
+}
+.sko-credits-sub {
+  margin-top: -1.8em;
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+.sko-credits-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}
+.sko-credits-heading {
+  font-size: 0.8em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sko-accent);
+}
+.sko-credits-names {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3em 1.4em;
+}
+
+/* Twitch activity */
+.sko-twitch {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}

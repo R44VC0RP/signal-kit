@@ -234,3 +234,20 @@ export function totals(summary: StreamSummary): StreamTotals {
     raids: sum((p) => p.raids),
   };
 }
+
+// ---- Shared with overlays -------------------------------------------------------------------
+
+/** What viewer-count overlays show: live or not, since when, latest viewers per platform. */
+export type LiveSnapshot = { live: boolean; startedAt: string | null; viewers: Partial<Record<EventPlatform, number>> };
+
+/** Names for the end-of-stream credits overlay. */
+export type CreditsData = {
+  streamTitle: string | null;
+  followers: string[];
+  subscribers: string[];
+  gifters: { name: string; count: number }[];
+  cheers: { name: string; amount: string }[];
+  tips: { name: string; amount: string }[];
+  raiders: { name: string; viewers: number }[];
+  chatters: string[];
+};

@@ -9,8 +9,8 @@
 
 import type { StatMetric } from "./stats-core";
 
-export type OverlayType = "alerts" | "chat" | "events" | "goal" | "label" | "emotewall" | "ticker";
-export const OVERLAY_TYPE_IDS: readonly OverlayType[] = ["alerts", "chat", "events", "goal", "label", "emotewall", "ticker"];
+export type OverlayType = "alerts" | "chat" | "events" | "goal" | "label" | "emotewall" | "ticker" | "poll" | "giveaway" | "queue" | "highlight" | "viewers" | "credits" | "twitch";
+export const OVERLAY_TYPE_IDS: readonly OverlayType[] = ["alerts", "chat", "events", "goal", "label", "emotewall", "ticker", "poll", "giveaway", "queue", "highlight", "viewers", "credits", "twitch"];
 export type OverlayStyle = "classic" | "signal" | "clean" | "bold";
 export type PlatformFilter = { twitch: boolean; youtube: boolean; x: boolean };
 
@@ -380,6 +380,72 @@ export type TickerSettings = Appearance & {
   separator: string;
 };
 
+/** Chat poll: viewers vote by typing the option number on any platform. */
+export type PollSettings = Appearance & {
+  fontSize: number;
+  instructions: string;
+  barColor: string;
+  barBackground: string;
+  showPercent: boolean;
+  showVotes: boolean;
+  /** Keep showing the result this long after the poll closes (0 = until cleared). */
+  resultSec: number;
+};
+
+export type GiveawaySettings = Appearance & {
+  fontSize: number;
+  /** {keyword} becomes the entry word. */
+  instructions: string;
+  showEntries: boolean;
+  sound: boolean;
+  volume: number;
+};
+
+export type QueueSettings = Appearance & {
+  fontSize: number;
+  instructions: string;
+  maxShown: number;
+  showPlatform: boolean;
+  hideWhenClosed: boolean;
+};
+
+export type HighlightSettings = Appearance & {
+  fontSize: number;
+  animation: (typeof ANIMATIONS_IN)[number][0];
+  showAvatar: boolean;
+  showPlatform: boolean;
+  /** Hide a pinned message after this long (0 = until unpinned). */
+  autoHideSec: number;
+};
+
+export type ViewersSettings = Appearance & {
+  fontSize: number;
+  /** One combined number, or one per platform. */
+  mode: "total" | "split";
+  label: string;
+  showUptime: boolean;
+  showLiveDot: boolean;
+  align: "left" | "center" | "right";
+};
+
+export type CreditsSettings = Appearance & {
+  title: string;
+  fontSize: number;
+  /** Pixels per second. */
+  speed: number;
+  loop: boolean;
+  sections: { followers: boolean; subscribers: boolean; gifters: boolean; cheers: boolean; tips: boolean; raiders: boolean; chatters: boolean };
+};
+
+export type TwitchActivitySettings = Appearance & {
+  fontSize: number;
+  showHypeTrain: boolean;
+  showPolls: boolean;
+  showPredictions: boolean;
+  barColor: string;
+  barBackground: string;
+};
+
 export type SettingsFor<T extends OverlayType> = T extends "alerts"
   ? AlertSettings
   : T extends "chat"
@@ -392,8 +458,36 @@ export type SettingsFor<T extends OverlayType> = T extends "alerts"
           ? LabelSettings
           : T extends "emotewall"
             ? EmoteWallSettings
-            : TickerSettings;
-export type AnySettings = AlertSettings | ChatSettings | EventListSettings | GoalSettings | LabelSettings | EmoteWallSettings | TickerSettings;
+            : T extends "ticker"
+              ? TickerSettings
+              : T extends "poll"
+                ? PollSettings
+                : T extends "giveaway"
+                  ? GiveawaySettings
+                  : T extends "queue"
+                    ? QueueSettings
+                    : T extends "highlight"
+                      ? HighlightSettings
+                      : T extends "viewers"
+                        ? ViewersSettings
+                        : T extends "credits"
+                          ? CreditsSettings
+                          : TwitchActivitySettings;
+export type AnySettings =
+  | AlertSettings
+  | ChatSettings
+  | EventListSettings
+  | GoalSettings
+  | LabelSettings
+  | EmoteWallSettings
+  | TickerSettings
+  | PollSettings
+  | GiveawaySettings
+  | QueueSettings
+  | HighlightSettings
+  | ViewersSettings
+  | CreditsSettings
+  | TwitchActivitySettings;
 
 type PresetFields = Pick<Appearance, "textColor" | "accentColor" | "panelColor" | "panelOpacity" | "radius" | "font" | "fontWeight" | "textShadow">;
 
@@ -448,6 +542,13 @@ export const OVERLAY_TYPES: {
   { type: "label", name: "Label", description: "One line of text: latest follower, top tip, subs today and more.", width: 600, height: 80 },
   { type: "emotewall", name: "Emote wall", description: "Emotes from chat fly across the screen; bursts on subs and raids.", width: 1920, height: 1080 },
   { type: "ticker", name: "Ticker", description: "A scrolling strip of recent supporters.", width: 1920, height: 60 },
+  { type: "poll", name: "Chat poll", description: "Live results while chat votes by typing 1, 2, 3 on any platform.", width: 640, height: 420 },
+  { type: "giveaway", name: "Giveaway", description: "Entries from chat on every platform, then a winner reveal.", width: 640, height: 360 },
+  { type: "queue", name: "Viewer queue", description: "Viewers type !join to get in line to play with you.", width: 420, height: 520 },
+  { type: "highlight", name: "Chat highlight", description: "Pin any chat message on stream from the dashboard.", width: 900, height: 260 },
+  { type: "viewers", name: "Viewer count", description: "Live viewers across Twitch and YouTube, with uptime.", width: 420, height: 90 },
+  { type: "credits", name: "Credits", description: "End-of-stream credits: followers, subs, cheers, raiders, chatters.", width: 1920, height: 1080 },
+  { type: "twitch", name: "Twitch activity", description: "Hype trains, Twitch polls and predictions as they happen.", width: 640, height: 640 },
 ];
 
 /** Default top-left position on a 1920×1080 canvas (preview stage and automatic OBS setup). */
@@ -459,6 +560,13 @@ export const OVERLAY_PLACEMENT: Record<OverlayType, { x: number; y: number }> = 
   label: { x: 48, y: 260 },
   emotewall: { x: 0, y: 0 },
   ticker: { x: 0, y: 1020 },
+  poll: { x: 1232, y: 330 },
+  giveaway: { x: 640, y: 360 },
+  queue: { x: 1452, y: 300 },
+  highlight: { x: 510, y: 760 },
+  viewers: { x: 1452, y: 48 },
+  credits: { x: 0, y: 0 },
+  twitch: { x: 48, y: 48 },
 };
 
 export function overlayTypeInfo(type: OverlayType) {
@@ -568,6 +676,76 @@ const DEFAULTS: { [T in OverlayType]: () => SettingsFor<T> } = {
     explodeOn: { subscription: true, "subscription.gift": true, cheer: true, tip: true, raid: true, follow: false },
     explodeCount: 40,
   }),
+  poll: () => ({
+    ...appearance("poll"),
+    panelOpacity: 0.7,
+    radius: 12,
+    fontSize: 22,
+    instructions: "Type the number in chat to vote",
+    barColor: "#32c3a6",
+    barBackground: "#2a2a2a",
+    showPercent: true,
+    showVotes: true,
+    resultSec: 30,
+  }),
+  giveaway: () => ({
+    ...appearance("giveaway"),
+    panelOpacity: 0.7,
+    radius: 12,
+    fontSize: 24,
+    instructions: "Type {keyword} in chat to enter!",
+    showEntries: true,
+    sound: true,
+    volume: 0.8,
+  }),
+  queue: () => ({
+    ...appearance("queue"),
+    panelOpacity: 0.7,
+    radius: 12,
+    fontSize: 20,
+    instructions: "Type !join to get in line",
+    maxShown: 8,
+    showPlatform: true,
+    hideWhenClosed: false,
+  }),
+  highlight: () => ({
+    ...appearance("highlight"),
+    panelOpacity: 0.8,
+    radius: 14,
+    fontSize: 28,
+    animation: "fadeInUp",
+    showAvatar: true,
+    showPlatform: true,
+    autoHideSec: 0,
+  }),
+  viewers: () => ({
+    ...appearance("viewers"),
+    fontSize: 32,
+    mode: "total",
+    label: "viewers",
+    showUptime: true,
+    showLiveDot: true,
+    align: "right",
+  }),
+  credits: () => ({
+    ...appearance("credits"),
+    title: "Thanks for watching!",
+    fontSize: 30,
+    speed: 70,
+    loop: true,
+    sections: { followers: true, subscribers: true, gifters: true, cheers: true, tips: true, raiders: true, chatters: true },
+  }),
+  twitch: () => ({
+    ...appearance("twitch"),
+    panelOpacity: 0.7,
+    radius: 12,
+    fontSize: 22,
+    showHypeTrain: true,
+    showPolls: true,
+    showPredictions: true,
+    barColor: "#9146ff",
+    barBackground: "#2a2a2a",
+  }),
   ticker: () => ({
     ...appearance("ticker"),
     kinds: { ...ALL_KINDS },
@@ -604,6 +782,7 @@ const ENUMS: Record<string, readonly string[]> = {
   "chat.layout": ["inline", "columns", "boxed"],
   "goal.layout": ["standard", "condensed", "simple"],
   "emotewall.animation": ["random", "rise", "bounce", "rain", "fountain", "zoom", "float"],
+  mode: ["total", "split"],
   metric: ["followers", "subs", "gifts", "bits", "tips", "members", "raids"],
   label: ids(LABEL_KINDS),
   align: ["left", "center", "right"],
@@ -642,6 +821,9 @@ const RANGES: Record<string, [number, number]> = {
   comboWindowSec: [2, 60],
   explodeCount: [5, 300],
   min: [0, 100_000_000],
+  resultSec: [0, 600],
+  maxShown: [1, 30],
+  autoHideSec: [0, 600],
 };
 
 /** Array settings and the shape of their items. */

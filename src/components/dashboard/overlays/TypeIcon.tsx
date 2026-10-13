@@ -8,6 +8,13 @@ const PATHS: Record<OverlayType, React.ReactNode> = {
   label: <path d="M4 7V4h16v3M9 20h6M12 4v16" />,
   emotewall: <path d="M12 22a10 10 0 100-20 10 10 0 000 20zM8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" />,
   ticker: <path d="M2 12h20M17 7l5 5-5 5M2 6h9M2 18h9" />,
+  poll: <path d="M4 20V10M10 20V4M16 20v-6M22 20H2" />,
+  giveaway: <path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" />,
+  queue: <path d="M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1" />,
+  highlight: <path d="M12 17v5M9 10.76V6a3 3 0 016 0v4.76l3 3.24v2H6v-2z" />,
+  viewers: <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z" />,
+  credits: <path d="M7 4h10M5 9h14M7 14h10M9 19h6" />,
+  twitch: <path d="M4 3h17v11l-5 5h-4l-3 3H7v-3H4zM11 8v4M16 8v4" />,
 };
 
 export function TypeIcon({ type }: { type: OverlayType }) {

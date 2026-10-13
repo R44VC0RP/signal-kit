@@ -21,7 +21,9 @@ import {
 } from "@/lib/overlays/settings";
 import type { PublicStats } from "@/lib/overlays/stats-core";
 import { applyTheme, findTheme, THEMES } from "@/lib/overlays/themes";
-import { SAMPLE_BUTTONS, sampleEvent, type SampleKind } from "@/lib/overlays/samples";
+import type { PublicLiveTools } from "@/lib/live/types";
+import { SAMPLE_BUTTONS, sampleCredits, sampleEvent, sampleLiveTools, sampleStream, type SampleKind } from "@/lib/overlays/samples";
+import type { LiveSnapshot } from "@/lib/streams/summary";
 import type { OverlayView } from "@/lib/overlays/store";
 import { ColorField, Field, Group, Segmented, SelectField, Slider, Toggle } from "./controls";
 import { PreviewStage, type StageBackground } from "./PreviewStage";
@@ -47,12 +49,15 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
   const [save, setSave] = useState<SaveState>("saved");
   const [events, setEvents] = useState<SignalKitEvent[]>([]);
   const [stats, setStats] = useState<PublicStats | null>(null);
+  const [liveTools, setLiveTools] = useState<PublicLiveTools | null>(null);
+  const [stream, setStream] = useState<LiveSnapshot | null>(null);
+  const [samples] = useState(() => ({ tools: sampleLiveTools(), stream: sampleStream(), credits: sampleCredits() }));
   // Sample events use random ids and times, so create them in the browser only (not during SSR).
   useEffect(() => {
     const seed = setTimeout(() => setEvents(seedEvents(initial.type)), 0);
     return () => clearTimeout(seed);
   }, [initial.type]);
-  const [demo, setDemo] = useState(initial.type !== "alerts" && initial.type !== "goal" && initial.type !== "label");
+  const [demo, setDemo] = useState(DEMO_KINDS[initial.type].length > 0 && initial.type !== "alerts" && initial.type !== "goal" && initial.type !== "label");
   const [background, setBackground] = useState<StageBackground>("gameplay");
   const [setupOpen, setSetupOpen] = useState(openSetup);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -90,11 +95,12 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
     const refresh = async () => {
       const response = await fetch(`/api/overlays/${overlay.id}`).catch(() => null);
       if (response?.ok) {
-        const json = (await response.json()) as { overlay: Overlay; stats?: PublicStats };
+        const json = (await response.json()) as { overlay: Overlay; stats?: PublicStats; stream?: LiveSnapshot };
         setOverlay((current) => ({ ...current, live: json.overlay.live, lastSeenAt: json.overlay.lastSeenAt, url: json.overlay.url }));
         if (json.stats) {
           setStats(json.stats);
         }
+        setStream(json.stream ?? null);
       }
     };
     const first = setTimeout(() => void refresh(), 0);
@@ -127,6 +133,9 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
     }
     let tick = 0;
     const kinds = DEMO_KINDS[overlay.type];
+    if (kinds.length === 0) {
+      return;
+    }
     const every = overlay.type === "chat" ? 1600 : overlay.type === "emotewall" ? 700 : overlay.type === "alerts" ? Math.max(3500, durationSec * 1000 + 1300) : 2600;
     const timer = setInterval(() => {
       tick += 1;
@@ -136,6 +145,32 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
   }, [demo, overlay.type, sendSample, durationSec]);
 
   const buttons = SAMPLE_BUTTONS.filter((button) => TEST_KINDS[overlay.type].includes(button.kind));
+  const toolType = overlay.type === "poll" || overlay.type === "giveaway" || overlay.type === "queue" || overlay.type === "highlight";
+
+  // Live tools: the real poll/giveaway/queue/pin while one runs, otherwise a sample.
+  useEffect(() => {
+    if (!toolType) {
+      return;
+    }
+    const refresh = async () => {
+      const response = await fetch("/api/live").catch(() => null);
+      if (response?.ok) {
+        setLiveTools(((await response.json()) as { tools: PublicLiveTools }).tools);
+      }
+    };
+    const first = setTimeout(() => void refresh(), 0);
+    const poll = setInterval(() => void refresh(), 2000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(poll);
+    };
+  }, [toolType]);
+  const previewTools: PublicLiveTools = {
+    poll: liveTools?.poll ?? samples.tools.poll,
+    giveaway: liveTools?.giveaway ?? samples.tools.giveaway,
+    queue: liveTools?.queue.open || liveTools?.queue.entries.length ? liveTools.queue : samples.tools.queue,
+    highlight: liveTools?.highlight ?? samples.tools.highlight,
+  };
   const info = overlayTypeInfo(overlay.type);
 
   return (
@@ -216,8 +251,34 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
                 />
               </div>
             </div>
-            <PreviewStage type={overlay.type} settings={settings} events={events} stats={stats} overlayId={overlay.id} background={background} />
-            <div className="flex flex-wrap items-center gap-2">
+            <PreviewStage
+              type={overlay.type}
+              settings={settings}
+              events={events}
+              stats={stats}
+              overlayId={overlay.id}
+              background={background}
+              tools={previewTools}
+              stream={stream?.live ? stream : samples.stream}
+              credits={samples.credits}
+            />
+            {toolType ? (
+              <p className="text-xs text-(--text-3)">
+                {`Showing ${
+                  (overlay.type === "poll" && liveTools?.poll) ||
+                  (overlay.type === "giveaway" && liveTools?.giveaway) ||
+                  (overlay.type === "queue" && (liveTools?.queue.open || liveTools?.queue.entries.length)) ||
+                  (overlay.type === "highlight" && liveTools?.highlight)
+                    ? "what's running now"
+                    : "a sample"
+                }. Run polls, giveaways, the queue and pinned messages from `}
+                <Link href="/dashboard/live" className="underline hover:text-(--text)">
+                  Live tools
+                </Link>
+                .
+              </p>
+            ) : null}
+            <div className={`flex flex-wrap items-center gap-2 ${buttons.length === 0 ? "hidden" : ""}`}>
               <span className="mr-1 text-xs text-(--text-3)">Send test</span>
               {buttons.map((button) => {
                 const off = overlay.type === "alerts" && button.kind !== "chat.message" && !(settings as AlertSettings).templates[button.kind as AlertKind]?.enabled;
@@ -266,6 +327,13 @@ const CSS_PLACEHOLDER: Record<OverlayType, string> = {
   label: ".sko-label-text { letter-spacing: 0.05em; }",
   emotewall: ".sko-sprite { filter: drop-shadow(0 4px 8px #000); }",
   ticker: ".sko-ticker-title { background: crimson; }",
+  poll: ".sko-poll-fill { border-radius: 999px; }",
+  giveaway: ".sko-giveaway-name { font-size: 2.4em; }",
+  queue: ".sko-queue-list li { padding: 0.2em 0; }",
+  highlight: ".sko-highlight { border: 2px solid var(--sko-accent); }",
+  viewers: ".sko-viewers-label { text-transform: uppercase; }",
+  credits: ".sko-credits-heading { color: gold; }",
+  twitch: ".sko-box-title { text-transform: uppercase; }",
 };
 
 /** Test buttons each overlay type offers, and what the auto demo cycles through. */
@@ -277,6 +345,13 @@ const TEST_KINDS: Record<OverlayType, SampleKind[]> = {
   label: ["follow", "subscription", "subscription.gift", "cheer", "tip", "raid"],
   emotewall: ["chat.message", "subscription", "cheer", "raid"],
   ticker: ["follow", "subscription", "subscription.gift", "cheer", "tip", "raid"],
+  poll: [],
+  giveaway: [],
+  queue: [],
+  highlight: [],
+  viewers: [],
+  credits: [],
+  twitch: [],
 };
 const DEMO_KINDS: Record<OverlayType, SampleKind[]> = {
   alerts: ["follow", "cheer", "subscription", "tip", "raid", "subscription.gift", "redemption"],
@@ -286,6 +361,13 @@ const DEMO_KINDS: Record<OverlayType, SampleKind[]> = {
   label: ["follow", "subscription", "cheer", "tip"],
   emotewall: ["chat.message", "chat.message", "chat.message", "chat.message", "chat.message", "chat.message", "chat.message", "chat.message", "subscription"],
   ticker: ["follow", "cheer", "subscription", "tip", "raid"],
+  poll: [],
+  giveaway: [],
+  queue: [],
+  highlight: [],
+  viewers: [],
+  credits: [],
+  twitch: [],
 };
 
 const WEIGHTS = [400, 500, 600, 700, 800, 900];
@@ -369,8 +451,22 @@ function seedEvents(type: OverlayType): SignalKitEvent[] {
   if (type === "chat") {
     return [1, 2, 3, 4, 5].map((seed) => sampleEvent("chat.message", seed));
   }
+  if (type === "twitch") {
+    return twitchSamples();
+  }
   if (type === "events" || type === "ticker") {
     return (["follow", "subscription", "cheer", "tip", "raid"] as SampleKind[]).map((kind, index) => sampleEvent(kind, index + 1));
   }
   return [];
+}
+
+/** Sample Twitch hype train, poll and prediction so the Twitch activity preview isn't empty. */
+function twitchSamples(): SignalKitEvent[] {
+  const base = sampleEvent("follow", 1);
+  const make = (kind: SignalKitEvent["kind"], data: Record<string, unknown>): SignalKitEvent => ({ ...base, id: `${base.id}_${kind}`, kind, platform: "twitch", actor: null, data });
+  return [
+    make("hype_train", { phase: "progress", level: 3, total: 3400, goal: 5000 }),
+    make("poll", { phase: "progress", title: "Best boss so far?", choices: [{ title: "Malenia", votes: 58 }, { title: "Radahn", votes: 31 }, { title: "Godrick", votes: 12 }] }),
+    make("prediction", { phase: "progress", title: "Beat it first try?", outcomes: [{ title: "Yes", color: "blue", channel_points: 24000 }, { title: "No way", color: "pink", channel_points: 51000 }] }),
+  ];
 }
