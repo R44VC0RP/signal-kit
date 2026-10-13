@@ -226,9 +226,14 @@ function xActor(user: Any | undefined, extraBadges: string[] = []): EventActor |
     id: u.id ?? null,
     name: u.name || u.username || "",
     login: u.username ?? undefined,
-    avatarUrl: u.profile_image_url ?? undefined,
+    avatarUrl: xAvatar(u.profile_image_url),
     badges: [...extraBadges, u.verified || u.verified_type ? "verified" : null].filter(Boolean) as string[],
   };
+}
+
+/** X sends the 48x48 "_normal" avatar; the "_400x400" variant of the same image is sharp on overlays. */
+function xAvatar(url: unknown) {
+  return typeof url === "string" ? url.replace(/_normal(\.[a-z]+)$/i, "_400x400$1") : undefined;
 }
 
 /** X Activity API events (broadcast chat, broadcast lifecycle, follows, subscriptions). */
