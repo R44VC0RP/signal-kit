@@ -1,304 +1,234 @@
 import { and, eq } from "drizzle-orm";
+import type { ServiceError } from "@grpc/grpc-js";
 import { getDb } from "@/db";
 import { connections } from "@/db/schema";
 import { connectionEvents } from "@/lib/connections/events";
-import { ConnectionUnavailableError, getConnectionAccessToken } from "@/lib/connections/tokens";
-import { relayHub } from "@/lib/ws/relay";
-import {
-  listActiveLiveBroadcasts,
-  listLiveChatMessages,
-  type YouTubeLiveBroadcast,
-  type YouTubeLiveChatMessage,
-  YouTubeApiError,
-} from "./api";
+import { ConnectionUnavailableError, forceRefresh, getConnection, getConnectionAccessToken } from "@/lib/connections/tokens";
+import { type EventSource, ingestEvent } from "@/lib/events/ingest";
+import { normalizeYouTube } from "@/lib/events/normalize";
+import { listActiveLiveBroadcasts, type YouTubeLiveChatMessage } from "./api";
+import { GrpcStatus, openLiveChatStream, type StreamListResponse } from "./stream-list";
 
-type ManagedYouTubeAccount = {
-  accountId: string;
-  currentLiveChatId?: string;
-  currentBroadcast?: YouTubeLiveBroadcast;
-  nextPageToken?: string;
-  initialized: boolean;
-  seenMessageIds: Set<string>;
-  pollTimer?: NodeJS.Timeout;
+/**
+ * YouTube live chat for every connected channel.
+ *
+ * While a channel is offline we look for an active broadcast every couple of minutes
+ * (liveBroadcasts.list, 1 quota unit). Once live, chat arrives over a streamList gRPC stream
+ * that we resume with the last page token, so reconnects neither miss nor repeat messages.
+ */
+
+const DISCOVERY_EVERY_MS = 2 * 60 * 1000;
+
+type Managed = {
+  connectionId: string;
+  source: EventSource;
+  liveChatId?: string;
+  pageToken?: string;
+  /** The first response after opening a brand-new chat is history from before we joined. */
+  skipBacklog: boolean;
+  stream?: { cancel: () => void };
+  retryTimer?: NodeJS.Timeout;
+  attempt: number;
+  discovering: boolean;
 };
 
 class YouTubeLiveManager {
-  private accounts = new Map<string, ManagedYouTubeAccount>();
-  private activeDiscoveryJobs = new Set<string>();
-  private activePollJobs = new Set<string>();
+  private managed = new Map<string, Managed>();
   private started = false;
 
   start() {
     if (this.started || process.env.YOUTUBE_MANAGER_ENABLED === "false") {
       return;
     }
-
     this.started = true;
-    connectionEvents.on("changed", (connectionId) => {
-      void this.syncAllAccounts().catch((error) => {
-        console.error(`[youtube] sync after ${connectionId} changed failed`, error);
-      });
-    });
-    connectionEvents.on("removed", (connectionId) => this.removeAccount(connectionId));
-    void this.syncAllAccounts().catch((error) => {
-      console.error("[youtube] initial sync failed", error);
-    });
-    setInterval(() => {
-      void this.syncAllAccounts().catch((error) => {
-        console.error("[youtube] periodic sync failed", error);
-      });
-    }, 60_000);
+    connectionEvents.on("changed", () => void this.syncAll());
+    connectionEvents.on("removed", (connectionId) => this.remove(connectionId));
+    setInterval(() => void this.syncAll(), DISCOVERY_EVERY_MS);
+    void this.syncAll();
   }
 
-  async syncAllAccounts() {
-    const rows = await getDb()
-      .select({ id: connections.id })
-      .from(connections)
-      .where(and(eq(connections.platform, "youtube"), eq(connections.status, "active")));
-    const active = new Set(rows.map((row) => row.id));
-    for (const connectionId of this.accounts.keys()) {
-      if (!active.has(connectionId)) {
-        this.removeAccount(connectionId);
+  status() {
+    return [...this.managed.values()].map((m) => ({ connectionId: m.connectionId, liveChatId: m.liveChatId ?? null, streaming: Boolean(m.stream) }));
+  }
+
+  private async syncAll() {
+    try {
+      const rows = await getDb()
+        .select()
+        .from(connections)
+        .where(and(eq(connections.platform, "youtube"), eq(connections.status, "active")));
+      const active = new Set(rows.map((row) => row.id));
+      for (const id of this.managed.keys()) {
+        if (!active.has(id)) {
+          this.remove(id);
+        }
       }
+      for (const row of rows) {
+        const existing = this.managed.get(row.id);
+        const source: EventSource = { connectionId: row.id, userId: row.userId, platform: "youtube", platformUserId: row.platformUserId, displayName: row.displayName };
+        if (existing) {
+          existing.source = source;
+        } else {
+          this.managed.set(row.id, { connectionId: row.id, source, skipBacklog: true, attempt: 0, discovering: false });
+        }
+        void this.discover(this.managed.get(row.id)!);
+      }
+    } catch (error) {
+      console.error("[youtube] sync failed", error);
     }
-    await Promise.all(rows.map((row) => this.ensureAccount(row.id)));
   }
 
-  removeAccount(connectionId: string) {
-    const managed = this.accounts.get(connectionId);
-    if (managed) {
-      this.stopPolling(managed);
-      this.accounts.delete(connectionId);
+  private remove(connectionId: string) {
+    const m = this.managed.get(connectionId);
+    if (m) {
+      this.closeChat(m);
+      this.managed.delete(connectionId);
     }
   }
 
-  async ensureAccount(accountId: string) {
-    const existing = this.accounts.get(accountId);
-    if (!existing) {
-      this.accounts.set(accountId, {
-        accountId,
-        initialized: false,
-        seenMessageIds: new Set(),
-      });
-    }
-    await this.discoverLiveChat(accountId);
-  }
-
-  private async discoverLiveChat(accountId: string) {
-    if (this.activeDiscoveryJobs.has(accountId)) {
+  /** Find the channel's active broadcast and open its chat stream. Skipped while already streaming. */
+  private async discover(m: Managed) {
+    if (m.stream || m.discovering || m.retryTimer) {
       return;
     }
-
-    this.activeDiscoveryJobs.add(accountId);
+    m.discovering = true;
     try {
-      const managed = this.accounts.get(accountId);
-      if (!managed) {
-        return;
-      }
-
-      const { accessToken } = await getConnectionAccessToken(accountId);
+      const { accessToken } = await getConnectionAccessToken(m.connectionId);
       const broadcasts = await listActiveLiveBroadcasts(accessToken);
-      const broadcast = broadcasts.find((item) => item.snippet?.liveChatId);
-
-      if (!broadcast?.snippet?.liveChatId) {
-        this.stopPolling(managed);
+      const liveChatId = broadcasts.find((broadcast) => broadcast.snippet?.liveChatId)?.snippet?.liveChatId;
+      if (!liveChatId) {
         return;
       }
-
-      if (managed.currentLiveChatId === broadcast.snippet.liveChatId) {
-        return;
+      if (liveChatId !== m.liveChatId) {
+        m.liveChatId = liveChatId;
+        m.pageToken = undefined;
+        m.skipBacklog = true;
       }
-
-      this.startPolling(managed, broadcast);
+      await this.open(m);
     } catch (error) {
-      await this.markError(accountId, error);
+      this.handleTokenError(m, error);
     } finally {
-      this.activeDiscoveryJobs.delete(accountId);
+      m.discovering = false;
     }
   }
 
-  private startPolling(managed: ManagedYouTubeAccount, broadcast: YouTubeLiveBroadcast) {
-    this.stopPolling(managed);
-    managed.currentBroadcast = broadcast;
-    managed.currentLiveChatId = broadcast.snippet?.liveChatId;
-    managed.nextPageToken = undefined;
-    managed.initialized = false;
-    managed.seenMessageIds = new Set();
-    if (managed.currentLiveChatId) {
-      this.schedulePoll(managed, 0);
+  private async open(m: Managed) {
+    if (!m.liveChatId || m.stream) {
+      return;
+    }
+    const { accessToken } = await getConnectionAccessToken(m.connectionId);
+    const liveChatId = m.liveChatId;
+    m.stream = openLiveChatStream({
+      accessToken,
+      liveChatId,
+      pageToken: m.pageToken,
+      onResponse: (response) => void this.onResponse(m, liveChatId, response),
+      onError: (error) => this.onStreamError(m, error),
+      // Streams end on their own (e.g. token lifetime); resume right away from the page token.
+      onEnd: () => {
+        m.stream = undefined;
+        this.retry(m, 0);
+      },
+    });
+  }
+
+  private async onResponse(m: Managed, liveChatId: string, response: StreamListResponse) {
+    if (m.liveChatId !== liveChatId) {
+      return;
+    }
+    m.attempt = 0;
+    if (response.nextPageToken) {
+      m.pageToken = response.nextPageToken;
+    }
+    const backlog = m.skipBacklog;
+    m.skipBacklog = false;
+    if (!backlog) {
+      for (const item of response.items ?? []) {
+        await this.ingest(m, item);
+      }
+    }
+    if (response.offlineAt) {
+      this.closeChat(m);
     }
   }
 
-  private stopPolling(managed: ManagedYouTubeAccount) {
-    clearTimeout(managed.pollTimer);
-    managed.currentBroadcast = undefined;
-    managed.currentLiveChatId = undefined;
-    managed.nextPageToken = undefined;
-    managed.initialized = false;
-    managed.seenMessageIds.clear();
+  private async ingest(m: Managed, item: YouTubeLiveChatMessage) {
+    const type = item.snippet?.type ?? "unknown";
+    // Gift events reuse their id for combo updates; include the count so each update is kept.
+    const combo = (item.snippet as { giftDetails?: { comboCount?: number } } | undefined)?.giftDetails?.comboCount;
+    await ingestEvent(m.source, {
+      rawType: `youtube.live_chat.${type}`,
+      raw: item,
+      sourceId: `youtube:${item.id}${combo ? `:${combo}` : ""}`,
+      normalized: normalizeYouTube(item),
+    });
   }
 
-  private schedulePoll(managed: ManagedYouTubeAccount, delayMs: number) {
-    clearTimeout(managed.pollTimer);
-    managed.pollTimer = setTimeout(() => {
-      void this.pollLiveChat(managed.accountId).catch((error) => {
-        console.error(`[youtube] ${managed.accountId} live chat poll failed`, error);
-      });
+  private onStreamError(m: Managed, error: ServiceError) {
+    m.stream = undefined;
+    switch (error.code) {
+      case GrpcStatus.CANCELLED:
+        return; // We closed it.
+      case GrpcStatus.FAILED_PRECONDITION: // chat ended or disabled
+      case GrpcStatus.NOT_FOUND:
+        this.closeChat(m);
+        return;
+      case GrpcStatus.UNAUTHENTICATED:
+        void this.refreshAndRetry(m);
+        return;
+      case GrpcStatus.RESOURCE_EXHAUSTED: // quota or requesting too fast
+        console.warn(`[youtube] ${m.connectionId} rate limited: ${error.details}`);
+        this.retry(m, 60_000);
+        return;
+      case GrpcStatus.PERMISSION_DENIED:
+        console.warn(`[youtube] ${m.connectionId} permission denied: ${error.details}`);
+        this.closeChat(m);
+        return;
+      default:
+        console.warn(`[youtube] ${m.connectionId} stream error ${error.code}: ${error.details}`);
+        this.retry(m, Math.min(60_000, 2000 * 2 ** m.attempt));
+        m.attempt += 1;
+    }
+  }
+
+  private async refreshAndRetry(m: Managed) {
+    try {
+      const connection = await getConnection(m.connectionId);
+      if (connection) {
+        await forceRefresh(connection);
+      }
+      this.retry(m, 1000);
+    } catch (error) {
+      this.handleTokenError(m, error);
+    }
+  }
+
+  private retry(m: Managed, delayMs: number) {
+    clearTimeout(m.retryTimer);
+    m.retryTimer = setTimeout(() => {
+      m.retryTimer = undefined;
+      void this.open(m).catch((error) => this.handleTokenError(m, error));
     }, delayMs);
   }
 
-  private async pollLiveChat(accountId: string) {
-    if (this.activePollJobs.has(accountId)) {
-      return;
-    }
-
-    const managed = this.accounts.get(accountId);
-    if (!managed?.currentLiveChatId) {
-      return;
-    }
-
-    this.activePollJobs.add(accountId);
-    try {
-      const { accessToken, connection: account } = await getConnectionAccessToken(accountId);
-      const response = await listLiveChatMessages(
-        accessToken,
-        managed.currentLiveChatId,
-        managed.nextPageToken,
-      );
-
-      const items = response.items ?? [];
-      let delivered = 0;
-
-      for (const item of items) {
-        if (managed.seenMessageIds.has(item.id)) {
-          continue;
-        }
-        managed.seenMessageIds.add(item.id);
-        if (!managed.initialized) {
-          continue;
-        }
-        delivered += relayHub.publish(account.userId, {
-          type: eventTypeForMessage(item),
-          provider: "youtube",
-          account: relayAccount(account),
-          subscription: {
-            type: "youtube.live_chat",
-            liveChatId: managed.currentLiveChatId,
-            broadcastId: managed.currentBroadcast?.id,
-          },
-          event: item,
-          receivedAt: new Date().toISOString(),
-        });
-      }
-
-      managed.initialized = true;
-      managed.nextPageToken = response.nextPageToken ?? managed.nextPageToken;
-      pruneSeenIds(managed.seenMessageIds);
-
-      if (delivered > 0) {
-        await getDb().update(connections).set({ lastEventAt: new Date() }).where(eq(connections.id, accountId));
-      }
-
-      if (response.offlineAt) {
-        relayHub.publish(account.userId, {
-          type: "youtube.live_chat.ended",
-          provider: "youtube",
-          account: relayAccount(account),
-          subscription: {
-            type: "youtube.live_chat",
-            liveChatId: managed.currentLiveChatId,
-            broadcastId: managed.currentBroadcast?.id,
-          },
-          event: { offlineAt: response.offlineAt, broadcast: managed.currentBroadcast },
-          receivedAt: new Date().toISOString(),
-        });
-        this.stopPolling(managed);
-        return;
-      }
-
-      this.schedulePoll(managed, Math.max(response.pollingIntervalMillis ?? 5_000, 1_000));
-    } catch (error) {
-      await this.markError(accountId, error);
-      if (isTerminalLiveChatError(error)) {
-        this.stopPolling(managed);
-      } else {
-        this.schedulePoll(managed, 30_000);
-      }
-    } finally {
-      this.activePollJobs.delete(accountId);
-    }
+  private closeChat(m: Managed) {
+    clearTimeout(m.retryTimer);
+    m.retryTimer = undefined;
+    m.stream?.cancel();
+    m.stream = undefined;
+    m.liveChatId = undefined;
+    m.pageToken = undefined;
   }
 
-  private async markError(connectionId: string, error: unknown) {
+  private handleTokenError(m: Managed, error: unknown) {
     if (error instanceof ConnectionUnavailableError) {
-      // Needs the user to reconnect; the periodic sync skips it until it is active again.
-      console.warn(`[youtube] ${connectionId} paused: ${error.message}`);
-      this.removeAccount(connectionId);
+      // Needs the user to reconnect; syncAll picks it up again once it's active.
+      console.warn(`[youtube] ${m.connectionId} paused: ${error.message}`);
+      this.remove(m.connectionId);
       return;
     }
-    console.error(`[youtube] ${connectionId} live chat error`, error);
+    console.error(`[youtube] ${m.connectionId} error`, error);
   }
-}
-
-function eventTypeForMessage(message: YouTubeLiveChatMessage) {
-  switch (message.snippet?.type) {
-    case "textMessageEvent":
-      return "youtube.live_chat.message";
-    case "superChatEvent":
-      return "youtube.live_chat.super_chat";
-    case "superStickerEvent":
-      return "youtube.live_chat.super_sticker";
-    case "newSponsorEvent":
-      return "youtube.live_chat.new_sponsor";
-    case "memberMilestoneChatEvent":
-      return "youtube.live_chat.member_milestone";
-    case "membershipGiftingEvent":
-      return "youtube.live_chat.membership_gifting";
-    case "giftMembershipReceivedEvent":
-      return "youtube.live_chat.gift_membership_received";
-    case "userBannedEvent":
-      return "youtube.live_chat.user_banned";
-    case "messageDeletedEvent":
-      return "youtube.live_chat.message_deleted";
-    case "chatEndedEvent":
-      return "youtube.live_chat.ended";
-    case "sponsorOnlyModeStartedEvent":
-      return "youtube.live_chat.sponsor_only_started";
-    case "sponsorOnlyModeEndedEvent":
-      return "youtube.live_chat.sponsor_only_ended";
-    default:
-      return `youtube.live_chat.${message.snippet?.type ?? "event"}`;
-  }
-}
-
-function relayAccount(connection: { id: string; platformUserId: string; username: string; displayName: string }) {
-  return {
-    id: connection.id,
-    connectionId: connection.id,
-    provider: "youtube",
-    providerAccountId: connection.platformUserId,
-    login: connection.username,
-    displayName: connection.displayName,
-  };
-}
-
-function pruneSeenIds(ids: Set<string>) {
-  if (ids.size <= 5_000) {
-    return;
-  }
-  for (const id of ids) {
-    ids.delete(id);
-    if (ids.size <= 4_000) {
-      return;
-    }
-  }
-}
-
-function isTerminalLiveChatError(error: unknown) {
-  if (!(error instanceof YouTubeApiError)) {
-    return false;
-  }
-  return ["liveChatEnded", "liveChatDisabled", "liveChatNotFound"].includes(error.reason ?? "");
 }
 
 const globalForYouTube = globalThis as typeof globalThis & { __signalKitYouTube?: YouTubeLiveManager };

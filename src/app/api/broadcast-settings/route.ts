@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { connections } from "@/db/schema";
+import { YOUTUBE_WRITE_SCOPE } from "@/lib/auth/scopes";
 import { getBroadcasterConnection } from "@/lib/connections/manage";
 import { ConnectionUnavailableError, getConnectionAccessToken } from "@/lib/connections/tokens";
 import { requireUser } from "@/lib/session";
@@ -32,7 +33,6 @@ const updateSchema = z.discriminatedUnion("provider", [
   }),
 ]);
 
-const YOUTUBE_WRITE_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
 const TWITCH_WRITE_SCOPE = "channel:manage:broadcast";
 
 export async function GET(request: Request) {

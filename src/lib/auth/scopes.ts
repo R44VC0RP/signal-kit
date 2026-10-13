@@ -43,7 +43,11 @@ export const TWITCH_BROADCASTER_SCOPES = [
 /** A separate Twitch account that reads and sends chat as a bot. */
 export const TWITCH_BOT_SCOPES = ["user:bot", "user:read:chat", "user:write:chat"];
 
-export const YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"];
+/** Reading broadcasts and live chat only needs read access, which has a far milder consent screen. */
+export const YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"];
+
+/** Sending chat, moderating, or editing broadcast details. Requested only when a creator turns that on. */
+export const YOUTUBE_WRITE_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
 
 /** Livestream scopes need X allow-listing; request them only once access is granted. */
 export const X_LIVESTREAM_SCOPES = ["broadcast.read", "broadcast.write", "follows.read"];

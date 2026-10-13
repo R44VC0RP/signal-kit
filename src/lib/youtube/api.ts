@@ -61,14 +61,6 @@ export type YouTubeLiveChatMessage = {
   };
 };
 
-export type YouTubeLiveChatResponse = {
-  nextPageToken?: string;
-  pollingIntervalMillis?: number;
-  offlineAt?: string;
-  items?: YouTubeLiveChatMessage[];
-  activePollItem?: YouTubeLiveChatMessage;
-};
-
 const YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3";
 
 export class YouTubeApiError extends Error {
@@ -158,22 +150,6 @@ export async function updateVideo(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-}
-
-export async function listLiveChatMessages(
-  accessToken: string,
-  liveChatId: string,
-  pageToken?: string,
-) {
-  const url = new URL(`${YOUTUBE_API_BASE}/liveChat/messages`);
-  url.searchParams.set("part", "snippet,authorDetails");
-  url.searchParams.set("liveChatId", liveChatId);
-  url.searchParams.set("maxResults", "200");
-  url.searchParams.set("profileImageSize", "88");
-  if (pageToken) {
-    url.searchParams.set("pageToken", pageToken);
-  }
-  return youtubeFetch<YouTubeLiveChatResponse>(accessToken, url);
 }
 
 function youtubeFetch<T>(accessToken: string, url: URL, init: RequestInit = {}) {

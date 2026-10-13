@@ -20,6 +20,8 @@
   },
   "dependencies": {
     "@better-auth/api-key": "1.7.7",
+    "@grpc/grpc-js": "^1.14.6",
+    "@grpc/proto-loader": "^0.8.1",
     "better-auth": "1.7.7",
     "drizzle-orm": "^0.45.2",
     "mysql2": "^3.22.3",
