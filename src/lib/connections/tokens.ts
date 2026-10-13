@@ -32,7 +32,7 @@ export async function decryptToken(value: string) {
   return symmetricDecrypt({ key: await getAuthSecretConfig(), data: value });
 }
 
-async function encryptToken(value: string) {
+export async function encryptToken(value: string) {
   return symmetricEncrypt({ key: await getAuthSecretConfig(), data: value });
 }
 

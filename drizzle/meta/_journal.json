@@ -36,6 +36,13 @@
       "when": 1791908182483,
       "tag": "0004_events_and_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1791920924677,
+      "tag": "0005_overlays",
+      "breakpoints": true
     }
   ]
 }

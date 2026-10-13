@@ -228,3 +228,28 @@ export const appSettings = mysqlTable("app_settings", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+/**
+ * A browser-source overlay (alerts, chat, event list). Its URL carries a secret token that only
+ * lets the page receive this user's events: hashed for lookup, encrypted so the dashboard can
+ * show the URL again, and replaceable with "Reset URL".
+ */
+export const overlays = mysqlTable(
+  "overlays",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    type: varchar("type", { length: 16 }).$type<"alerts" | "chat" | "events">().notNull(),
+    name: varchar("name", { length: 80 }).notNull(),
+    settings: json("settings").$type<Record<string, unknown>>().notNull(),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+    tokenEncrypted: text("token_encrypted").notNull(),
+    lastSeenAt: timestamp("last_seen_at", { fsp: 3 }),
+    createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { fsp: 3 })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [uniqueIndex("overlays_token_hash_idx").on(table.tokenHash), index("overlays_user_id_idx").on(table.userId)],
+);

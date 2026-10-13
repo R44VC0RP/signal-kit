@@ -15,6 +15,8 @@ type RelayClient = {
   connectedAt: Date;
   /** While a `since` replay is being sent, live events queue here so order is preserved. */
   pending?: RelayPayload[] | null;
+  /** Set when this socket is a browser-source overlay (connected with its overlay URL token). */
+  overlayId?: string;
 };
 
 const MAX_PENDING = 5000;
@@ -47,7 +49,8 @@ class RelayHub {
     });
   }
 
-  publish(userId: string, payload: RelayPayload) {
+  /** Sends to every socket of a user; `overlaysOnly` limits it to overlays (e.g. test alerts). */
+  publish(userId: string, payload: RelayPayload, options: { overlaysOnly?: boolean } = {}) {
     const message = JSON.stringify(payload);
     const userClients = this.clients.get(userId);
     if (!userClients) {
@@ -56,6 +59,9 @@ class RelayHub {
 
     let delivered = 0;
     for (const client of userClients.values()) {
+      if (options.overlaysOnly && !client.overlayId) {
+        continue;
+      }
       if (client.pending) {
         if (client.pending.length < MAX_PENDING) {
           client.pending.push(payload);
@@ -92,6 +98,36 @@ class RelayHub {
       if (client.ws.readyState === WebSocket.OPEN) {
         client.ws.send(JSON.stringify(payload));
       }
+    }
+  }
+
+  /** Overlay sockets currently connected for one overlay (OBS etc. showing it). */
+  overlayClients(overlayId: string) {
+    const found: RelayClient[] = [];
+    for (const userClients of this.clients.values()) {
+      for (const client of userClients.values()) {
+        if (client.overlayId === overlayId && client.ws.readyState === WebSocket.OPEN) {
+          found.push(client);
+        }
+      }
+    }
+    return found;
+  }
+
+  /** Pushes a message to one overlay's sockets, e.g. new settings so OBS updates without a refresh. */
+  sendToOverlay(overlayId: string, payload: RelayPayload) {
+    const message = JSON.stringify(payload);
+    const targets = this.overlayClients(overlayId);
+    for (const client of targets) {
+      client.ws.send(message);
+    }
+    return targets.length;
+  }
+
+  /** Disconnects an overlay's sockets, e.g. after its URL was reset or it was deleted. */
+  disconnectOverlay(overlayId: string, reason: string) {
+    for (const client of this.overlayClients(overlayId)) {
+      client.ws.close(1008, reason);
     }
   }
 

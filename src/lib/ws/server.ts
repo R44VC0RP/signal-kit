@@ -6,6 +6,7 @@ import { clientIpOf } from "@/lib/client-ip";
 import { randomToken } from "@/lib/crypto";
 import { isEventId } from "@/lib/events/ids";
 import { eventsSince, MAX_REPLAY } from "@/lib/events/ingest";
+import { findOverlayByToken, markOverlaySeen } from "@/lib/overlays/store";
 import { authenticateApiKey, authenticateSession } from "./auth";
 import { relayHub } from "./relay";
 
@@ -42,11 +43,12 @@ export function startRelayHeartbeat() {
   }, HEARTBEAT_MS);
 }
 
-type Auth = { userId: string; keyId: string; label: string } | null;
+type Auth = { userId: string; keyId: string; label: string; overlayId?: string } | null;
 
 export function handleRelayUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer) {
   const url = new URL(req.url ?? "/", "http://relay.local");
   const token = url.searchParams.get("token");
+  const overlayToken = url.searchParams.get("overlay");
   const since = url.searchParams.get("since");
   const ip = clientIpOf(req);
 
@@ -55,6 +57,20 @@ export function handleRelayUpgrade(req: IncomingMessage, socket: Duplex, head: B
     ws.on("pong", () => alive.add(ws));
 
     void (async () => {
+      if (overlayToken) {
+        // Browser-source overlays: the URL token only grants receiving this user's events.
+        const overlay = await findOverlayByToken(overlayToken);
+        if (overlay) {
+          void markOverlaySeen(overlay.id).catch(() => {});
+        }
+        await start(
+          ws,
+          overlay ? { userId: overlay.userId, keyId: `overlay:${overlay.id}`, label: overlay.name, overlayId: overlay.id } : null,
+          null,
+          "Overlay URL was reset or deleted",
+        );
+        return;
+      }
       if (token) {
         await start(ws, await authenticateApiKey(token), since, "Invalid API key");
         return;
@@ -132,7 +148,15 @@ async function start(ws: WebSocket, auth: Auth, since: string | null, failure: s
   }
   const replay = isEventId(since);
   const clientId = randomToken(16);
-  relayHub.add({ id: clientId, keyId: auth.keyId, userId: auth.userId, ws, connectedAt: new Date(), pending: replay ? [] : null });
+  relayHub.add({
+    id: clientId,
+    keyId: auth.keyId,
+    userId: auth.userId,
+    ws,
+    connectedAt: new Date(),
+    pending: replay ? [] : null,
+    overlayId: auth.overlayId,
+  });
   ws.send(
     JSON.stringify({
       type: "signal_kit.ready",
