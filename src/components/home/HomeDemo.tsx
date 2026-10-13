@@ -7,7 +7,7 @@ import { defaultSettings, type AlertSettings, type ChatSettings, type GoalSettin
 import { applyTheme, THEMES } from "@/lib/overlays/themes";
 import type { LiveSnapshot } from "@/lib/streams/summary";
 
-export type DemoScene = { id: string; game: string; image: string; imageSmall: string; video?: string; author?: string; license?: string; licenseUrl?: string; sourceUrl?: string };
+export type DemoScene = { image: string; video?: string };
 
 /** Where each overlay sits on the 1920×1080 demo stream. */
 const BOXES: { type: OverlayType; style: CSSProperties }[] = [
@@ -38,11 +38,9 @@ function demoSettings(themeId: string) {
  * The homepage's live demo: the same overlay renderer streamers put in OBS, on a gameplay
  * frame, with a scripted mix of Twitch, YouTube and X chat and alerts. Pauses off-screen.
  */
-export function HomeDemo({ scenes, fallback }: { scenes: DemoScene[]; fallback: DemoScene }) {
-  const all = scenes.length ? scenes : [fallback];
-  const [themeId, setThemeId] = useState("classic");
-  const [sceneId, setSceneId] = useState(all[0].id);
-  const scene = all.find((item) => item.id === sceneId) ?? all[0];
+export function HomeDemo({ scene }: { scene: DemoScene }) {
+  const [themeIndex, setThemeIndex] = useState(0);
+  const themeId = THEMES[themeIndex % THEMES.length].id;
   const settings = useMemo(() => demoSettings(themeId), [themeId]);
   const [events, setEvents] = useState<OverlayEvent[]>([]);
   const [stream, setStream] = useState<LiveSnapshot | null>(null);
@@ -87,81 +85,29 @@ export function HomeDemo({ scenes, fallback }: { scenes: DemoScene[]; fallback: 
         setStream((current) => (current ? { ...current, viewers: { twitch: 120 + Math.round(Math.random() * 30), youtube: 38 + Math.round(Math.random() * 10) } } : current));
       }
     }, 1500);
-    return () => clearInterval(timer);
+    // A different theme every few seconds, so visitors see the looks without clicking.
+    const themes = setInterval(() => setThemeIndex((index) => index + 1), 7000);
+    return () => {
+      clearInterval(timer);
+      clearInterval(themes);
+    };
   }, [visible]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div ref={frame} className="relative aspect-video w-full overflow-hidden rounded-xl border border-(--line) bg-black" aria-label="Live demo of Signal Kit overlays on a game stream">
-        <div className="absolute top-0 left-0 h-[1080px] w-[1920px] origin-top-left" style={{ transform: `scale(${scale})` }}>
-          {scene.video ? (
-            <video key={scene.id} className="absolute inset-0 size-full object-cover" src={scene.video} poster={scene.image} autoPlay muted loop playsInline />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={scene.id} src={scene.image} alt="" className="absolute inset-0 size-full object-cover" draggable={false} />
-          )}
-          {BOXES.map(({ type, style }) => (
-            <div key={type} className="absolute" style={style}>
-              <OverlayRenderer type={type} settings={settings[type as keyof typeof settings]} events={events} stream={stream} overlayId="home-demo" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label="Theme">
-          <span className="mr-1.5 text-xs text-(--text-3)">Try a theme</span>
-          {THEMES.map((theme) => (
-            <button
-              key={theme.id}
-              type="button"
-              role="radio"
-              aria-checked={theme.id === themeId}
-              onClick={() => setThemeId(theme.id)}
-              className={`inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs transition-colors ${
-                theme.id === themeId ? "border-(--accent) bg-(--accent-soft) text-(--text)" : "border-(--line) text-(--text-2) hover:border-(--line-strong) hover:text-(--text)"
-              }`}
-            >
-              <span className="size-2 rounded-full" style={{ background: theme.look.accentColor }} />
-              {theme.name}
-            </button>
-          ))}
-        </div>
-        {all.length > 1 ? (
-          <div className="flex shrink-0 items-center gap-1.5" role="radiogroup" aria-label="Game">
-            {all.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="radio"
-                aria-checked={item.id === scene.id}
-                title={item.game}
-                onClick={() => setSceneId(item.id)}
-                className={`h-8 w-14 overflow-hidden rounded-[5px] border-2 transition-colors ${item.id === scene.id ? "border-(--accent)" : "border-transparent opacity-70 hover:opacity-100"}`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.imageSmall} alt={item.game} className="size-full object-cover" />
-              </button>
-            ))}
+    <div ref={frame} className="relative aspect-video w-full overflow-hidden rounded-xl border border-(--line) bg-black" aria-label="Live demo of Signal Kit overlays on a game stream">
+      <div className="absolute top-0 left-0 h-[1080px] w-[1920px] origin-top-left" style={{ transform: `scale(${scale})` }}>
+        {scene.video ? (
+          <video className="absolute inset-0 size-full object-cover" src={scene.video} poster={scene.image} autoPlay muted loop playsInline />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={scene.image} alt="" className="absolute inset-0 size-full object-cover" draggable={false} />
+        )}
+        {BOXES.map(({ type, style }) => (
+          <div key={type} className="absolute" style={style}>
+            <OverlayRenderer type={type} settings={settings[type as keyof typeof settings]} events={events} stream={stream} overlayId="home-demo" />
           </div>
-        ) : null}
+        ))}
       </div>
-      {scene.author ? (
-        <p className="text-[11px] text-(--text-3)">
-          Gameplay:{" "}
-          <a href={scene.sourceUrl} className="underline-offset-2 hover:text-(--text-2) hover:underline">
-            {scene.game}
-          </a>{" "}
-          by {scene.author},{" "}
-          <a href={scene.licenseUrl} className="underline-offset-2 hover:text-(--text-2) hover:underline">
-            {scene.license}
-          </a>
-          . Overlays are Signal Kit, chat and alerts are samples.{" "}
-          <a href="/credits" className="underline-offset-2 hover:text-(--text-2) hover:underline">
-            Credits
-          </a>
-        </p>
-      ) : null}
     </div>
   );
 }

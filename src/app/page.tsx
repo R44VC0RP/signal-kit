@@ -17,8 +17,7 @@ export const metadata: Metadata = {
     "Free alerts, chat box, goals, live tools, a chat bot and stream stats for Twitch, YouTube and X at the same time. Pick a look and add it to OBS in one click.",
 };
 
-const SCENES = scenesJson as (DemoScene & { title?: string })[];
-const FALLBACK: DemoScene = { id: "sample", game: "Sample stream", image: "/preview/stream-sample.jpg", imageSmall: "/preview/stream-sample.jpg" };
+const SCENE: DemoScene = (scenesJson as DemoScene[])[0] ?? { image: "/preview/stream-sample.jpg" };
 
 const PLATFORMS: { platform: Platform; name: string; sends: string }[] = [
   { platform: "twitch", name: "Twitch", sends: "Chat, follows, subs and gift subs, bits, raids, channel points, polls, predictions, hype trains" },
@@ -35,14 +34,10 @@ const CHAT: { platform: Platform; name: string; color: string; text: string; bad
 ];
 
 export default function HomePage() {
-  const overlayCount = OVERLAY_TYPES.length;
   return (
     <div className="sk-app flex flex-1 justify-center px-5 sm:px-8">
       <div className="flex w-full max-w-6xl flex-col">
         <SiteHeader>
-          <a href="#features" className="hidden text-[13px] text-(--text-2) transition-colors hover:text-(--text) sm:inline">
-            Features
-          </a>
           <Link href="/developers" className="hidden text-[13px] text-(--text-2) transition-colors hover:text-(--text) sm:inline">
             Developers
           </Link>
@@ -50,40 +45,20 @@ export default function HomePage() {
 
         <main className="flex flex-col">
           {/* ---- Hero ---- */}
-          <section className="flex flex-col items-center pt-12 text-center sm:pt-20">
-            <ul className="flex items-center gap-4">
-              {PLATFORMS.map(({ platform, name }) => (
-                <li key={platform} className="inline-flex items-center gap-1.5 text-[13px] text-(--text-2)">
-                  <PlatformLogo platform={platform} size={14} />
-                  {name}
-                </li>
-              ))}
-            </ul>
-            <h1 className="sk-brand mt-6 max-w-200 text-[40px] leading-[44px] font-semibold tracking-[-0.035em] text-balance text-(--text) sm:text-[68px] sm:leading-[72px]">
-              Look pro on stream in two minutes.
-            </h1>
-            <p className="mt-5 max-w-150 text-base leading-[25px] text-pretty text-(--text-2) sm:text-lg sm:leading-[28px]">
-              Free alerts, chat, goals and live tools for Twitch, YouTube and X at the same time. Pick a look, click once, and it&apos;s in OBS.
-            </p>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
-              <Link href="/sign-in" className={`${buttonClass("primary", "lg")} px-5`}>
-                Start free
-              </Link>
-              <a href="#demo" className={`${buttonClass("control", "lg")} px-5`}>
-                See it live
-              </a>
-            </div>
-            <p className="mt-3 text-xs text-(--text-3)">Sign in with Twitch, YouTube or X. No download, no credit card.</p>
+          <section className="flex flex-col items-center pt-10 text-center sm:pt-14">
+            <h1 className="sk-brand text-[44px] leading-[48px] font-semibold tracking-[-0.035em] text-balance text-(--text) sm:text-[72px] sm:leading-[76px]">Look pro on stream.</h1>
+            <Link href="/sign-in" className={`${buttonClass("primary", "lg")} mt-7 px-5`}>
+              Start free
+            </Link>
           </section>
 
-          <section id="demo" className="mt-12 scroll-mt-6 sm:mt-16">
-            <HomeDemo scenes={SCENES} fallback={FALLBACK} />
+          <section className="mt-10 sm:mt-12">
+            <HomeDemo scene={SCENE} />
           </section>
 
           {/* ---- Multistream ---- */}
           <Block
             id="features"
-            eyebrow="One chat for every platform"
             title="Three chats. One screen."
             description="Streaming to more than one platform? Every message, follow, sub, bit and Super Chat lands in one chat box and one set of alerts, with each platform's emotes and badges."
           >
@@ -108,7 +83,6 @@ export default function HomePage() {
 
           {/* ---- Looks ---- */}
           <Block
-            eyebrow="Themes, art and sounds"
             title="Pick a look. Every overlay matches."
             description={`${THEMES.length} theme packs restyle all your overlays at once. Then choose art and sounds for each alert from a free library you're allowed to use on stream and in VODs.`}
           >
@@ -130,7 +104,7 @@ export default function HomePage() {
           </Block>
 
           {/* ---- Overlays ---- */}
-          <Block eyebrow={`${overlayCount} overlays`} title="Everything you'd put on stream." description="Each one is a browser source with its own settings: fonts, colours, animations, sizes, filters. Change it in the dashboard and it updates in OBS right away.">
+          <Block title="Everything you'd put on stream." description="Each one is a browser source with its own settings: fonts, colours, animations, sizes, filters. Change it in the dashboard and it updates in OBS right away.">
             <ul className="grid border-t border-(--line) sm:grid-cols-2 lg:grid-cols-3">
               {OVERLAY_TYPES.map((info) => (
                 <li key={info.type} className="flex flex-col gap-1 border-b border-(--line) py-4 pr-6">
@@ -143,7 +117,6 @@ export default function HomePage() {
 
           {/* ---- Live tools + bot ---- */}
           <Block
-            eyebrow="Live tools"
             title="Get chat playing along, on every platform."
             description="Run polls, giveaways, a viewer queue and a spin wheel from your dashboard. Viewers on Twitch, YouTube and X join by typing in chat, and it all shows on stream."
           >
@@ -169,7 +142,6 @@ export default function HomePage() {
 
           {/* ---- Stats ---- */}
           <Block
-            eyebrow="Stream stats"
             title="See how every stream went."
             description="Each stream is logged on its own: viewers, chatters, new faces, follows, subs and support, per platform. Get a recap in your Discord when you end."
           >
@@ -177,7 +149,7 @@ export default function HomePage() {
           </Block>
 
           {/* ---- Setup ---- */}
-          <Block eyebrow="Setup" title="In OBS with one click." description="Signal Kit connects to OBS on your computer and adds every overlay, sized and placed. Using something else? Paste one link as a browser source.">
+          <Block title="In OBS with one click." description="Signal Kit connects to OBS on your computer and adds every overlay, sized and placed. Using something else? Paste one link as a browser source.">
             <ol className="grid border-t border-(--line) sm:grid-cols-3">
               {[
                 ["Sign in", "With Twitch, YouTube or X. Connect your other platforms after."],
@@ -194,7 +166,7 @@ export default function HomePage() {
           </Block>
 
           {/* ---- FAQ ---- */}
-          <Block eyebrow="Questions" title="Good to know.">
+          <Block title="Good to know.">
             <dl className="grid border-t border-(--line) sm:grid-cols-2 sm:gap-x-12">
               {[
                 ["Is it free?", "Yes. Overlays, live tools, the chat bot and stream stats are free to use."],
@@ -239,11 +211,10 @@ export default function HomePage() {
   );
 }
 
-function Block({ id, eyebrow, title, description, children }: { id?: string; eyebrow: string; title: string; description?: string; children: ReactNode }) {
+function Block({ id, title, description, children }: { id?: string; title: string; description?: string; children: ReactNode }) {
   return (
     <section id={id} className="mt-24 flex scroll-mt-6 flex-col gap-8 sm:mt-32">
       <div className="flex max-w-170 flex-col gap-3">
-        <span className="sk-mono text-[11px] tracking-[0.08em] text-(--accent-text) uppercase">{eyebrow}</span>
         <h2 className="sk-brand text-[30px] leading-[36px] font-semibold tracking-[-0.03em] text-balance text-(--text) sm:text-[40px] sm:leading-[46px]">{title}</h2>
         {description ? <p className="text-[15px] leading-6 text-pretty text-(--text-2) sm:text-base sm:leading-[26px]">{description}</p> : null}
       </div>
