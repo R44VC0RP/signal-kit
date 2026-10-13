@@ -29,9 +29,15 @@ export function SiteFooter() {
         <span className="size-[7px] rounded-full bg-(--accent)" />
         <span className="sk-brand text-[13px] leading-4 font-semibold text-(--text-2)">Signal Kit</span>
       </span>
-      <nav className="flex items-center gap-6 text-[13px] leading-4 text-(--text-3)">
+      <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] leading-4 text-(--text-3)">
+        <Link href="/developers" className="transition-colors hover:text-(--text)">
+          Developers
+        </Link>
         <Link href="/docs" className="transition-colors hover:text-(--text)">
           Docs
+        </Link>
+        <Link href="/credits" className="transition-colors hover:text-(--text)">
+          Credits
         </Link>
         <Link href="/dashboard" className="transition-colors hover:text-(--text)">
           Dashboard

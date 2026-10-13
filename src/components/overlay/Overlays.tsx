@@ -402,7 +402,7 @@ function ChatOverlay({ settings, events }: { settings: ChatSettings; events: Ove
           const name = event.actor?.name ?? "Someone";
           const twitchColor = typeof event.data?.color === "string" && /^#[0-9a-f]{6}$/i.test(event.data.color) ? event.data.color : null;
           const color =
-            settings.nameColor === "viewer" ? (classic ? (twitchColor ?? defaultNameColor(name)) : twitchColor ? brighten(twitchColor) : nameColor(name)) : undefined;
+            settings.nameColor === "viewer" ? (classic ? readable(twitchColor ?? defaultNameColor(name)) : twitchColor ? brighten(twitchColor) : nameColor(name)) : undefined;
           const role = youtubeRole(event);
           const nameNode = (
             <span className="sko-chat-name" data-role={role} style={color && !role ? { color } : undefined}>
@@ -599,6 +599,14 @@ function EventListOverlay({ settings, events }: { settings: EventListSettings; e
 export function hexToRgba(hex: string, alpha: number) {
   const value = parseInt(hex.replace("#", ""), 16);
   return `rgb(${(value >> 16) & 255} ${(value >> 8) & 255} ${value & 255} / ${Math.round(alpha * 100)}%)`;
+}
+
+/** Keeps bright name colours as they are and lifts dark ones (#0000ff, #b22222…), like Twitch's dark mode. */
+function readable(hex: string) {
+  const value = parseInt(hex.replace("#", ""), 16);
+  const [r, g, b] = [(value >> 16) & 255, (value >> 8) & 255, value & 255].map((c) => (c / 255) ** 2.2);
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance < 0.12 ? `color-mix(in oklab, ${hex} 55%, white)` : hex;
 }
 
 /** Twitch name colours are picked for white backgrounds; lift dark ones so they read on stream. */
