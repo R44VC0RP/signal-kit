@@ -8,7 +8,7 @@ import { buttonClass, Muted, PageHeader, Row, Section } from "@/components/dashb
 import type { Platform } from "@/db/schema";
 import { requireDashboardUser } from "@/lib/dashboard";
 import { durationMs, getStream, previousStream, topChatters } from "@/lib/streams/store";
-import { supportScore, totals, type PlatformStats } from "@/lib/streams/summary";
+import { supportScore, topEmotes, totals, type PlatformStats } from "@/lib/streams/summary";
 
 const KIND_LABEL: Record<string, string> = {
   follow: "followed",
@@ -146,6 +146,20 @@ export default async function StreamPage({ params }: { params: Promise<{ id: str
           )}
         </Section>
       </div>
+
+      {topEmotes(stream.summary).length ? (
+        <Section title="Top emotes" aside={<Muted>Twitch, BTTV, FFZ and 7TV emotes used in chat</Muted>}>
+          <div className="grid grid-cols-10 gap-2 border-t border-(--line) pt-4">
+            {topEmotes(stream.summary, 20).map((emote) => (
+              <div key={emote.name} title={emote.name} className="flex flex-col items-center gap-1.5 py-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={emote.url} alt={emote.name} className="h-9 w-auto" referrerPolicy="no-referrer" />
+                <span className="sk-mono text-[11px] text-(--text-3)">{compact(emote.count)}</span>
+              </div>
+            ))}
+          </div>
+        </Section>
+      ) : null}
 
       <Section title="Moments" aside={<Muted>Follows, subs, bits, tips, raids and redemptions</Muted>}>
         {moments.length === 0 ? (

@@ -71,6 +71,13 @@
       "when": 1791924868591,
       "tag": "0009_live_tools",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1791925214009,
+      "tag": "0010_user_settings",
+      "breakpoints": true
     }
   ]
 }

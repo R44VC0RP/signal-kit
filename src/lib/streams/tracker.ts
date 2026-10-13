@@ -4,10 +4,12 @@ import { getDb } from "@/db";
 import { chatters, connections, streamChatters, streams, type Platform } from "@/db/schema";
 import { getConnectionAccessToken } from "@/lib/connections/tokens";
 import type { SignalKitEvent } from "@/lib/events/types";
+import { notifyLive, notifyRecap } from "@/lib/notify/discord";
 import { helixApp } from "@/lib/twitch/helix-app";
 import { relayHub } from "@/lib/ws/relay";
 import { getLiveStreamingDetails } from "@/lib/youtube/api";
-import { countEvent, emptyPlatform, emptySummary, minute, sampleViewers, trimSupporters, type LiveSnapshot, type StreamSummary } from "./summary";
+import { pruneYouTubeData } from "./retention";
+import { countEmotes, countEvent, emptyPlatform, emptySummary, minute, sampleViewers, trimSupporters, type LiveSnapshot, type StreamSummary } from "./summary";
 
 /**
  * Turns the live event flow into a history of streams.
@@ -62,6 +64,10 @@ class StreamTracker {
     setInterval(() => void this.flushAll(), FLUSH_EVERY_MS);
     setInterval(() => void this.poll(), POLL_EVERY_MS);
     setTimeout(() => void this.poll(), 5000);
+    // YouTube data retention (30 days), daily.
+    const prune = () => void pruneYouTubeData().catch((error) => console.error("[streams] YouTube retention failed", error));
+    setTimeout(prune, 60_000);
+    setInterval(prune, 24 * 60 * 60 * 1000);
   }
 
   /** The user's live stream, if any (for the dashboard). */
@@ -134,6 +140,7 @@ class StreamTracker {
           point.m[platform] = (point.m[platform] ?? 0) + 1;
         }
         this.countChatter(stream, platform, event);
+        countEmotes(stream.summary, event.messageParts);
         stream.dirty = true;
         return;
       }
@@ -212,6 +219,9 @@ class StreamTracker {
     await getDb().update(streams).set({ endedAt: at, title: stream.title, summary: stream.summary }).where(eq(streams.id, stream.id));
     this.active.delete(stream.userId);
     this.publishSnapshot(stream.userId);
+    if (at.getTime() - Date.parse(stream.startedAt) >= 2 * 60_000) {
+      void notifyRecap(stream.userId, { id: stream.id, title: stream.title, startedAt: stream.startedAt, endedAt: at.toISOString(), summary: stream.summary });
+    }
     console.log(`[streams] stream ${stream.id} ended`);
   }
 
@@ -222,6 +232,13 @@ class StreamTracker {
     await getDb()
       .insert(streams)
       .values({ id, userId, startedAt: new Date(startedAt), title: info.title ?? null, summary });
+    // Announce a new stream once the platforms have reported title and game (not on resumes).
+    setTimeout(() => {
+      const current = this.active.get(userId);
+      if (current?.id === id) {
+        void notifyLive(userId, { title: current.title, summary: current.summary });
+      }
+    }, 45_000);
     return blank(id, userId, startedAt, info.title ?? null, summary);
   }
 

@@ -45,6 +45,8 @@ export type StreamSummary = {
   timeline: TimelinePoint[];
   supporters: Record<string, Supporter>;
   highlights: Highlight[];
+  /** Emote uses in chat (Twitch, BTTV, FFZ, 7TV), by name. */
+  emotes?: Record<string, { url: string; count: number }>;
 };
 
 const MAX_HIGHLIGHTS = 500;
@@ -177,8 +179,30 @@ export function sampleViewers(summary: StreamSummary, startedAt: string, platfor
   }
 }
 
-/** Keeps the biggest supporters once a stream is over. */
+/** Counts the emotes in a chat message. */
+export function countEmotes(summary: StreamSummary, parts: { type: string; name?: string; url?: string; zeroWidth?: boolean }[] | undefined) {
+  for (const part of parts ?? []) {
+    if (part.type === "emote" && part.name && part.url && !part.zeroWidth) {
+      summary.emotes ??= {};
+      const entry = (summary.emotes[part.name] ??= { url: part.url, count: 0 });
+      entry.count += 1;
+    }
+  }
+}
+
+/** The most used emotes, most first. */
+export function topEmotes(summary: StreamSummary, limit = 30) {
+  return Object.entries(summary.emotes ?? {})
+    .map(([name, value]) => ({ name, ...value }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+/** Keeps the biggest supporters (and top emotes) once a stream is over. */
 export function trimSupporters(summary: StreamSummary) {
+  if (summary.emotes) {
+    summary.emotes = Object.fromEntries(topEmotes(summary, 50).map(({ name, url, count }) => [name, { url, count }]));
+  }
   const ranked = Object.entries(summary.supporters).sort(([, a], [, b]) => supportScore(b) - supportScore(a));
   summary.supporters = Object.fromEntries(ranked.slice(0, TOP_SUPPORTERS));
 }

@@ -70,6 +70,11 @@ export default function PrivacyPage() {
         <li>To sign you in and keep your connected accounts working.</li>
         <li>To deliver your stream events, in real time, only to clients that hold one of your API keys or to your own dashboard.</li>
         <li>To perform actions on your own channels that you request, such as updating a stream title.</li>
+        <li>
+          To show you stream statistics (viewers, chatters, follows, subs and support per stream) and, if you turn them on, to post
+          go-live and recap messages to your Discord through a webhook you provide, and to publish a public stats page at an address you
+          choose.
+        </li>
         <li>To keep the service secure and to diagnose problems.</li>
       </ul>
       <p>
@@ -80,6 +85,11 @@ export default function PrivacyPage() {
       <h2>How long we keep it</h2>
       <ul>
         <li>Stream events are kept for 24 hours so your apps can catch up after a reconnect, then deleted automatically.</li>
+        <li>
+          Stream history (per-stream totals, and which chatters took part) is kept until you delete your account, except YouTube viewer
+          names and pictures, which are removed after 30 days; the totals stay. Public stats pages never show YouTube viewer names.
+        </li>
+        <li>Your Discord webhook URL is stored encrypted and deleted when you remove it.</li>
         <li>Access tokens are kept while an account is connected and deleted when you disconnect it.</li>
         <li>Account details and API key records are kept until you delete your account.</li>
       </ul>

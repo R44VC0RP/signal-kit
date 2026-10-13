@@ -335,3 +335,24 @@ export const liveTools = mysqlTable("live_tools", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+/**
+ * Per-user preferences outside overlays: Discord notifications (webhook URL stored encrypted)
+ * and the opt-in public stats page.
+ */
+export const userSettings = mysqlTable(
+  "user_settings",
+  {
+    userId: varchar("user_id", { length: 36 }).primaryKey(),
+    /** Encrypted Discord webhook URL (it's a secret: anyone with it can post to the channel). */
+    discordWebhook: text("discord_webhook"),
+    discordLive: boolean("discord_live").notNull().default(true),
+    discordRecap: boolean("discord_recap").notNull().default(true),
+    /** Public stats page at /s/<slug>, off unless the streamer turns it on. */
+    publicSlug: varchar("public_slug", { length: 40 }).unique(),
+    updatedAt: timestamp("updated_at", { fsp: 3 })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+);
