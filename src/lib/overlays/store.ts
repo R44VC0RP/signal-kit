@@ -5,7 +5,8 @@ import { overlays } from "@/db/schema";
 import { getAppUrl } from "@/lib/app-url";
 import { randomToken } from "@/lib/crypto";
 import { decryptToken, encryptToken } from "@/lib/connections/tokens";
-import { defaultSettings, overlayTypeInfo, sanitizeSettings, type AnySettings, type OverlayType } from "./settings";
+import { defaultSettings, overlayTypeInfo, sanitizeSettings, type AnySettings, type GoalSettings, type OverlayType } from "./settings";
+import { ensureGoal } from "./stats";
 
 export type OverlayRow = typeof overlays.$inferSelect;
 
@@ -83,7 +84,17 @@ export async function createOverlay(userId: string, type: OverlayType, name?: st
       settings: defaultSettings(type),
       ...(await newToken()),
     });
-  return (await getOverlay(userId, id))!;
+  const row = (await getOverlay(userId, id))!;
+  await syncGoal(row);
+  return row;
+}
+
+/** Goal overlays count from when they were created, or from when what they count changed. */
+async function syncGoal(row: OverlayRow) {
+  if (row.type === "goal") {
+    const settings = sanitizeSettings("goal", row.settings) as GoalSettings;
+    await ensureGoal(row.userId, row.id, settings.metric, settings.currency).catch((error) => console.error("[overlays] goal start failed", error));
+  }
 }
 
 export async function updateOverlay(row: OverlayRow, input: { name?: unknown; settings?: unknown }) {
@@ -97,7 +108,9 @@ export async function updateOverlay(row: OverlayRow, input: { name?: unknown; se
   if (Object.keys(values).length > 0) {
     await getDb().update(overlays).set(values).where(eq(overlays.id, row.id));
   }
-  return (await getOverlay(row.userId, row.id))!;
+  const updated = (await getOverlay(row.userId, row.id))!;
+  await syncGoal(updated);
+  return updated;
 }
 
 /** Issues a new URL; the old one stops working immediately. */

@@ -1,10 +1,14 @@
 /*
  * On-stream overlay styles.
- * Streamer choices arrive as CSS variables (--sko-font, --sko-text, --sko-accent, --sko-panel,
- * --sko-radius, --sk-scale, --sko-duration); presets in [data-style] decide structure:
+ * Streamer choices arrive as CSS variables (--sko-font, --sko-weight, --sko-text, --sko-accent,
+ * --sko-panel, --sko-radius, --sko-shadow, --sko-size, --sk-scale, --sko-duration); presets in
+ * [data-style] decide structure:
+ *   classic: the Streamlabs/StreamElements look: art above outlined text, highlighted name,
+ *            Twitch-style inline chat
  *   signal: dark panel, hairline, countdown bar, accent amounts
  *   clean:  no panel, large type with a soft shadow, centred
  *   bold:   thick black outlines, hard shadows, a slight tilt, accent-filled money alerts
+ * Motion uses animate.css names (animations.css): elements get "sko-anim-<name>".
  * Browser sources can't blur what's behind them, so nothing relies on backdrop-filter.
  * Sizes use em (1em = 16px at 100% on a 1080p canvas) so "size" scales everything together.
  * Streamer custom CSS is applied after this file and can target any .sko-* class.
@@ -24,6 +28,7 @@
   font-family: var(--sko-font);
   font-size: calc(16px * var(--sk-scale, 1));
   color: var(--sko-text);
+  text-shadow: var(--sko-shadow, none);
   -webkit-font-smoothing: antialiased;
   pointer-events: none;
 }
@@ -106,28 +111,10 @@
   align-items: center;
   gap: 0.9em;
   max-width: 60em;
-  animation: sko-in-slide 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-duration: 1s;
+  animation-fill-mode: both;
 }
-.sko-alert-wrap[data-leaving] {
-  animation: sko-out-slide 260ms ease-in both;
-}
-[data-animation="fade"] .sko-alert-wrap {
-  animation: sko-in-fade 400ms ease-out both;
-}
-[data-animation="fade"] .sko-alert-wrap[data-leaving] {
-  animation: sko-out-fade 350ms ease-in both;
-}
-[data-animation="pop"] .sko-alert-wrap {
-  animation: sko-in-pop 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-[data-animation="pop"] .sko-alert-wrap[data-leaving] {
-  animation: sko-out-pop 220ms ease-in both;
-}
-[data-animation="none"] .sko-alert-wrap {
-  animation: none;
-}
-[data-animation="none"] .sko-alert-wrap[data-leaving] {
-  animation: none;
+.sko-alert-wrap[data-leaving]:not([class*="sko-anim-"]) {
   opacity: 0;
 }
 
@@ -216,41 +203,6 @@
   display: none;
 }
 
-@keyframes sko-in-slide {
-  from {
-    opacity: 0;
-    transform: translateY(-1em) scale(0.98);
-    filter: blur(6px);
-  }
-}
-@keyframes sko-out-slide {
-  to {
-    opacity: 0;
-    transform: translateY(-0.5em);
-  }
-}
-@keyframes sko-in-fade {
-  from {
-    opacity: 0;
-  }
-}
-@keyframes sko-out-fade {
-  to {
-    opacity: 0;
-  }
-}
-@keyframes sko-in-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.6) rotate(-6deg);
-  }
-}
-@keyframes sko-out-pop {
-  to {
-    opacity: 0;
-    transform: scale(0.92) translateY(1.5em);
-  }
-}
 @keyframes sko-countdown {
   from {
     transform: scaleX(1);
@@ -289,7 +241,8 @@
   display: flex;
   align-items: flex-start;
   gap: 0.75em;
-  animation: sko-line-in 220ms ease-out both;
+  animation-duration: 0.3s;
+  animation-fill-mode: both;
   transition: opacity 400ms ease;
 }
 .sko-chat-line[data-fading] {
@@ -379,12 +332,6 @@
 .sko-badge[data-badge="owner"] {
   background: #e91916;
 }
-@keyframes sko-line-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.5em);
-  }
-}
 
 /* ---- Emotes ---- */
 
@@ -432,7 +379,8 @@
   padding: 0.7em 0.9em;
   border-radius: calc(var(--sko-radius) * 0.7);
   background: var(--sko-panel);
-  animation: sko-line-in 220ms ease-out both;
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
 }
 .sko-list-body {
   min-width: 0;
@@ -440,16 +388,22 @@
   display: flex;
   flex-direction: column;
 }
-.sko-list-title {
+.sko-list-name {
   overflow: hidden;
   font-size: 1em;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.sko-list-detail {
+.sko-list-action {
   font-size: 0.8em;
-  opacity: 0.7;
+  opacity: 0.75;
+}
+.sko-list-amount {
+  color: var(--sko-accent);
+}
+.sko-list[data-newest="bottom"] {
+  justify-content: flex-end;
 }
 .sko-list-platform {
   display: inline-flex;
@@ -499,11 +453,6 @@
 
 /* ================= Preset: clean ================= */
 
-[data-style="clean"] {
-  text-shadow:
-    0 2px 3px rgb(0 0 0 / 60%),
-    0 8px 32px rgb(0 0 0 / 55%);
-}
 [data-style="clean"] .sko-alert {
   flex-direction: column;
   gap: 0.875em;
@@ -657,7 +606,6 @@
   border-radius: 1em 1em 1em 0.375em;
   background: var(--sko-panel);
   box-shadow: 0.3125em 0.3125em 0 #0a0a0a;
-  animation: sko-bubble-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   transform-origin: bottom left;
 }
 [data-style="bold"] .sko-chat-line[data-highlight] {
@@ -695,17 +643,623 @@
   border: 3px solid #0a0a0a;
   box-shadow: 0.3em 0.3em 0 #0a0a0a;
 }
-@keyframes sko-bubble-in {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .sko-alert-wrap,
   .sko-chat-line,
-  .sko-list-item {
+  .sko-list-item,
+  .sko-letter {
     animation-duration: 1ms !important;
+  }
+}
+
+/* ================= Text animations (per letter, on highlighted words) ================= */
+
+.sko-letter {
+  display: inline-block;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+}
+/* Streamlabs' own three, sized in em so they scale with the text. */
+.sko-text-wiggle {
+  animation: sko-wiggle 0.5s infinite;
+}
+.sko-text-wave {
+  animation: sko-wave 0.5s infinite;
+}
+.sko-text-pulse {
+  animation: sko-pulse-letter 3s infinite;
+}
+.sko-text-bounce {
+  animation-name: sko-bounce;
+  animation-duration: 1.5s;
+  transform-origin: center bottom;
+}
+.sko-text-tada {
+  animation-name: sko-tada;
+  animation-duration: 2s;
+}
+.sko-text-rubberBand {
+  animation-name: sko-rubberBand;
+  animation-duration: 2s;
+}
+.sko-text-wobble {
+  animation-name: sko-wobble;
+  animation-duration: 2s;
+}
+.sko-text-swing {
+  animation-name: sko-swing;
+  animation-duration: 1s;
+  transform-origin: top center;
+}
+.sko-text-shakeX {
+  animation-name: sko-shakeX;
+  animation-duration: 1.5s;
+}
+.sko-text-heartBeat {
+  animation-name: sko-heartBeat;
+  animation-duration: 1.3s;
+  animation-timing-function: ease-in-out;
+}
+.sko-text-jello {
+  animation-name: sko-jello;
+  animation-duration: 2s;
+  transform-origin: center;
+}
+.sko-text-flash {
+  animation-name: sko-flash;
+  animation-duration: 2s;
+}
+@keyframes sko-wiggle {
+  50% {
+    transform: rotate(-4deg) scale(1.1);
+  }
+}
+@keyframes sko-wave {
+  50% {
+    transform: translateY(-0.06em);
+  }
+}
+@keyframes sko-pulse-letter {
+  15% {
+    transform: scale(1.2);
+  }
+}
+
+/* ================= Preset: classic ================= */
+
+.sko-classic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25em;
+  max-width: 75em;
+  text-align: center;
+}
+.sko-classic[data-layout="side"] {
+  flex-direction: row;
+  gap: 1.5em;
+  text-align: left;
+}
+.sko-classic[data-layout="side"] .sko-alert-image {
+  max-width: 30%;
+}
+.sko-classic[data-layout="banner"] {
+  display: grid;
+  place-items: center;
+}
+.sko-classic[data-layout="banner"] > * {
+  grid-area: 1 / 1;
+}
+[data-style="classic"] .sko-alert-image {
+  height: var(--sko-image-size);
+  max-width: 100%;
+  max-height: none;
+  object-fit: contain;
+}
+[data-style="classic"] .sko-alert-image[data-default] {
+  animation:
+    sko-art-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    sko-art-float 2.6s ease-in-out 0.7s infinite;
+  filter: drop-shadow(0 0.4em 0.8em rgb(0 0 0 / 45%));
+}
+.sko-classic-text {
+  padding: 0.75em 1.25em;
+}
+.sko-classic-text[data-delayed] {
+  animation: sko-fadeIn 0.5s both;
+}
+.sko-classic-title {
+  font-size: var(--sko-title-size);
+  line-height: 1.2;
+  font-weight: var(--sko-weight);
+  overflow-wrap: anywhere;
+}
+.sko-classic-message {
+  margin-top: 0.4em;
+  font-size: var(--sko-message-size);
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--sko-message-color);
+  overflow-wrap: anywhere;
+}
+[data-style="classic"] .sko-hl {
+  color: var(--sko-accent);
+}
+[data-style="classic"] .sko-amount {
+  font-family: inherit;
+  font-weight: inherit;
+}
+@keyframes sko-art-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-8deg);
+  }
+}
+@keyframes sko-art-float {
+  50% {
+    transform: translateY(-0.35em) rotate(2deg);
+  }
+}
+
+/* Classic chat: Twitch-style lines, a name column (Streamlabs "Clean"), or boxed messages. */
+[data-style="classic"] .sko-chat {
+  padding: 0.6em 0.75em;
+  font-size: calc(var(--sko-size, 1.25) * 1em);
+}
+[data-style="classic"] .sko-chat-box {
+  gap: 0.3em;
+}
+[data-style="classic"] .sko-chat-line {
+  display: block;
+  line-height: 1.5;
+  font-weight: var(--sko-weight);
+  overflow-wrap: anywhere;
+}
+[data-style="classic"] .sko-chat-line > * {
+  vertical-align: middle;
+}
+[data-style="classic"] .sko-chat-name {
+  overflow: visible;
+  font-size: 1em;
+  font-weight: 700;
+  white-space: normal;
+}
+[data-style="classic"] .sko-chat-colon {
+  margin-left: -0.05em;
+}
+[data-style="classic"] .sko-chat-text {
+  display: inline;
+  font-size: 1em;
+  line-height: inherit;
+}
+[data-style="classic"] .sko-chat-platform,
+[data-style="classic"] .sko-badge-img,
+[data-style="classic"] .sko-badge,
+[data-style="classic"] .sko-badge-icon,
+[data-style="classic"] .sko-chat-line .sko-avatar {
+  display: inline-flex;
+  margin-right: 0.25em;
+  vertical-align: middle;
+}
+[data-style="classic"] .sko-chat-platform svg {
+  width: 0.85em;
+  height: 0.85em;
+}
+[data-style="classic"] .sko-badge-img {
+  width: 1em;
+  height: 1em;
+  margin-top: -0.15em;
+}
+[data-style="classic"] .sko-badge {
+  font-size: 0.6em;
+}
+[data-style="classic"] .sko-chat-line .sko-avatar-chat {
+  width: 1.4em;
+  height: 1.4em;
+}
+[data-style="classic"] .sko-chat-amount {
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: 700;
+  color: var(--sko-accent);
+}
+[data-style="classic"] .sko-chat-line[data-highlight] {
+  padding: 0.2em 0.45em;
+  border-radius: 0.3em;
+  background: color-mix(in srgb, var(--sko-accent) 22%, transparent);
+}
+[data-style="classic"] .sko-emote {
+  height: 1.6em;
+  margin: -0.3em 0.05em;
+}
+[data-layout="columns"] .sko-chat-box {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  border-spacing: 0 0.1em;
+}
+[data-layout="columns"] .sko-chat-line {
+  display: table-row;
+}
+[data-layout="columns"] .sko-chat-meta {
+  display: table-cell;
+  width: 35%;
+  padding-right: 0.5em;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: top;
+}
+[data-layout="columns"] .sko-chat-message {
+  display: table-cell;
+  vertical-align: top;
+}
+[data-layout="boxed"] .sko-chat-box {
+  gap: 0.45em;
+}
+[data-layout="boxed"] .sko-chat-line {
+  align-self: flex-start;
+  padding: 0.35em 0.7em;
+  border-radius: max(0.4em, var(--sko-radius));
+  background: var(--sko-panel);
+}
+
+/* Classic event list */
+[data-style="classic"] .sko-list {
+  font-size: calc(var(--sko-size, 1.125) * 1em);
+  gap: 0.35em;
+}
+[data-style="classic"] .sko-list-item {
+  padding: 0.55em 0.8em;
+  border-radius: var(--sko-radius);
+}
+[data-style="classic"] .sko-list-body {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.4em;
+}
+[data-style="classic"] .sko-list-name {
+  flex-shrink: 1;
+  font-weight: var(--sko-weight);
+  color: var(--sko-accent);
+}
+[data-style="classic"] .sko-list-action {
+  flex-shrink: 0;
+  font-size: 0.85em;
+  opacity: 0.9;
+}
+[data-style="classic"] .sko-list-amount {
+  font-weight: 700;
+  color: inherit;
+}
+
+/* ================= Goal ================= */
+
+.sko-goal {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4em;
+  padding: 0.75em 1em;
+  font-weight: var(--sko-weight);
+}
+.sko-goal-title {
+  font-size: 1.5em;
+  line-height: 1.2;
+}
+.sko-goal-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1em;
+  height: var(--sko-bar-height);
+  padding: 0 0.9em;
+  overflow: hidden;
+  border-radius: var(--sko-radius);
+  background: var(--sko-bar-bg);
+  color: var(--sko-bar-text);
+}
+.sko-goal-bar[data-thin] {
+  height: 0.5em;
+  padding: 0;
+}
+.sko-goal-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--sko-bar);
+  transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sko-goal-fill[data-done] {
+  background-image: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 35%) 50%, transparent 70%);
+  background-size: 200% 100%;
+  background-color: var(--sko-bar);
+  animation: sko-goal-shine 2.2s linear infinite;
+}
+.sko-goal-numbers {
+  position: relative;
+  font-size: 1.25em;
+  font-variant-numeric: tabular-nums;
+}
+[data-layout="condensed"] .sko-goal-bar {
+  justify-content: space-between;
+}
+[data-layout="condensed"] .sko-goal-title {
+  position: relative;
+  font-size: 1.25em;
+}
+.sko-goal-end {
+  font-size: 1em;
+  opacity: 0.85;
+}
+.sko-goal-line {
+  font-size: 1.25em;
+}
+.sko-goal-line .sko-goal-title,
+.sko-goal-line .sko-goal-numbers {
+  font-size: 1em;
+}
+@keyframes sko-goal-shine {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ================= Label ================= */
+
+.sko-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 0.5em;
+  overflow: hidden;
+  font-size: calc(var(--sko-size, 2) * 1em);
+  font-weight: var(--sko-weight);
+  white-space: nowrap;
+  background: var(--sko-panel);
+  border-radius: var(--sko-radius);
+}
+.sko-label[data-align="center"] {
+  justify-content: center;
+}
+.sko-label[data-align="right"] {
+  justify-content: flex-end;
+}
+.sko-label-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Marquee: two copies side by side slide left by one copy's width, so the loop is seamless. */
+.sko-marquee {
+  display: inline-flex;
+  flex-shrink: 0;
+  animation: sko-marquee linear infinite;
+}
+.sko-marquee-copy {
+  flex-shrink: 0;
+  padding-right: 2em;
+}
+@keyframes sko-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ================= Ticker ================= */
+
+.sko-ticker {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  font-size: calc(var(--sko-size, 1.375) * 1em);
+  font-weight: var(--sko-weight);
+  white-space: nowrap;
+  background: var(--sko-panel);
+  border-radius: var(--sko-radius);
+}
+.sko-ticker-title {
+  z-index: 1;
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  padding: 0 0.8em;
+  font-weight: 800;
+  color: #fff;
+  background: var(--sko-accent);
+}
+.sko-ticker-track {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding-left: 0.8em;
+}
+.sko-ticker-name {
+  color: var(--sko-accent);
+}
+.sko-ticker-amount {
+  font-weight: 800;
+}
+.sko-ticker-sep {
+  padding: 0 0.9em;
+  opacity: 0.6;
+}
+
+/* ================= Emote wall ================= */
+
+.sko-wall {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  text-shadow: none;
+}
+.sko-sprite {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size);
+  height: var(--size);
+  margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+  object-fit: contain;
+  font-size: calc(var(--size) * 0.8);
+  line-height: 1;
+  animation-duration: var(--dur);
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+.sko-sprite[data-anim="rise"] {
+  left: var(--x);
+  animation-name: sko-wall-rise;
+}
+.sko-sprite[data-anim="rain"] {
+  left: var(--x);
+  animation-name: sko-wall-rain;
+}
+.sko-sprite[data-anim="float"] {
+  top: var(--y);
+  animation-name: sko-wall-float;
+}
+.sko-sprite[data-anim="zoom"] {
+  top: var(--y);
+  left: var(--x);
+  animation-name: sko-wall-zoom;
+  animation-timing-function: ease-out;
+}
+.sko-sprite[data-anim="bounce"] {
+  animation-name: sko-wall-bounce;
+}
+.sko-sprite[data-anim="fountain"] {
+  animation-name: sko-wall-fountain;
+}
+@keyframes sko-wall-rise {
+  0% {
+    top: 110%;
+    opacity: 0;
+    transform: translateX(0);
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(var(--drift));
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: -10%;
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+@keyframes sko-wall-rain {
+  0% {
+    top: -10%;
+    transform: rotate(0);
+  }
+  100% {
+    top: 110%;
+    transform: rotate(var(--spin));
+  }
+}
+@keyframes sko-wall-float {
+  0% {
+    left: -10%;
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-1em);
+  }
+  75% {
+    transform: translateY(1em);
+  }
+  100% {
+    left: 110%;
+    transform: translateY(0);
+  }
+}
+@keyframes sko-wall-zoom {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  35% {
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+@keyframes sko-wall-bounce {
+  0% {
+    top: 88%;
+    left: var(--x);
+    animation-timing-function: ease-out;
+  }
+  15% {
+    top: 30%;
+    animation-timing-function: ease-in;
+  }
+  30% {
+    top: 88%;
+    animation-timing-function: ease-out;
+  }
+  45% {
+    top: 45%;
+    animation-timing-function: ease-in;
+  }
+  60% {
+    top: 88%;
+    animation-timing-function: ease-out;
+  }
+  75% {
+    top: 62%;
+    animation-timing-function: ease-in;
+    opacity: 1;
+  }
+  90% {
+    top: 88%;
+  }
+  100% {
+    top: 88%;
+    left: calc(var(--x) + var(--drift) * 3);
+    opacity: 0;
+  }
+}
+@keyframes sko-wall-fountain {
+  0% {
+    top: 105%;
+    left: 50%;
+    transform: rotate(0);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  45% {
+    top: var(--peak);
+    left: calc(50% + (var(--x) - 50%) * 0.55);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.4);
+  }
+  100% {
+    top: 112%;
+    left: var(--x);
+    transform: rotate(var(--spin));
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { YouTubeModeratorIcon, YouTubeVerifiedIcon } from "@/components/brand/platforms";
 import { XVerifiedBadge } from "@/components/brand/x";
 import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
@@ -8,58 +8,116 @@ import type { SignalKitEvent } from "@/lib/events/types";
 import {
   fontStack,
   googleFontsUrl,
-  type AlertKind,
   type AlertSettings,
   type AnySettings,
+  type Appearance,
   type ChatSettings,
+  type EmoteWallSettings,
   type EventListSettings,
+  type GoalSettings,
+  type LabelSettings,
   type OverlayType,
+  type TickerSettings,
 } from "@/lib/overlays/settings";
-import { alertText, hasBlockedWord, isBot, matchesAlert, nameColor } from "./describe";
+import type { PublicStats } from "@/lib/overlays/stats-core";
+import { alertText, defaultNameColor, hasBlockedWord, isBot, isMuted, matchesAlert, nameColor, shortAction, templateParts } from "./describe";
 import { MessageText } from "./MessageText";
+import { EmoteWall, GoalWidget, LabelWidget, Ticker } from "./widgets";
+import "./animations.css";
 import "./overlay.css";
+
+/** An event as an overlay holds it: `seenAt` is when this browser received it (for delays and fades). */
+export type OverlayEvent = SignalKitEvent & { seenAt?: number; test?: boolean };
+
+const SHADOWS: Record<Appearance["textShadow"], string> = {
+  outline: "0 0 1px #000, 0 0 2px #000, 0 0 3px #000, 0 0 4px #000",
+  soft: "0 2px 3px rgb(0 0 0 / 60%), 0 8px 32px rgb(0 0 0 / 55%)",
+  heavy: "0 0 2px #000, 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 4px 10px rgb(0 0 0 / 60%)",
+  none: "none",
+};
 
 /**
  * What viewers see. Used by the browser-source page and by the customizer preview, so the
- * preview is exactly what OBS shows. `events` only ever grows (newest last); each overlay
- * keeps track of which ids it has already handled.
+ * preview is exactly what OBS shows. `events` only ever grows (newest last) and holds what
+ * arrived live; `history` is what was already there when the overlay loaded (lists show it,
+ * alerts never replay it). `stats` feeds goals and labels.
  */
-export function OverlayRenderer({ type, settings, events }: { type: OverlayType; settings: AnySettings; events: SignalKitEvent[] }) {
+export function OverlayRenderer({
+  type,
+  settings,
+  events,
+  history = EMPTY,
+  stats = null,
+  overlayId = "",
+}: {
+  type: OverlayType;
+  settings: AnySettings;
+  events: OverlayEvent[];
+  history?: OverlayEvent[];
+  stats?: PublicStats | null;
+  overlayId?: string;
+}) {
   const style = {
     "--sk-scale": settings.scale,
     "--sko-font": fontStack(settings.font),
+    "--sko-weight": settings.fontWeight,
     "--sko-text": settings.textColor,
     "--sko-accent": settings.accentColor,
     "--sko-panel": hexToRgba(settings.panelColor, settings.panelOpacity),
     "--sko-radius": `${settings.radius / 16}em`,
+    "--sko-shadow": SHADOWS[settings.textShadow] ?? "none",
+    ...("fontSize" in settings ? { "--sko-size": settings.fontSize / 16 } : {}),
     ...("durationSec" in settings ? { "--sko-duration": `${settings.durationSec}s` } : {}),
   } as CSSProperties;
   const fontUrl = googleFontsUrl([settings.font]);
+  const all = useMemo(() => mergeEvents(history, events), [history, events]);
   return (
-    <div className="sko-root" data-style={settings.style} data-type={type} data-animation={"animation" in settings ? settings.animation : undefined} style={style}>
+    <div className="sko-root" data-style={settings.style} data-type={type} style={style}>
       {fontUrl ? <link rel="stylesheet" href={fontUrl} precedence="default" /> : null}
       {settings.customCss ? <style>{settings.customCss}</style> : null}
       {type === "alerts" ? (
         <AlertsOverlay settings={settings as AlertSettings} events={events} />
       ) : type === "chat" ? (
-        <ChatOverlay settings={settings as ChatSettings} events={events} />
+        <ChatOverlay settings={settings as ChatSettings} events={all} />
+      ) : type === "events" ? (
+        <EventListOverlay settings={settings as EventListSettings} events={all} />
+      ) : type === "goal" ? (
+        <GoalWidget settings={settings as GoalSettings} stats={stats} events={events} overlayId={overlayId} />
+      ) : type === "label" ? (
+        <LabelWidget settings={settings as LabelSettings} stats={stats} events={events} />
+      ) : type === "emotewall" ? (
+        <EmoteWall settings={settings as EmoteWallSettings} events={events} />
       ) : (
-        <EventListOverlay settings={settings as EventListSettings} events={events} />
+        <Ticker settings={settings as TickerSettings} events={all} />
       )}
     </div>
   );
 }
 
+const EMPTY: OverlayEvent[] = [];
+
+function mergeEvents(history: OverlayEvent[], events: OverlayEvent[]) {
+  if (history.length === 0) {
+    return events;
+  }
+  const live = new Set(events.map((event) => event.id));
+  return [...history.filter((event) => !live.has(event.id)), ...events];
+}
+
+/** animate.css class for a named animation ("none" disables it). */
+export function anim(name: string) {
+  return name === "none" ? "" : `sko-anim-${name}`;
+}
+
 // ---- Alerts ---------------------------------------------------------------------------------
 
-const EXIT_MS = 450;
-/** Breathing room between queued alerts. */
-const GAP_MS = 400;
+/** animate.css's standard duration; alerts animate in and out over this long. */
+const ANIMATION_MS = 1000;
 
-function AlertsOverlay({ settings, events }: { settings: AlertSettings; events: SignalKitEvent[] }) {
+function AlertsOverlay({ settings, events }: { settings: AlertSettings; events: OverlayEvent[] }) {
   const handled = useRef(new Set<string>());
-  const queue = useRef<SignalKitEvent[]>([]);
-  const [current, setCurrent] = useState<{ event: SignalKitEvent; leaving: boolean } | null>(null);
+  const queue = useRef<OverlayEvent[]>([]);
+  const [current, setCurrent] = useState<{ event: OverlayEvent; leaving: boolean } | null>(null);
   const settingsRef = useRef(settings);
   useEffect(() => {
     settingsRef.current = settings;
@@ -92,12 +150,7 @@ function AlertsOverlay({ settings, events }: { settings: AlertSettings; events: 
     }
     const live = settingsRef.current;
     if (live.sound) {
-      const custom = live.templates[current.event.kind as AlertKind]?.sound;
-      if (custom) {
-        playSound(custom, live.volume);
-      } else {
-        playChime(live.volume, current.event.kind === "tip" || current.event.kind === "raid");
-      }
+      playSound(alertText(current.event, live.templates).sound, live.volume);
     }
     const hold = setTimeout(() => setCurrent((value) => (value ? { ...value, leaving: true } : value)), live.durationSec * 1000);
     return () => clearTimeout(hold);
@@ -107,17 +160,19 @@ function AlertsOverlay({ settings, events }: { settings: AlertSettings; events: 
     if (!current?.leaving) {
       return;
     }
-    const exit = setTimeout(() => {
-      cooling.current = true;
-      setCurrent(null);
-      // After an alert leaves, wait a beat before the next one.
-      setTimeout(() => {
-        cooling.current = false;
-        if (queue.current.length > 0) {
-          setCurrent({ event: queue.current.shift()!, leaving: false });
-        }
-      }, GAP_MS);
-    }, EXIT_MS);
+    const exit = setTimeout(
+      () => {
+        cooling.current = true;
+        setCurrent(null);
+        setTimeout(() => {
+          cooling.current = false;
+          if (queue.current.length > 0) {
+            setCurrent({ event: queue.current.shift()!, leaving: false });
+          }
+        }, settingsRef.current.gapSec * 1000);
+      },
+      settingsRef.current.animationOut === "none" ? 0 : ANIMATION_MS,
+    );
     return () => clearTimeout(exit);
   }, [current]);
 
@@ -126,82 +181,129 @@ function AlertsOverlay({ settings, events }: { settings: AlertSettings; events: 
   }
   const { event, leaving } = current;
   const text = alertText(event, settings.templates);
-  const image = settings.templates[event.kind as AlertKind]?.image;
   const message = settings.showMessage && !hasBlockedWord(event.message, settings.blockedWords) ? event.message : null;
-  const money = event.kind === "tip";
+  const classic = settings.style === "classic";
+  const vars = {
+    "--sko-title-size": `${settings.titleSize / 16}em`,
+    "--sko-message-size": `${settings.messageSize / 16}em`,
+    "--sko-image-size": `${settings.imageSize / 16}em`,
+    "--sko-message-color": settings.messageColor,
+  } as CSSProperties;
   return (
-    <div className="sko-alert-stage" data-position={settings.position}>
-      <div key={event.id} className="sko-alert-wrap" data-leaving={leaving || undefined}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {image ? <img className="sko-alert-image" src={image} alt="" referrerPolicy="no-referrer" /> : null}
-        <div className="sko-alert" data-kind={event.kind} data-money={money || undefined}>
-          {settings.showAvatar ? <Avatar name={event.actor?.name ?? "?"} url={event.actor?.avatarUrl} size="alert" platform={event.platform} /> : null}
-          <div className="sko-alert-body">
-            <div className="sko-alert-eyebrow">
-              {settings.showAvatar ? null : <PlatformLogo platform={event.platform} size={14} />}
-              <span>{text.label}</span>
-            </div>
-            <div className="sko-alert-title">
-              {text.parts.map((part, index) =>
-                part.variable === "name" ? (
-                  <span key={index} className="sko-name">
-                    {part.text}
-                    <Verified event={event} />
-                  </span>
-                ) : (
-                  <span key={index} className={part.variable === "amount" ? "sko-amount" : undefined}>
-                    {part.text}
-                  </span>
-                ),
-              )}
-            </div>
-            {text.detail ? <div className="sko-alert-detail">{text.detail}</div> : null}
-            {message ? (
-              <div className="sko-alert-message">
-                <MessageText text={message} parts={event.messageParts} />
+    <div className="sko-alert-stage" data-position={settings.position} style={vars}>
+      <div key={event.id} className={`sko-alert-wrap ${anim(leaving ? settings.animationOut : settings.animationIn)}`} data-leaving={leaving || undefined}>
+        {classic ? (
+          <div className="sko-classic" data-layout={settings.layout} data-kind={event.kind}>
+            {text.image ? <AlertArt key={text.image} url={text.image} isDefault={text.image.startsWith("/alerts/art/")} /> : null}
+            <div className="sko-classic-text" data-delayed={settings.textDelaySec > 0 || undefined} style={settings.textDelaySec > 0 ? { animationDelay: `${settings.textDelaySec}s` } : undefined}>
+              <div className="sko-classic-title">
+                <TitleParts event={event} parts={text.parts} animation={settings.textAnimation} />
               </div>
-            ) : null}
+              {message ? (
+                <div className="sko-classic-message">
+                  <MessageText text={message} parts={event.messageParts} />
+                </div>
+              ) : null}
+            </div>
           </div>
-          <span className="sko-alert-countdown" aria-hidden="true" />
-        </div>
+        ) : (
+          <>
+            {text.customImage ? <AlertArt key={text.customImage} url={text.customImage} isDefault={false} /> : null}
+            <div className="sko-alert" data-kind={event.kind} data-money={event.kind === "tip" || undefined}>
+              {settings.showAvatar ? <Avatar name={event.actor?.name ?? "?"} url={event.actor?.avatarUrl} size="alert" platform={event.platform} /> : null}
+              <div className="sko-alert-body">
+                <div className="sko-alert-eyebrow">
+                  {settings.showAvatar ? null : <PlatformLogo platform={event.platform} size={14} />}
+                  <span>{text.label}</span>
+                </div>
+                <div className="sko-alert-title">
+                  <TitleParts event={event} parts={text.parts} animation={settings.textAnimation} />
+                </div>
+                {text.detail ? <div className="sko-alert-detail">{text.detail}</div> : null}
+                {message ? (
+                  <div className="sko-alert-message">
+                    <MessageText text={message} parts={event.messageParts} />
+                  </div>
+                ) : null}
+              </div>
+              <span className="sko-alert-countdown" aria-hidden="true" />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-/** A streamer's own alert sound (any HTTPS audio URL). */
+/** The headline with its variables ({name}, {amount}…) highlighted and, optionally, animated letter by letter. */
+function TitleParts({ event, parts, animation }: { event: SignalKitEvent; parts: ReturnType<typeof templateParts>; animation: string }) {
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.variable ? (
+          <span key={index} className={`sko-hl${part.variable === "name" ? " sko-name" : ""}${part.variable === "amount" ? " sko-amount" : ""}`} data-var={part.variable}>
+            <AnimatedLetters text={part.text} animation={animation} />
+            {part.variable === "name" ? <Verified event={event} /> : null}
+          </span>
+        ) : (
+          <span key={index}>{part.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+/** Each letter animates on its own, 0.1 s after the one before (as Streamlabs and StreamElements do). */
+export function AnimatedLetters({ text, animation }: { text: string; animation: string }) {
+  if (animation === "none" || !text) {
+    return <>{text}</>;
+  }
+  const letters = graphemes(text);
+  return (
+    <>
+      {letters.map((letter, index) =>
+        letter.trim() ? (
+          <span key={index} className={`sko-letter sko-text-${animation}`} style={{ animationDelay: `${(index % 30) * 0.1}s` }}>
+            {letter}
+          </span>
+        ) : (
+          letter
+        ),
+      )}
+    </>
+  );
+}
+
+function graphemes(text: string) {
+  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+    return [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text)].map((part) => part.segment);
+  }
+  return Array.from(text);
+}
+
+/** Alert art: an image, GIF or WebM/MP4 video. Signal Kit's own art floats gently. */
+function AlertArt({ url, isDefault }: { url: string; isDefault: boolean }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return null;
+  }
+  if (/\.(webm|mp4)(\?|#|$)/i.test(url)) {
+    return <video className="sko-alert-image" src={url} autoPlay muted loop playsInline onError={() => setFailed(true)} />;
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img className="sko-alert-image" data-default={isDefault || undefined} src={url} alt="" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
+  );
+}
+
+/** Plays an alert sound (Signal Kit's default or the streamer's HTTPS URL). */
 function playSound(url: string, volume: number) {
   try {
     const sound = new Audio(url);
-    sound.volume = volume;
+    sound.volume = Math.min(1, Math.max(0, volume));
     void sound.play().catch(() => {});
   } catch {
     // Unsupported or blocked audio; the alert still shows.
-  }
-}
-
-/** A short two-note chime, synthesized so there's no audio file to load. */
-let audio: AudioContext | null = null;
-function playChime(volume: number, big: boolean) {
-  try {
-    audio ??= new AudioContext();
-    const ctx = audio;
-    const notes = big ? [659.25, 880, 1318.5] : [659.25, 987.77];
-    notes.forEach((frequency, index) => {
-      const start = ctx.currentTime + index * 0.12;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = frequency;
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.25 * volume, start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.9);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(start);
-      osc.stop(start + 1);
-    });
-  } catch {
-    // No audio available (e.g. a browser that blocks autoplay); alerts still show.
   }
 }
 
@@ -209,23 +311,28 @@ function playChime(volume: number, big: boolean) {
 
 const HIGHLIGHT_KINDS = new Set(["tip", "subscription", "subscription.gift"]);
 
-function ChatOverlay({ settings, events }: { settings: ChatSettings; events: SignalKitEvent[] }) {
+function ChatOverlay({ settings, events }: { settings: ChatSettings; events: OverlayEvent[] }) {
   const [now, setNow] = useState(() => Date.now());
+  const ticking = settings.lifetimeSec > 0 || settings.delaySec > 0;
   useEffect(() => {
-    if (settings.lifetimeSec <= 0) {
+    if (!ticking) {
       return;
     }
-    const tick = setInterval(() => setNow(Date.now()), 1000);
+    const tick = setInterval(() => setNow(Date.now()), settings.delaySec > 0 ? 250 : 1000);
     return () => clearInterval(tick);
-  }, [settings.lifetimeSec]);
+  }, [ticking, settings.delaySec]);
 
+  // Messages a moderator deleted disappear, as they do in Twitch and YouTube chat.
+  const deleted = new Set(events.filter((event) => event.kind === "chat.message.deleted").map((event) => String(event.data?.messageId ?? "")));
+  const ageOf = (event: OverlayEvent) => now - (event.seenAt ?? (Date.parse(event.receivedAt) || now));
+  const delayMs = settings.delaySec * 1000;
   const lines = events
     .filter((event) => {
       if (!settings.platforms[event.platform]) {
         return false;
       }
       if (event.kind === "chat.message") {
-        return true;
+        return !deleted.has(String(event.data?.messageId ?? "-"));
       }
       if (event.kind === "tip") {
         return settings.showTips;
@@ -234,27 +341,77 @@ function ChatOverlay({ settings, events }: { settings: ChatSettings; events: Sig
     })
     .filter((event) => !(settings.hideCommands && event.kind === "chat.message" && event.message?.trim().startsWith("!")))
     .filter((event) => !(settings.hideBots && isBot(event)))
+    .filter((event) => !isMuted(event, settings.mutedUsers))
     .filter((event) => !hasBlockedWord(event.message, settings.blockedWords))
+    .filter((event) => delayMs === 0 || ageOf(event) >= delayMs)
     .slice(-settings.maxMessages);
   const lifetimeMs = settings.lifetimeSec * 1000;
-  const ageOf = (event: SignalKitEvent) => Math.max(0, now - (Date.parse(event.receivedAt) || now));
-  const visible = lifetimeMs > 0 ? lines.filter((line) => ageOf(line) < lifetimeMs + 600) : lines;
+  const visible = lifetimeMs > 0 ? lines.filter((line) => ageOf(line) < lifetimeMs + delayMs + 600) : lines;
   const ordered = settings.newestAt === "top" ? [...visible].reverse() : visible;
 
   if (ordered.length === 0) {
     return null;
   }
+  const classic = settings.style === "classic";
   return (
-    <div className="sko-chat" data-newest={settings.newestAt}>
+    <div className="sko-chat" data-newest={settings.newestAt} data-layout={classic ? settings.layout : undefined}>
       <div className="sko-chat-box">
         {ordered.map((event) => {
-          const fading = lifetimeMs > 0 && ageOf(event) > lifetimeMs;
+          const fading = lifetimeMs > 0 && ageOf(event) > lifetimeMs + delayMs;
           const highlight = HIGHLIGHT_KINDS.has(event.kind);
           const name = event.actor?.name ?? "Someone";
           const twitchColor = typeof event.data?.color === "string" && /^#[0-9a-f]{6}$/i.test(event.data.color) ? event.data.color : null;
-          const color = settings.nameColor === "viewer" ? (twitchColor ? brighten(twitchColor) : nameColor(name)) : undefined;
+          const color =
+            settings.nameColor === "viewer" ? (classic ? (twitchColor ?? defaultNameColor(name)) : twitchColor ? brighten(twitchColor) : nameColor(name)) : undefined;
+          const role = youtubeRole(event);
+          const nameNode = (
+            <span className="sko-chat-name" data-role={role} style={color && !role ? { color } : undefined}>
+              {name}
+            </span>
+          );
+          const extra = highlight ? <span className="sko-chat-amount">{event.kind === "tip" ? event.amount?.display : shortAction(event).action}</span> : null;
+          const text = event.message ? <MessageText className="sko-chat-text" text={event.message} parts={event.messageParts} /> : null;
+          const lineProps = {
+            className: `sko-chat-line ${anim(settings.animation)}`,
+            "data-fading": fading || undefined,
+            "data-highlight": highlight || undefined,
+            "data-platform": event.platform,
+          };
+          if (classic) {
+            const meta = (
+              <>
+                {settings.showAvatars ? <Avatar name={name} url={event.actor?.avatarUrl} size="chat" /> : null}
+                {settings.showPlatform ? (
+                  <span className="sko-chat-platform">
+                    <PlatformLogo platform={event.platform} size={13} />
+                  </span>
+                ) : null}
+                {settings.showBadges ? <Badges event={event} /> : null}
+                {nameNode}
+                {settings.showBadges ? <Verified event={event} /> : null}
+              </>
+            );
+            return settings.layout === "columns" ? (
+              <div key={event.id} {...lineProps}>
+                <span className="sko-chat-meta">{meta}</span>
+                <span className="sko-chat-message">
+                  {extra}
+                  {extra && text ? " " : null}
+                  {text}
+                </span>
+              </div>
+            ) : (
+              <div key={event.id} {...lineProps}>
+                {meta}
+                {settings.showColon && !highlight ? <span className="sko-chat-colon">:</span> : null}{" "}
+                {extra}
+                {extra && text ? " " : null}
+                {text}
+              </div>
+            );
+          }
           return (
-            <div key={event.id} className="sko-chat-line" data-fading={fading || undefined} data-highlight={highlight || undefined} data-platform={event.platform}>
+            <div key={event.id} {...lineProps}>
               {settings.showAvatars ? <Avatar name={name} url={event.actor?.avatarUrl} size="chat" /> : null}
               <div className="sko-chat-body">
                 <div className="sko-chat-meta">
@@ -264,13 +421,11 @@ function ChatOverlay({ settings, events }: { settings: ChatSettings; events: Sig
                     </span>
                   ) : null}
                   {settings.showBadges ? <Badges event={event} /> : null}
-                  <span className="sko-chat-name" data-role={youtubeRole(event)} style={color && !youtubeRole(event) ? { color } : undefined}>
-                    {name}
-                  </span>
+                  {nameNode}
                   {settings.showBadges ? <Verified event={event} /> : null}
-                  {highlight ? <span className="sko-chat-amount">{event.kind === "tip" ? event.amount?.display : alertText(event).title.replace(name, "").trim()}</span> : null}
+                  {extra}
                 </div>
-                {event.message ? <MessageText className="sko-chat-text" text={event.message} parts={event.messageParts} /> : null}
+                {text}
               </div>
             </div>
           );
@@ -346,7 +501,7 @@ function youtubeRole(event: SignalKitEvent) {
 
 /**
  * Verification shown after the name: X's own badges (Premium blue, Business gold, Government
- * gray, from the X Partner Icon Kit); a plain check for other platforms' verified channels.
+ * gray, from the X Partner Icon Kit); YouTube's check for verified channels.
  */
 function Verified({ event }: { event: SignalKitEvent }) {
   const badges = event.actor?.badges ?? [];
@@ -370,22 +525,28 @@ function Verified({ event }: { event: SignalKitEvent }) {
 
 // ---- Event list -----------------------------------------------------------------------------
 
-function EventListOverlay({ settings, events }: { settings: EventListSettings; events: SignalKitEvent[] }) {
-  const items = events.filter((event) => matchesAlert(event, settings)).slice(-settings.maxItems).reverse();
+function EventListOverlay({ settings, events }: { settings: EventListSettings; events: OverlayEvent[] }) {
+  const latest = events.filter((event) => matchesAlert(event, settings)).slice(-settings.maxItems);
+  const items = settings.newestAt === "top" ? latest.reverse() : latest;
   return (
-    <div className="sko-list">
+    <div className="sko-list" data-newest={settings.newestAt}>
       {items.map((event) => {
-        const text = alertText(event);
+        const { name, action, amount } = shortAction(event);
         return (
-          <div key={event.id} className="sko-list-item" data-kind={event.kind}>
-            {settings.showAvatars ? <Avatar name={event.actor?.name ?? "?"} url={event.actor?.avatarUrl} size="chat" /> : null}
+          <div key={event.id} className={`sko-list-item ${anim(settings.animation)}`} data-kind={event.kind}>
+            {settings.showAvatars ? <Avatar name={name} url={event.actor?.avatarUrl} size="chat" /> : null}
             <div className="sko-list-body">
-              <span className="sko-list-title">{text.title}</span>
-              {text.detail ? <span className="sko-list-detail">{text.detail}</span> : null}
+              <span className="sko-list-name">{name}</span>
+              <span className="sko-list-action">
+                {action}
+                {amount ? <span className="sko-list-amount"> {amount}</span> : null}
+              </span>
             </div>
-            <span className="sko-list-platform">
-              <PlatformLogo platform={event.platform} size={12} />
-            </span>
+            {settings.showPlatform ? (
+              <span className="sko-list-platform">
+                <PlatformLogo platform={event.platform} size={12} />
+              </span>
+            ) : null}
           </div>
         );
       })}
@@ -395,7 +556,7 @@ function EventListOverlay({ settings, events }: { settings: EventListSettings; e
 
 // ---- Shared ---------------------------------------------------------------------------------
 
-function hexToRgba(hex: string, alpha: number) {
+export function hexToRgba(hex: string, alpha: number) {
   const value = parseInt(hex.replace("#", ""), 16);
   return `rgb(${(value >> 16) & 255} ${(value >> 8) & 255} ${value & 255} / ${Math.round(alpha * 100)}%)`;
 }
@@ -408,7 +569,7 @@ function brighten(hex: string) {
 function Avatar({ name, url, size, platform }: { name: string; url?: string | null; size: "alert" | "chat"; platform?: SignalKitEvent["platform"] }) {
   const [failed, setFailed] = useState(false);
   const className = `sko-avatar sko-avatar-${size}`;
-  const face =
+  const face: ReactNode =
     url && !failed ? (
       // eslint-disable-next-line @next/next/no-img-element
       <img className={className} src={url} alt="" referrerPolicy="no-referrer" onError={() => setFailed(true)} />

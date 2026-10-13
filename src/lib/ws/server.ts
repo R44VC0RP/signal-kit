@@ -5,7 +5,9 @@ import { getAppUrl } from "@/lib/app-url";
 import { clientIpOf } from "@/lib/client-ip";
 import { randomToken } from "@/lib/crypto";
 import { isEventId } from "@/lib/events/ids";
-import { eventsSince, MAX_REPLAY } from "@/lib/events/ingest";
+import { eventsSince, MAX_REPLAY, recentEvents } from "@/lib/events/ingest";
+import { publicStats } from "@/lib/overlays/stats-core";
+import { getStats } from "@/lib/overlays/stats";
 import { findOverlayByToken, markOverlaySeen } from "@/lib/overlays/store";
 import { authenticateApiKey, authenticateSession } from "./auth";
 import { relayHub } from "./relay";
@@ -168,6 +170,9 @@ async function start(ws: WebSocket, auth: Auth, since: string | null, failure: s
       event: { clientId, label: auth.label },
     }),
   );
+  if (auth.overlayId) {
+    void sendOverlayInit(ws, auth.userId);
+  }
   if (!replay) {
     return;
   }
@@ -194,4 +199,18 @@ async function start(ws: WebSocket, auth: Auth, since: string | null, failure: s
     ws.send(JSON.stringify({ type: "signal_kit.replayed", count, truncated, lastId, receivedAt: new Date().toISOString() }));
   }
   relayHub.flush(auth.userId, clientId, lastId);
+}
+
+/** Overlays start with the current stats (goals, labels) and recent events (event list, ticker). */
+async function sendOverlayInit(ws: WebSocket, userId: string) {
+  try {
+    const [stats, recent] = await Promise.all([getStats(userId), recentEvents(userId, { limit: 60 })]);
+    if (ws.readyState === WebSocket.OPEN) {
+      // Overlays never read the raw platform payloads; leave them out to keep the message small.
+      const history = recent.events.reverse().map((event) => ({ ...event, raw: undefined, event: undefined }));
+      ws.send(JSON.stringify({ type: "signal_kit.overlay.init", stats: publicStats(stats), history }));
+    }
+  } catch (error) {
+    console.error("[relay] overlay init failed", error);
+  }
 }

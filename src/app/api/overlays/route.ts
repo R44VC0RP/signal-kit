@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   }
   const body = (await request.json().catch(() => ({}))) as { type?: unknown; name?: unknown };
   if (!isOverlayType(body.type)) {
-    return NextResponse.json({ error: "Choose an overlay type: alerts, chat or events." }, { status: 400 });
+    return NextResponse.json({ error: "Choose an overlay type: alerts, chat, events, goal, label, emotewall or ticker." }, { status: 400 });
   }
   if ((await listOverlays(user.id)).length >= 50) {
     return NextResponse.json({ error: "You can have up to 50 overlays." }, { status: 400 });

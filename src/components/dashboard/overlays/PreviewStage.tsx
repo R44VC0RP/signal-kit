@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { OverlayRenderer } from "@/components/overlay/Overlays";
+import type { PublicStats } from "@/lib/overlays/stats-core";
 import type { SignalKitEvent } from "@/lib/events/types";
 import { overlayTypeInfo, type AnySettings, type OverlayType } from "@/lib/overlays/settings";
 
@@ -12,6 +13,10 @@ const PLACEMENT: Record<OverlayType, CSSProperties> = {
   alerts: { left: 0, top: 0 },
   chat: { left: 48, bottom: 48 },
   events: { right: 48, top: 48 },
+  goal: { left: 48, top: 48 },
+  label: { left: 48, top: 48 },
+  emotewall: { left: 0, top: 0 },
+  ticker: { left: 0, bottom: 0 },
 };
 
 /**
@@ -22,11 +27,15 @@ export function PreviewStage({
   type,
   settings,
   events,
+  stats,
+  overlayId,
   background,
 }: {
   type: OverlayType;
   settings: AnySettings;
   events: SignalKitEvent[];
+  stats: PublicStats | null;
+  overlayId: string;
   background: StageBackground;
 }) {
   const frame = useRef<HTMLDivElement>(null);
@@ -65,9 +74,9 @@ export function PreviewStage({
           <div className="absolute inset-0 bg-[repeating-conic-gradient(#202020_0%_25%,#2b2b2b_0%_50%)] bg-[length:48px_48px]" />
         )}
         <div className="absolute" style={box}>
-          <OverlayRenderer type={type} settings={settings} events={events} />
+          <OverlayRenderer type={type} settings={settings} events={events} stats={stats} overlayId={overlayId} />
         </div>
-        {type !== "alerts" ? <div className="pointer-events-none absolute rounded-[6px] outline-2 outline-white/10 outline-dashed" style={box} /> : null}
+        {type !== "alerts" && type !== "emotewall" ? <div className="pointer-events-none absolute rounded-[6px] outline-2 outline-white/10 outline-dashed" style={box} /> : null}
       </div>
     </div>
   );

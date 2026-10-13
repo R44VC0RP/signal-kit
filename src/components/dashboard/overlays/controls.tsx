@@ -212,3 +212,36 @@ export function PositionGrid<T extends string>({ value, onChange }: { value: T; 
     </div>
   );
 }
+
+export function NumberField({ value, onChange, min = 0, max, step = 1, suffix }: { value: number; onChange: (value: number) => void; min?: number; max?: number; step?: number; suffix?: string }) {
+  return (
+    <div className="flex h-8 w-full items-center rounded-(--r) border border-(--line) bg-(--surface-inset) focus-within:border-(--accent)">
+      <input
+        type="number"
+        value={Number.isFinite(value) ? value : 0}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(event) => {
+          const next = Number(event.target.value);
+          if (Number.isFinite(next)) {
+            onChange(Math.min(max ?? Infinity, Math.max(min, next)));
+          }
+        }}
+        className="sk-mono h-full min-w-0 flex-1 bg-transparent px-2.5 text-xs text-(--text) outline-none"
+      />
+      {suffix ? <span className="pr-2.5 text-xs text-(--text-3)">{suffix}</span> : null}
+    </div>
+  );
+}
+
+export function DateField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <input
+      type="date"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="sk-mono h-8 w-full rounded-(--r) border border-(--line) bg-(--surface-inset) px-2.5 text-xs text-(--text) [color-scheme:dark] outline-none focus:border-(--accent)"
+    />
+  );
+}

@@ -14,7 +14,7 @@ export default async function OverlayPage({ params }: { params: Promise<{ token:
       {/* Browser sources composite this page over the stream, so nothing may paint a background. */}
       <style>{"html,body{background:transparent!important;margin:0;overflow:hidden}"}</style>
       {overlay ? (
-        <OverlayRuntime token={token} type={overlay.type} initialSettings={sanitizeSettings(overlay.type, overlay.settings)} />
+        <OverlayRuntime token={token} overlayId={overlay.id} type={overlay.type} initialSettings={sanitizeSettings(overlay.type, overlay.settings)} />
       ) : (
         <p style={{ margin: 24, font: "500 16px system-ui", color: "#f5f5f5", textShadow: "0 1px 3px #000" }}>
           This overlay URL no longer works. Copy the current URL from your Signal Kit dashboard.

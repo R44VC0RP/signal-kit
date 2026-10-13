@@ -106,7 +106,7 @@ export function OverlaysList({ initial }: { initial: Overlay[] }) {
       ) : null}
 
       <Section title={initial.length > 0 ? "New overlay" : "Or start with one"}>
-        <div className="grid gap-3 border-t border-(--line) pt-4 md:grid-cols-3">
+        <div className="grid gap-3 border-t border-(--line) pt-4 md:grid-cols-3 xl:grid-cols-4">
           {OVERLAY_TYPES.map((type) => (
             <button
               key={type.type}

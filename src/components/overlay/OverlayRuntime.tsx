@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import type { SignalKitEvent } from "@/lib/events/types";
 import type { AnySettings, OverlayType } from "@/lib/overlays/settings";
-import { OverlayRenderer } from "./Overlays";
+import type { PublicStats } from "@/lib/overlays/stats-core";
+import { OverlayRenderer, type OverlayEvent } from "./Overlays";
 
 const MAX_EVENTS = 200;
 
@@ -12,9 +13,11 @@ const MAX_EVENTS = 200;
  * settings saved in the dashboard immediately. Reconnects with backoff; a closed URL (reset or
  * deleted) stops retrying.
  */
-export function OverlayRuntime({ token, type, initialSettings }: { token: string; type: OverlayType; initialSettings: AnySettings }) {
+export function OverlayRuntime({ token, overlayId, type, initialSettings }: { token: string; overlayId: string; type: OverlayType; initialSettings: AnySettings }) {
   const [settings, setSettings] = useState(initialSettings);
-  const [events, setEvents] = useState<SignalKitEvent[]>([]);
+  const [events, setEvents] = useState<OverlayEvent[]>([]);
+  const [history, setHistory] = useState<OverlayEvent[]>([]);
+  const [stats, setStats] = useState<PublicStats | null>(null);
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
@@ -26,7 +29,7 @@ export function OverlayRuntime({ token, type, initialSettings }: { token: string
     const connect = () => {
       ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?overlay=${encodeURIComponent(token)}`);
       ws.onmessage = (message) => {
-        let parsed: (Partial<SignalKitEvent> & { type?: string; settings?: AnySettings }) | null = null;
+        let parsed: (Partial<SignalKitEvent> & { type?: string; settings?: AnySettings; stats?: PublicStats; history?: SignalKitEvent[] }) | null = null;
         try {
           parsed = JSON.parse(String(message.data));
         } catch {
@@ -43,8 +46,20 @@ export function OverlayRuntime({ token, type, initialSettings }: { token: string
           setSettings(parsed.settings);
           return;
         }
+        // On connect: current goal/label stats and recent events (lists show them; alerts don't replay them).
+        if (parsed.type === "signal_kit.overlay.init") {
+          if (parsed.stats) {
+            setStats(parsed.stats);
+          }
+          setHistory(Array.isArray(parsed.history) ? parsed.history : []);
+          return;
+        }
+        if (parsed.type === "signal_kit.overlay.stats" && parsed.stats) {
+          setStats(parsed.stats);
+          return;
+        }
         if (parsed.v === 2 && parsed.id && parsed.kind) {
-          const event = parsed as SignalKitEvent;
+          const event: OverlayEvent = { ...(parsed as SignalKitEvent), seenAt: Date.now() };
           setEvents((current) => (current.some((existing) => existing.id === event.id) ? current : [...current, event].slice(-MAX_EVENTS)));
         }
       };
@@ -76,5 +91,5 @@ export function OverlayRuntime({ token, type, initialSettings }: { token: string
       </p>
     );
   }
-  return <OverlayRenderer type={type} settings={settings} events={events} />;
+  return <OverlayRenderer type={type} settings={settings} events={events} history={history} stats={stats} overlayId={overlayId} />;
 }

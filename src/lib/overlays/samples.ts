@@ -6,12 +6,13 @@ import type { EventKind, EventPlatform, MessagePart, SignalKitEvent } from "@/li
  * `test: true`; overlays show it like a real event, apps can ignore it.
  */
 
-export type SampleKind = "follow" | "subscription" | "subscription.gift" | "tip" | "raid" | "redemption" | "chat.message";
+export type SampleKind = "follow" | "subscription" | "subscription.gift" | "cheer" | "tip" | "raid" | "redemption" | "chat.message";
 
 export const SAMPLE_BUTTONS: { kind: SampleKind; label: string }[] = [
   { kind: "follow", label: "Follow" },
   { kind: "subscription", label: "Sub" },
   { kind: "subscription.gift", label: "Gift subs" },
+  { kind: "cheer", label: "Cheer" },
   { kind: "tip", label: "Tip" },
   { kind: "raid", label: "Raid" },
   { kind: "redemption", label: "Redemption" },
@@ -56,6 +57,9 @@ const CHAT: { text: string; parts?: MessagePart[] }[] = [
   { text: "OMEGALUL that jump", parts: [sevenTv("OMEGALUL", "01GDR51Q1R0006171NHFCC48HX"), t(" that jump")] },
   { text: "the new overlay looks so clean Kappa", parts: [t("the new overlay looks so clean "), twitchEmote("Kappa", "25")] },
   { text: "hello from Lisbon 👋" },
+  { text: "Kappa Kappa Kappa", parts: [twitchEmote("Kappa", "25"), t(" "), twitchEmote("Kappa", "25"), t(" "), twitchEmote("Kappa", "25")] },
+  { text: "LUL LUL", parts: [twitchEmote("LUL", "425618"), t(" "), twitchEmote("LUL", "425618")] },
+  { text: "🔥🔥🔥 lets go" },
 ];
 
 const TIP_MESSAGES = ["Take my money.", "For the coffee fund ☕", "Love the stream!", null];
@@ -66,12 +70,14 @@ const pick = <T,>(items: T[], seed: number) => items[seed % items.length];
 export function sampleEvent(kind: SampleKind, seed = Math.floor(Math.random() * 1000)): SignalKitEvent & { test: true } {
   const person = pick(PEOPLE, seed);
   // Platforms differ in what they support: a raid is a Twitch thing, Super Chats are YouTube.
-  const platform: EventPlatform = kind === "raid" || kind === "redemption" ? "twitch" : person.platform;
+  // Cheers (Bits) are Twitch; money tips come from YouTube Super Chats and X.
+  const platform: EventPlatform =
+    kind === "raid" || kind === "redemption" || kind === "cheer" ? "twitch" : kind === "tip" && person.platform === "twitch" ? "youtube" : person.platform;
   const now = new Date().toISOString();
   const base = {
     v: 2 as const,
     id: `test_${Date.now().toString(36)}_${(counter++).toString(36)}`,
-    kind: kind as EventKind,
+    kind: (kind === "cheer" ? "tip" : kind) as EventKind,
     platform,
     channel: { connectionId: "test", id: "test", name: "You" },
     actor: {
@@ -98,21 +104,20 @@ export function sampleEvent(kind: SampleKind, seed = Math.floor(Math.random() * 
     case "subscription.gift":
       base.data = { count: 5, tier: 1 };
       break;
+    case "cheer":
+      base.amount = { value: 500, currency: "BITS", display: "500 bits" };
+      base.data = { source: "cheer" };
+      base.message = "Cheer500 Love the stream!";
+      (base as { messageParts?: MessagePart[] }).messageParts = [
+        { type: "cheer", name: "Cheer500", bits: 500, url: "https://d3aqoihi2n8ty8.cloudfront.net/actions/cheer/dark/animated/100/3.gif", color: "#9c3ee8" },
+        t(" Love the stream!"),
+      ];
+      break;
     case "tip": {
-      const message = pick(TIP_MESSAGES, seed);
-      base.message = message;
-      if (platform === "twitch") {
-        base.amount = { value: 500, currency: "BITS", display: "500 bits" };
-        base.data = { source: "cheer" };
-        base.message = "Cheer500 Love the stream!";
-        (base as { messageParts?: MessagePart[] }).messageParts = [
-          { type: "cheer", name: "Cheer500", bits: 500, url: "https://d3aqoihi2n8ty8.cloudfront.net/actions/cheer/dark/animated/100/3.gif", color: "#9c3ee8" },
-          t(" Love the stream!"),
-        ];
-      } else {
-        base.amount = { value: 20, currency: "USD", display: "$20.00" };
-        base.data = { source: platform === "youtube" ? "super_chat" : "tip" };
-      }
+      base.message = pick(TIP_MESSAGES, seed);
+      const value = pick([5, 20, 50], seed);
+      base.amount = { value, currency: "USD", display: `$${value.toFixed(2)}` };
+      base.data = { source: platform === "youtube" ? "super_chat" : "tip" };
       break;
     }
     case "raid":

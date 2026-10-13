@@ -6,33 +6,32 @@ import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
 import { buttonClass } from "@/components/dashboard/ui";
 import type { SignalKitEvent } from "@/lib/events/types";
 import {
-  ALERT_KIND_LABEL,
-  ALERT_KINDS,
   FONTS,
   fontStack,
   googleFontsUrl,
   overlayTypeInfo,
-  STYLE_PRESETS,
-  TEMPLATE_VARIABLES,
+  presetFor,
+  TEXT_SHADOWS,
   type AlertKind,
   type AlertSettings,
   type AnySettings,
-  type ChatSettings,
-  type EventListSettings,
   type OverlayStyle,
   type OverlayType,
   type PlatformFilter,
 } from "@/lib/overlays/settings";
+import type { PublicStats } from "@/lib/overlays/stats-core";
 import { SAMPLE_BUTTONS, sampleEvent, type SampleKind } from "@/lib/overlays/samples";
 import type { OverlayView } from "@/lib/overlays/store";
-import { ColorField, Field, Group, PositionGrid, Segmented, SelectField, Slider, TemplateField, TextField, Toggle } from "./controls";
+import { ColorField, Field, Group, Segmented, SelectField, Slider, Toggle } from "./controls";
 import { PreviewStage, type StageBackground } from "./PreviewStage";
 import { SetupPanel } from "./SetupPanel";
+import { TypeSettings } from "./TypeSettings";
 
 type Overlay = OverlayView & { live: boolean };
 type SaveState = "saved" | "saving" | "error";
 
 const STYLE_OPTIONS = [
+  { value: "classic" as const, label: "Classic" },
   { value: "signal" as const, label: "Signal" },
   { value: "clean" as const, label: "Clean" },
   { value: "bold" as const, label: "Bold" },
@@ -46,12 +45,13 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
   const [name, setName] = useState(initial.name);
   const [save, setSave] = useState<SaveState>("saved");
   const [events, setEvents] = useState<SignalKitEvent[]>([]);
+  const [stats, setStats] = useState<PublicStats | null>(null);
   // Sample events use random ids and times, so create them in the browser only (not during SSR).
   useEffect(() => {
     const seed = setTimeout(() => setEvents(seedEvents(initial.type)), 0);
     return () => clearTimeout(seed);
   }, [initial.type]);
-  const [demo, setDemo] = useState(initial.type !== "alerts");
+  const [demo, setDemo] = useState(initial.type !== "alerts" && initial.type !== "goal" && initial.type !== "label");
   const [background, setBackground] = useState<StageBackground>("gameplay");
   const [setupOpen, setSetupOpen] = useState(openSetup);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -84,15 +84,24 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
   };
 
   // Keep "live in OBS" fresh.
+  // Keep "live in OBS" and the goal/label stats fresh.
   useEffect(() => {
-    const poll = setInterval(async () => {
+    const refresh = async () => {
       const response = await fetch(`/api/overlays/${overlay.id}`).catch(() => null);
       if (response?.ok) {
-        const json = (await response.json()) as { overlay: Overlay };
+        const json = (await response.json()) as { overlay: Overlay; stats?: PublicStats };
         setOverlay((current) => ({ ...current, live: json.overlay.live, lastSeenAt: json.overlay.lastSeenAt, url: json.overlay.url }));
+        if (json.stats) {
+          setStats(json.stats);
+        }
       }
-    }, 4000);
-    return () => clearInterval(poll);
+    };
+    const first = setTimeout(() => void refresh(), 0);
+    const poll = setInterval(() => void refresh(), 4000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(poll);
+    };
   }, [overlay.id]);
 
   const sendSample = useCallback(
@@ -116,13 +125,8 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
       return;
     }
     let tick = 0;
-    const kinds: SampleKind[] =
-      overlay.type === "chat"
-        ? ["chat.message", "chat.message", "chat.message", "tip", "chat.message", "chat.message", "subscription"]
-        : overlay.type === "alerts"
-          ? ["follow", "tip", "subscription", "follow", "raid", "subscription.gift", "redemption"]
-          : ["follow", "tip", "subscription", "raid"];
-    const every = overlay.type === "chat" ? 1600 : overlay.type === "alerts" ? Math.max(3500, durationSec * 1000 + 1300) : 2600;
+    const kinds = DEMO_KINDS[overlay.type];
+    const every = overlay.type === "chat" ? 1600 : overlay.type === "emotewall" ? 700 : overlay.type === "alerts" ? Math.max(3500, durationSec * 1000 + 1300) : 2600;
     const timer = setInterval(() => {
       tick += 1;
       sendSample(kinds[tick % kinds.length], false);
@@ -130,10 +134,7 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
     return () => clearInterval(timer);
   }, [demo, overlay.type, sendSample, durationSec]);
 
-  const buttons =
-    overlay.type === "chat"
-      ? SAMPLE_BUTTONS.filter((button) => ["chat.message", "tip", "subscription"].includes(button.kind))
-      : SAMPLE_BUTTONS.filter((button) => button.kind !== "chat.message");
+  const buttons = SAMPLE_BUTTONS.filter((button) => TEST_KINDS[overlay.type].includes(button.kind));
   const info = overlayTypeInfo(overlay.type);
 
   return (
@@ -172,11 +173,13 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
 
       <div className="flex min-h-0 flex-1">
         <aside className="w-90 shrink-0 overflow-y-auto border-r border-(--line) bg-(--surface-panel) px-5 py-5">
-          <LookSettings settings={settings} update={update} />
-          <TypeSettings type={overlay.type} settings={settings} update={update} />
-          <Group title="Platforms">
-            <PlatformToggles value={settings.platforms} onChange={(platforms) => update({ ...settings, platforms } as AnySettings)} />
-          </Group>
+          <LookSettings type={overlay.type} settings={settings} update={update} />
+          <TypeSettings type={overlay.type} settings={settings} update={update} overlayId={overlay.id} />
+          {"platforms" in settings ? (
+            <Group title="Platforms">
+              <PlatformToggles value={settings.platforms} onChange={(platforms) => update({ ...settings, platforms } as AnySettings)} />
+            </Group>
+          ) : null}
           <Group title="Advanced">
             <Field label="Custom CSS" hint="Applied last">
               <textarea
@@ -212,18 +215,18 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
                 />
               </div>
             </div>
-            <PreviewStage type={overlay.type} settings={settings} events={events} background={background} />
+            <PreviewStage type={overlay.type} settings={settings} events={events} stats={stats} overlayId={overlay.id} background={background} />
             <div className="flex flex-wrap items-center gap-2">
               <span className="mr-1 text-xs text-(--text-3)">Send test</span>
               {buttons.map((button) => {
-                const off = overlay.type === "alerts" && !(settings as AlertSettings).templates[button.kind as AlertKind]?.enabled;
+                const off = overlay.type === "alerts" && button.kind !== "chat.message" && !(settings as AlertSettings).templates[button.kind as AlertKind]?.enabled;
                 return (
                   <button key={button.kind} type="button" disabled={off} className={`${buttonClass("control")} disabled:opacity-50`} onClick={() => sendSample(button.kind, overlay.live)}>
                     {button.label}
                   </button>
                 );
               })}
-              {overlay.type !== "alerts" ? (
+              {overlay.type === "chat" || overlay.type === "events" || overlay.type === "ticker" ? (
                 <button type="button" className={buttonClass("quiet")} onClick={() => setEvents([])}>
                   Clear
                 </button>
@@ -247,7 +250,7 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
           overlay={overlay}
           onClose={() => setSetupOpen(false)}
           onReset={(next) => setOverlay(next)}
-          onTest={() => sendSample(overlay.type === "chat" ? "chat.message" : "follow", true)}
+          onTest={() => sendSample(overlay.type === "chat" || overlay.type === "emotewall" ? "chat.message" : "follow", true)}
         />
       ) : null}
     </>
@@ -255,191 +258,73 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
 }
 
 const CSS_PLACEHOLDER: Record<OverlayType, string> = {
-  alerts: ".sko-alert-title { text-transform: uppercase; }\n.sko-alert { border: 2px solid #fff; }",
+  alerts: ".sko-classic-title { text-transform: uppercase; }\n.sko-hl { color: gold; }",
   chat: ".sko-chat-line { margin-left: 1em; }\n.sko-chat-name { text-decoration: underline; }",
   events: ".sko-list-item { border-radius: 0; }",
+  goal: ".sko-goal-bar { border: 2px solid #fff; }",
+  label: ".sko-label-text { letter-spacing: 0.05em; }",
+  emotewall: ".sko-sprite { filter: drop-shadow(0 4px 8px #000); }",
+  ticker: ".sko-ticker-title { background: crimson; }",
 };
 
-function LookSettings({ settings, update }: { settings: AnySettings; update: (next: AnySettings) => void }) {
+/** Test buttons each overlay type offers, and what the auto demo cycles through. */
+const TEST_KINDS: Record<OverlayType, SampleKind[]> = {
+  alerts: ["follow", "subscription", "subscription.gift", "cheer", "tip", "raid", "redemption"],
+  chat: ["chat.message", "cheer", "tip", "subscription"],
+  events: ["follow", "subscription", "subscription.gift", "cheer", "tip", "raid", "redemption"],
+  goal: ["follow", "subscription", "subscription.gift", "cheer", "tip", "raid"],
+  label: ["follow", "subscription", "subscription.gift", "cheer", "tip", "raid"],
+  emotewall: ["chat.message", "subscription", "cheer", "raid"],
+  ticker: ["follow", "subscription", "subscription.gift", "cheer", "tip", "raid"],
+};
+const DEMO_KINDS: Record<OverlayType, SampleKind[]> = {
+  alerts: ["follow", "cheer", "subscription", "tip", "raid", "subscription.gift", "redemption"],
+  chat: ["chat.message", "chat.message", "chat.message", "cheer", "chat.message", "chat.message", "subscription"],
+  events: ["follow", "cheer", "subscription", "tip", "raid"],
+  goal: ["follow", "subscription", "cheer", "tip"],
+  label: ["follow", "subscription", "cheer", "tip"],
+  emotewall: ["chat.message", "chat.message", "chat.message", "chat.message", "chat.message", "chat.message", "chat.message", "chat.message", "subscription"],
+  ticker: ["follow", "cheer", "subscription", "tip", "raid"],
+};
+
+const WEIGHTS = [400, 500, 600, 700, 800, 900];
+
+function LookSettings({ type, settings, update }: { type: OverlayType; settings: AnySettings; update: (next: AnySettings) => void }) {
   return (
     <Group title="Look">
-      <Field label="Style" hint="Sets colours you can change below">
-        <Segmented value={settings.style} options={STYLE_OPTIONS} onChange={(style: OverlayStyle) => update({ ...settings, style, ...STYLE_PRESETS[style] })} />
+      <Field label="Style" hint="Sets colours and type you can change below">
+        <Segmented value={settings.style} options={STYLE_OPTIONS} onChange={(style: OverlayStyle) => update({ ...settings, style, ...presetFor(style, type) })} />
       </Field>
-      <Field label="Font">
-        <SelectField value={settings.font} options={FONTS.map((font) => ({ value: font.id, label: font.name }))} fontFor={fontStack} onChange={(font) => update({ ...settings, font })} />
-      </Field>
+      <div className="grid grid-cols-[1fr_88px] gap-2">
+        <Field label="Font">
+          <SelectField value={settings.font} options={FONTS.map((font) => ({ value: font.id, label: font.name }))} fontFor={fontStack} onChange={(font) => update({ ...settings, font })} />
+        </Field>
+        <Field label="Weight">
+          <SelectField
+            value={String(settings.fontWeight)}
+            options={WEIGHTS.map((weight) => ({ value: String(weight), label: String(weight) }))}
+            onChange={(weight) => update({ ...settings, fontWeight: Number(weight) })}
+          />
+        </Field>
+      </div>
       <div className="flex flex-col gap-2.5">
         <ColorField label="Text" value={settings.textColor} onChange={(textColor) => update({ ...settings, textColor })} />
-        <ColorField label="Accent" value={settings.accentColor} onChange={(accentColor) => update({ ...settings, accentColor })} />
-        <ColorField label="Panel" value={settings.panelColor} onChange={(panelColor) => update({ ...settings, panelColor })} />
+        <ColorField label="Highlight" value={settings.accentColor} onChange={(accentColor) => update({ ...settings, accentColor })} />
+        <ColorField label="Background" value={settings.panelColor} onChange={(panelColor) => update({ ...settings, panelColor })} />
       </div>
-      <Field label="Panel opacity">
+      <Field label="Background opacity">
         <Slider value={settings.panelOpacity} min={0} max={1} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(panelOpacity) => update({ ...settings, panelOpacity })} />
       </Field>
       <Field label="Corner radius">
         <Slider value={settings.radius} min={0} max={40} step={1} format={(v) => `${v}px`} onChange={(radius) => update({ ...settings, radius })} />
       </Field>
-      <Field label="Size">
-        <Slider value={settings.scale} min={0.6} max={2} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(scale) => update({ ...settings, scale })} />
+      <Field label="Text shadow">
+        <Segmented value={settings.textShadow} options={TEXT_SHADOWS.map(([value, label]) => ({ value, label }))} onChange={(textShadow) => update({ ...settings, textShadow })} />
+      </Field>
+      <Field label="Overall size">
+        <Slider value={settings.scale} min={0.5} max={2.5} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(scale) => update({ ...settings, scale })} />
       </Field>
     </Group>
-  );
-}
-
-function TypeSettings({ type, settings, update }: { type: OverlayType; settings: AnySettings; update: (next: AnySettings) => void }) {
-  if (type === "alerts") {
-    return <AlertTypeSettings settings={settings as AlertSettings} update={update} />;
-  }
-  if (type === "chat") {
-    const s = settings as ChatSettings;
-    return (
-      <>
-        <Group title="Messages">
-          <Field label="Newest at">
-            <Segmented
-              value={s.newestAt}
-              options={[
-                { value: "bottom", label: "Bottom" },
-                { value: "top", label: "Top" },
-              ]}
-              onChange={(newestAt) => update({ ...s, newestAt })}
-            />
-          </Field>
-          <Field label="Most on screen">
-            <Slider value={s.maxMessages} min={5} max={40} step={1} format={(v) => `${v}`} onChange={(maxMessages) => update({ ...s, maxMessages })} />
-          </Field>
-          <Field label="Hide each message after">
-            <Slider value={s.lifetimeSec} min={0} max={120} step={5} format={(v) => (v === 0 ? "Never" : `${v}s`)} onChange={(lifetimeSec) => update({ ...s, lifetimeSec })} />
-          </Field>
-        </Group>
-        <Group title="Show">
-          <Toggle label="Tips, cheers and Super Chats (highlighted)" checked={s.showTips} onChange={(showTips) => update({ ...s, showTips })} />
-          <Toggle label="Subs and gift subs (highlighted)" checked={s.showSubs} onChange={(showSubs) => update({ ...s, showSubs })} />
-          <Toggle label="Hide !commands" checked={s.hideCommands} onChange={(hideCommands) => update({ ...s, hideCommands })} />
-          <Toggle label="Hide bots (Nightbot, StreamElements…)" checked={s.hideBots} onChange={(hideBots) => update({ ...s, hideBots })} />
-        </Group>
-        <Group title="Details">
-          <Toggle label="Avatars" checked={s.showAvatars} onChange={(showAvatars) => update({ ...s, showAvatars })} />
-          <Toggle label="Platform logos" checked={s.showPlatform} onChange={(showPlatform) => update({ ...s, showPlatform })} />
-          <Toggle label="Badges (mod, sub, member, verified)" checked={s.showBadges} onChange={(showBadges) => update({ ...s, showBadges })} />
-          <Field label="Name colour">
-            <Segmented
-              value={s.nameColor}
-              options={[
-                { value: "viewer", label: "Viewer's own" },
-                { value: "accent", label: "Accent" },
-              ]}
-              onChange={(nameColor) => update({ ...s, nameColor })}
-            />
-          </Field>
-        </Group>
-        <Group title="Blocked words">
-          <Field label="Hide messages containing" hint="Comma-separated">
-            <TextField value={s.blockedWords} onChange={(blockedWords) => update({ ...s, blockedWords })} placeholder="spoiler, link" maxLength={2000} />
-          </Field>
-        </Group>
-      </>
-    );
-  }
-  const s = settings as EventListSettings;
-  return (
-    <Group title="Events">
-      <KindToggles value={s.kinds} onChange={(kinds) => update({ ...s, kinds })} />
-      <Toggle label="Avatars" checked={s.showAvatars} onChange={(showAvatars) => update({ ...s, showAvatars })} />
-      <Field label="Show up to">
-        <Slider value={s.maxItems} min={1} max={12} step={1} format={(v) => `${v}`} onChange={(maxItems) => update({ ...s, maxItems })} />
-      </Field>
-    </Group>
-  );
-}
-
-function AlertTypeSettings({ settings: s, update }: { settings: AlertSettings; update: (next: AnySettings) => void }) {
-  const [kind, setKind] = useState<AlertKind>("follow");
-  const template = s.templates[kind];
-  const setTemplate = (patch: Partial<typeof template>) => update({ ...s, templates: { ...s.templates, [kind]: { ...template, ...patch } } });
-  const enabledCount = ALERT_KINDS.filter((k) => s.templates[k].enabled).length;
-  return (
-    <>
-      <Group title={`Events · ${enabledCount} of ${ALERT_KINDS.length}`}>
-        <div className="flex flex-col gap-2.5">
-          {ALERT_KINDS.map((k) => (
-            <Toggle key={k} label={ALERT_KIND_LABEL[k]} checked={s.templates[k].enabled} onChange={(enabled) => update({ ...s, templates: { ...s.templates, [k]: { ...s.templates[k], enabled } } })} />
-          ))}
-        </div>
-        <Field label="Minimum tip" hint="In the tip's own units ($, Bits)">
-          <Slider value={s.minTip} min={0} max={100} step={1} format={(v) => (v === 0 ? "Any" : String(v))} onChange={(minTip) => update({ ...s, minTip })} />
-        </Field>
-        <Field label="Minimum raid">
-          <Slider value={s.minRaid} min={0} max={100} step={1} format={(v) => (v === 0 ? "Any" : `${v} viewers`)} onChange={(minRaid) => update({ ...s, minRaid })} />
-        </Field>
-      </Group>
-      <Group title="Text & media">
-        <Field label="Edit alert">
-          <SelectField value={kind} options={ALERT_KINDS.map((k) => ({ value: k, label: ALERT_KIND_LABEL[k] }))} onChange={setKind} />
-        </Field>
-        <Field label="Label">
-          <TextField value={template.label} onChange={(label) => setTemplate({ label })} />
-        </Field>
-        <Field label="Headline">
-          <TemplateField value={template.title} onChange={(title) => setTemplate({ title })} variables={TEMPLATE_VARIABLES} />
-        </Field>
-        <Field label="Image or GIF" hint="HTTPS URL">
-          <TextField value={template.image} onChange={(image) => setTemplate({ image: image.trim() })} placeholder="https://…/alert.gif" maxLength={2048} mono />
-        </Field>
-        <Field label="Sound" hint="HTTPS URL to an MP3, OGG or WAV">
-          <TextField value={template.sound} onChange={(sound) => setTemplate({ sound: sound.trim() })} placeholder="Default chime" maxLength={2048} mono />
-        </Field>
-        <Toggle label="Show the viewer's message" checked={s.showMessage} onChange={(showMessage) => update({ ...s, showMessage })} />
-        <Field label="Hide messages containing" hint="Comma-separated">
-          <TextField value={s.blockedWords} onChange={(blockedWords) => update({ ...s, blockedWords })} placeholder="spoiler, link" maxLength={2000} />
-        </Field>
-      </Group>
-      <Group title="Layout & motion">
-        <div className="flex items-start gap-5">
-          <Field label="Position">
-            <PositionGrid value={s.position} onChange={(position) => update({ ...s, position })} />
-          </Field>
-          <div className="flex flex-1 flex-col gap-4">
-            <Field label="Animation">
-              <SelectField
-                value={s.animation}
-                options={[
-                  { value: "slide", label: "Drop in" },
-                  { value: "fade", label: "Fade" },
-                  { value: "pop", label: "Pop" },
-                  { value: "none", label: "None" },
-                ]}
-                onChange={(animation) => update({ ...s, animation })}
-              />
-            </Field>
-          </div>
-        </div>
-        <Field label="Show each alert for">
-          <Slider value={s.durationSec} min={2} max={20} step={1} format={(v) => `${v}s`} onChange={(durationSec) => update({ ...s, durationSec })} />
-        </Field>
-        <Toggle label="Avatars" checked={s.showAvatar} onChange={(showAvatar) => update({ ...s, showAvatar })} />
-      </Group>
-      <Group title="Sound">
-        <Toggle label="Play sounds" checked={s.sound} onChange={(sound) => update({ ...s, sound })} />
-        {s.sound ? (
-          <Field label="Volume" hint="Your sound URL, or a chime">
-            <Slider value={s.volume} min={0} max={1} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(volume) => update({ ...s, volume })} />
-          </Field>
-        ) : null}
-        <p className="text-xs leading-[18px] text-(--text-3)">In OBS, tick “Control audio via OBS” to mix alert sounds with your other sources.</p>
-      </Group>
-    </>
-  );
-}
-
-function KindToggles({ value, onChange }: { value: EventListSettings["kinds"]; onChange: (value: EventListSettings["kinds"]) => void }) {
-  return (
-    <div className="flex flex-col gap-2.5">
-      {ALERT_KINDS.map((kind) => (
-        <Toggle key={kind} label={ALERT_KIND_LABEL[kind]} checked={value[kind]} onChange={(checked) => onChange({ ...value, [kind]: checked })} />
-      ))}
-    </div>
   );
 }
 
@@ -471,8 +356,8 @@ function seedEvents(type: OverlayType): SignalKitEvent[] {
   if (type === "chat") {
     return [1, 2, 3, 4, 5].map((seed) => sampleEvent("chat.message", seed));
   }
-  if (type === "events") {
-    return (["follow", "subscription", "tip", "raid"] as SampleKind[]).map((kind, index) => sampleEvent(kind, index + 1));
+  if (type === "events" || type === "ticker") {
+    return (["follow", "subscription", "cheer", "tip", "raid"] as SampleKind[]).map((kind, index) => sampleEvent(kind, index + 1));
   }
   return [];
 }

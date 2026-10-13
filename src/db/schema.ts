@@ -9,6 +9,7 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
+import type { OverlayType } from "@/lib/overlays/settings";
 
 // Better Auth core tables (generated with `auth generate`, then adjusted):
 // - no foreign keys, because PlanetScale rejects them; ownership is enforced in code
@@ -239,7 +240,7 @@ export const overlays = mysqlTable(
   {
     id: varchar("id", { length: 36 }).primaryKey(),
     userId: varchar("user_id", { length: 36 }).notNull(),
-    type: varchar("type", { length: 16 }).$type<"alerts" | "chat" | "events">().notNull(),
+    type: varchar("type", { length: 16 }).$type<OverlayType>().notNull(),
     name: varchar("name", { length: 80 }).notNull(),
     settings: json("settings").$type<Record<string, unknown>>().notNull(),
     tokenHash: varchar("token_hash", { length: 64 }).notNull(),
@@ -255,3 +256,16 @@ export const overlays = mysqlTable(
   },
   (table) => [uniqueIndex("overlays_token_hash_idx").on(table.tokenHash), index("overlays_user_id_idx").on(table.userId)],
 );
+
+/**
+ * Running tallies per user for goal bars and labels: latest follower/sub/tip…, counters, and
+ * top tips. "session" resets when a stream goes live; "total" counts since tracking began.
+ */
+export const streamStats = mysqlTable("stream_stats", {
+  userId: varchar("user_id", { length: 36 }).primaryKey(),
+  state: json("state").$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});

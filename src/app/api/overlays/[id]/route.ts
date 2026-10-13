@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getStats } from "@/lib/overlays/stats";
+import { publicStats } from "@/lib/overlays/stats-core";
 import { deleteOverlay, getOverlay, toView, updateOverlay } from "@/lib/overlays/store";
 import { requireUser } from "@/lib/session";
 import { relayHub } from "@/lib/ws/relay";
@@ -14,7 +16,9 @@ export async function GET(request: Request, { params }: Params) {
   if (!row) {
     return NextResponse.json({ error: "Overlay not found." }, { status: 404 });
   }
-  return NextResponse.json({ overlay: { ...(await toView(row)), live: relayHub.overlayClients(row.id).length > 0 } });
+  // Stats let the customizer preview goals and labels with real numbers.
+  const stats = publicStats(await getStats(user.id));
+  return NextResponse.json({ overlay: { ...(await toView(row)), live: relayHub.overlayClients(row.id).length > 0 }, stats });
 }
 
 export async function PATCH(request: Request, { params }: Params) {

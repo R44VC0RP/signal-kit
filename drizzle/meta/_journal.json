@@ -50,6 +50,13 @@
       "when": 1791921787951,
       "tag": "0006_overlay_tested",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1791922755719,
+      "tag": "0007_stream_stats",
+      "breakpoints": true
     }
   ]
 }
