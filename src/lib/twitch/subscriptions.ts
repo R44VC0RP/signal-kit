@@ -6,7 +6,7 @@ import { stableJsonHash } from "@/lib/crypto";
 import { eventCatalogForUser } from "./event-catalog";
 
 /** Writes the EventSub subscriptions a Twitch broadcaster connection should have, based on its scopes. */
-export async function syncDesiredSubscriptionsForConnection(connectionId: string) {
+export async function syncDesiredSubscriptionsForConnection(connectionId: string, options: { resetRevoked?: boolean } = {}) {
   const db = getDb();
   const [connection] = await db.select().from(connections).where(eq(connections.id, connectionId)).limit(1);
   if (!connection || connection.platform !== "twitch") {
@@ -37,7 +37,10 @@ export async function syncDesiredSubscriptionsForConnection(connectionId: string
       .onDuplicateKeyUpdate({
         set: {
           requiredScopes: item.requiredScopes,
-          status: sql`if(${platformSubscriptions.status} = 'failed', 'desired', ${platformSubscriptions.status})`,
+          // Failed rows are always retried; revoked ones only after the streamer reconnects.
+          status: options.resetRevoked
+            ? sql`if(${platformSubscriptions.status} in ('failed', 'revoked'), 'desired', ${platformSubscriptions.status})`
+            : sql`if(${platformSubscriptions.status} = 'failed', 'desired', ${platformSubscriptions.status})`,
           error: null,
         },
       });

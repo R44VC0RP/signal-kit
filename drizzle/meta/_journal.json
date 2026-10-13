@@ -29,6 +29,13 @@
       "when": 1791901829193,
       "tag": "0003_better_auth_connections",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1791908182483,
+      "tag": "0004_events_and_settings",
+      "breakpoints": true
     }
   ]
 }

@@ -1,13 +1,10 @@
 import WebSocket from "ws";
 
-export type RelayPayload = {
-  type: string;
-  provider?: string;
-  account?: unknown;
-  subscription?: unknown;
-  event?: unknown;
-  receivedAt: string;
-};
+/** Anything sent to clients: a SignalKitEvent, or a `signal_kit.*` control message. */
+export type RelayPayload = { type: string } & Record<string, unknown>;
+
+/** A client this far behind is disconnected rather than buffered without limit. */
+const MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
 
 type RelayClient = {
   id: string;
@@ -42,10 +39,16 @@ class RelayHub {
 
     let delivered = 0;
     for (const client of userClients.values()) {
-      if (client.ws.readyState === WebSocket.OPEN) {
-        client.ws.send(message);
-        delivered += 1;
+      if (client.ws.readyState !== WebSocket.OPEN) {
+        continue;
       }
+      if (client.ws.bufferedAmount > MAX_BUFFERED_BYTES) {
+        // It can reconnect with `since` and replay from the event log.
+        client.ws.close(1013, "Client too slow; reconnect with since");
+        continue;
+      }
+      client.ws.send(message);
+      delivered += 1;
     }
     return delivered;
   }

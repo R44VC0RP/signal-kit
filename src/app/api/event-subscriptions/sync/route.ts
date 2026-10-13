@@ -13,11 +13,8 @@ export async function POST(request: Request) {
   if (!connection) {
     return NextResponse.json({ error: "Connect Twitch before syncing EventSub subscriptions." }, { status: 400 });
   }
-  if (connection.status !== "active") {
-    return NextResponse.json({ error: "Reconnect Twitch before syncing EventSub subscriptions." }, { status: 409 });
-  }
 
-  const result = await syncDesiredSubscriptionsForConnection(connection.id);
-  await eventSubManager.ensureConnection(connection.id, connection.platformUserId, connection.userId);
+  const result = await syncDesiredSubscriptionsForConnection(connection.id, { resetRevoked: true });
+  eventSubManager.reconcileSoon();
   return NextResponse.json(result);
 }

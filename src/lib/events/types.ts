@@ -1,0 +1,82 @@
+/**
+ * The normalized event format every Signal Kit client receives.
+ * Kept dependency-free so the SDK (packages/client) can mirror it exactly.
+ */
+
+export type EventPlatform = "twitch" | "youtube" | "x";
+
+export type EventKind =
+  | "chat.message"
+  | "chat.message.deleted"
+  | "chat.notification"
+  | "chat.settings"
+  | "follow"
+  | "subscription"
+  | "subscription.gift"
+  | "subscription.end"
+  | "tip"
+  | "raid"
+  | "redemption"
+  | "hype_train"
+  | "poll"
+  | "prediction"
+  | "goal"
+  | "charity"
+  | "shoutout"
+  | "ad_break"
+  | "moderation"
+  | "stream.online"
+  | "stream.offline"
+  | "stream.update"
+  | "other";
+
+export type EventActor = {
+  /** The platform's id for the person (Twitch user id, YouTube channel id, X user id). */
+  id: string | null;
+  /** Display name as shown on the platform. */
+  name: string;
+  /** Login / handle when the platform has one. */
+  login?: string;
+  avatarUrl?: string;
+  /** Platform roles or badges, e.g. "moderator", "subscriber", "member", "owner", "verified". */
+  badges?: string[];
+};
+
+export type EventAmount = {
+  /** Numeric value in `currency` units (Bits count for Twitch cheers). */
+  value: number;
+  /** ISO currency code, or "BITS" for Twitch Bits. */
+  currency: string;
+  /** Human-readable amount, e.g. "$20.00" or "500 bits". */
+  display: string;
+};
+
+export type SignalKitEvent = {
+  /** Version of this envelope format. */
+  v: 2;
+  /** Sortable, unique id. Pass the last one you saw as `since` to replay what you missed. */
+  id: string;
+  kind: EventKind;
+  platform: EventPlatform;
+  /** Which connected account this came from. */
+  channel: { connectionId: string; id: string; name: string };
+  actor: EventActor | null;
+  /** Free text attached to the event (chat text, cheer message, Super Chat comment…). */
+  message: string | null;
+  /** Money-like value for tips, Bits, Super Chats and charity donations. */
+  amount: EventAmount | null;
+  /** Kind-specific details (tier, months, viewers, reward, level…). */
+  data: Record<string, unknown>;
+  occurredAt: string;
+  receivedAt: string;
+  /** The original platform payload, untouched. */
+  raw: { type: string; event: unknown };
+
+  // Compatibility with pre-v2 clients, which dispatched on the raw platform type.
+  /** @deprecated Use `kind`; this is the raw platform type (e.g. "channel.cheer"). */
+  type: string;
+  /** @deprecated Use `platform`. */
+  provider: EventPlatform;
+  /** @deprecated Use `raw.event`. */
+  event: unknown;
+};

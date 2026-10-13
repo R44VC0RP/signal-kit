@@ -3,6 +3,7 @@ import next from "next";
 import { parse } from "url";
 import { WebSocketServer } from "ws";
 import { startConnectionHealthChecks } from "@/lib/connections/health";
+import { startEventRetention } from "@/lib/events/ingest";
 import { randomToken } from "@/lib/crypto";
 import { eventSubManager } from "@/lib/twitch/eventsub-manager";
 import { getAppUrl } from "@/lib/app-url";
@@ -83,6 +84,7 @@ async function main() {
       eventSubManager.start();
       youtubeLiveManager.start();
       startConnectionHealthChecks();
+      startEventRetention();
     } else {
       console.warn("Signal Kit started without DATABASE_URL; EventSub manager is paused.");
     }

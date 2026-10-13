@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Platform } from "@/db/schema";
 import { describeEvent, type DescribedEvent, type EventCategory } from "@/lib/events/describe";
+import type { SignalKitEvent } from "@/lib/events/types";
 import { PlatformLogo, PLATFORM_NAME } from "./PlatformLogo";
 import { buttonClass, PageHeader } from "./ui";
 
@@ -45,7 +46,7 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
       setStatus("connecting");
       ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
       ws.onmessage = (message) => {
-        let parsed: { type?: string; provider?: string; event?: unknown; receivedAt?: string };
+        let parsed: Partial<SignalKitEvent> & { type?: string };
         try {
           parsed = JSON.parse(String(message.data));
         } catch {
@@ -59,7 +60,7 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
         if (!described) {
           return;
         }
-        const row: Row = { ...described, id: crypto.randomUUID(), time: parsed.receivedAt ?? new Date().toISOString() };
+        const row: Row = { ...described, id: parsed.id ?? crypto.randomUUID(), time: parsed.occurredAt ?? parsed.receivedAt ?? new Date().toISOString() };
         if (pausedRef.current) {
           buffer.current = [row, ...buffer.current].slice(0, MAX_ROWS);
         } else {

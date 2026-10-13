@@ -1,10 +1,3 @@
-export type TwitchSubscriptionRequest = {
-  type: string;
-  version: string;
-  condition: Record<string, string>;
-  sessionId: string;
-};
-
 export type TwitchChannelInformation = {
   broadcaster_id: string;
   broadcaster_login: string;
@@ -33,28 +26,6 @@ export function getTwitchClientId() {
     throw new Error("TWITCH_CLIENT_ID is required.");
   }
   return clientId;
-}
-
-export async function createEventSubSubscription(accessToken: string, request: TwitchSubscriptionRequest) {
-  return twitchFetch<{ data: Array<{ id: string; status: string; type: string; version: string }> }>(
-    `${TWITCH_API_BASE}/eventsub/subscriptions`,
-    {
-      method: "POST",
-      headers: {
-        ...twitchHeaders(accessToken),
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        type: request.type,
-        version: request.version,
-        condition: request.condition,
-        transport: {
-          method: "websocket",
-          session_id: request.sessionId,
-        },
-      }),
-    },
-  );
 }
 
 export async function getChannelInformation(accessToken: string, broadcasterId: string) {

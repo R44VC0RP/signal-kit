@@ -195,3 +195,36 @@ export const platformSubscriptions = mysqlTable(
     ),
   ],
 );
+
+/**
+ * Recent normalized events, kept briefly so a client that reconnects can catch up (`since`).
+ * `sourceId` is the platform's own message id and makes ingestion idempotent across retries.
+ */
+export const events = mysqlTable(
+  "events",
+  {
+    id: varchar("id", { length: 26 }).primaryKey(),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    connectionId: varchar("connection_id", { length: 36 }).notNull(),
+    platform: varchar("platform", { length: 16 }).$type<Platform>().notNull(),
+    kind: varchar("kind", { length: 48 }).notNull(),
+    sourceId: varchar("source_id", { length: 191 }).notNull(),
+    envelope: json("envelope").notNull(),
+    createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("events_user_id_idx").on(table.userId, table.id),
+    index("events_created_at_idx").on(table.createdAt),
+    uniqueIndex("events_source_idx").on(table.platform, table.sourceId),
+  ],
+);
+
+/** Per-environment key/value state (e.g. this deployment's Twitch conduit id). */
+export const appSettings = mysqlTable("app_settings", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
