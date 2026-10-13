@@ -71,7 +71,7 @@ export function PreviewStage({
           <div className="absolute inset-0 bg-[repeating-conic-gradient(#202020_0%_25%,#2b2b2b_0%_50%)] bg-[length:48px_48px]" />
         )}
         <div className="absolute" style={box}>
-          <OverlayRenderer type={type} settings={settings} events={events} stats={stats} overlayId={overlayId} tools={tools} stream={stream} credits={credits} />
+          <OverlayRenderer type={type} settings={settings} events={events} stats={stats} overlayId={overlayId} tools={tools} stream={stream} credits={credits} preview />
         </div>
         {type !== "alerts" && type !== "emotewall" && type !== "credits" ? <div className="pointer-events-none absolute rounded-[6px] outline-2 outline-white/10 outline-dashed" style={box} /> : null}
       </div>

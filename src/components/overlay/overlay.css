@@ -1619,3 +1619,101 @@
   flex-direction: column;
   gap: 0.6em;
 }
+
+/* Spin wheel */
+.sko-wheel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sko-wheel-disc {
+  width: min(100%, 100vh);
+  max-width: 600px;
+  filter: drop-shadow(0 0.6em 1.4em rgb(0 0 0 / 50%));
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.12, 0.6, 0.08, 1);
+}
+.sko-wheel-label {
+  fill: #fff;
+  font-family: var(--sko-font);
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: rgb(0 0 0 / 55%);
+  stroke-width: 3px;
+}
+.sko-wheel-hub {
+  fill: var(--sko-panel, #111);
+  stroke: #fff;
+  stroke-width: 6;
+}
+.sko-wheel-pointer {
+  position: absolute;
+  top: calc(50% - min(50%, 300px) - 0.2em);
+  left: 50%;
+  z-index: 1;
+  width: 0;
+  height: 0;
+  margin-left: -1.1em;
+  border-left: 1.1em solid transparent;
+  border-right: 1.1em solid transparent;
+  border-top: 2em solid #fff;
+  filter: drop-shadow(0 0.15em 0.2em rgb(0 0 0 / 60%));
+}
+.sko-wheel-result {
+  position: absolute;
+  bottom: 0.4em;
+  left: 50%;
+  translate: -50% 0;
+  max-width: 95%;
+  padding: 0.35em 0.9em;
+  font-size: 2em;
+  font-weight: var(--sko-weight);
+  text-align: center;
+  white-space: nowrap;
+  border-radius: var(--sko-radius);
+  background: rgb(0 0 0 / 70%);
+  color: var(--sko-accent);
+  animation-duration: 0.5s;
+}
+
+/* Stream boss */
+.sko-boss {
+  position: absolute;
+  inset: 0 0 auto;
+}
+.sko-boss-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+}
+.sko-boss-avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.6em;
+  height: 2.6em;
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--sko-bar);
+}
+.sko-boss-body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+.sko-boss-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-size: 1.05em;
+}
+.sko-boss-hit {
+  font-size: 0.7em;
+  color: var(--sko-bar);
+  animation-duration: 0.4s;
+}

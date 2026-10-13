@@ -31,6 +31,49 @@ export type Counters = {
   tipCount: number;
 };
 
+/** The stream boss: support deals damage; the viewer who lands the final hit becomes the boss. */
+export type Boss = { name: string; platform: EventPlatform | null; avatarUrl?: string | null; hp: number; maxHp: number; lastHit?: { name: string; damage: number; what: string; at: string } };
+
+export const BOSS_START_HP = 1000;
+/** Each new boss is tougher than the last, up to a cap. */
+const BOSS_HP_STEP = 250;
+const BOSS_MAX_HP = 20_000;
+
+export function newBoss(): Boss {
+  return { name: "Signal Kit", platform: null, hp: BOSS_START_HP, maxHp: BOSS_START_HP };
+}
+
+/** Damage per kind of support: follow 10, sub 100 (tier 2: 200, tier 3: 500), gift 100 each, 1 per bit, 100 per dollar-ish, raid 2 per viewer. */
+export function bossDamage(event: SignalKitEvent): { damage: number; what: string } | null {
+  const data = event.data ?? {};
+  switch (event.kind) {
+    case "follow":
+      return { damage: 10, what: "followed" };
+    case "subscription": {
+      if (event.platform === "twitch" && data.isGift === true) {
+        return null;
+      }
+      const tier = data.tier === 3 ? 5 : data.tier === 2 ? 2 : 1;
+      return { damage: 100 * tier, what: "subscribed" };
+    }
+    case "subscription.gift": {
+      const count = typeof data.count === "number" && data.count > 0 ? data.count : 1;
+      return { damage: 100 * count, what: `gifted ${count}` };
+    }
+    case "tip":
+      if (!event.amount || !(event.amount.value > 0)) {
+        return null;
+      }
+      return event.amount.currency === "BITS"
+        ? { damage: Math.round(event.amount.value), what: `cheered ${event.amount.value}` }
+        : { damage: Math.round(event.amount.value * 100), what: `tipped ${event.amount.display}` };
+    case "raid":
+      return { damage: 2 * (Number(data.viewers ?? 0) || 0), what: "raided" };
+    default:
+      return null;
+  }
+}
+
 export type GoalBaseline = { metric: StatMetric; currency: string; value: number; at: string };
 
 export type StreamStats = {
@@ -47,6 +90,7 @@ export type StreamStats = {
   recent: { followers: StatPerson[]; subscribers: StatPerson[]; tips: StatAmount[]; cheers: StatAmount[] };
   session: Counters & { startedAt: string; topTip?: StatAmount; topCheer?: StatAmount; topGifter?: StatPerson & { count: number } };
   total: Counters & { topTip?: StatAmount; topCheer?: StatAmount };
+  boss?: Boss;
   /** Goal overlays count from here: the metric's total when the goal was (re)started. */
   goalBaselines: Record<string, GoalBaseline>;
 };
@@ -86,6 +130,28 @@ export type PublicStats = ReturnType<typeof publicStats>;
 
 /** Mutates `stats` for the event; returns whether anything changed. Pure, so it's easy to reason about. */
 export function applyEvent(stats: StreamStats, event: SignalKitEvent): boolean {
+  const bossChanged = applyBoss(stats, event);
+  return applyCounters(stats, event) || bossChanged;
+}
+
+function applyBoss(stats: StreamStats, event: SignalKitEvent) {
+  const hit = bossDamage(event);
+  if (hit && hit.damage > 0) {
+    const boss = (stats.boss ??= newBoss());
+    const attacker = event.actor?.name || "Someone";
+    boss.lastHit = { name: attacker, damage: hit.damage, what: hit.what, at: event.occurredAt };
+    boss.hp -= hit.damage;
+    if (boss.hp <= 0) {
+      // Final hit: the attacker takes over as a tougher boss.
+      const maxHp = Math.min(BOSS_MAX_HP, boss.maxHp + BOSS_HP_STEP);
+      stats.boss = { name: attacker, platform: event.platform, avatarUrl: event.actor?.avatarUrl ?? null, hp: maxHp, maxHp, lastHit: boss.lastHit };
+    }
+    return true;
+  }
+  return false;
+}
+
+function applyCounters(stats: StreamStats, event: SignalKitEvent): boolean {
   const at = event.occurredAt;
   const person: StatPerson | null = event.actor ? { name: event.actor.name || "Someone", platform: event.platform, avatarUrl: event.actor.avatarUrl ?? null, at } : null;
   const both = [stats.session, stats.total];

@@ -25,6 +25,8 @@ import {
   type QueueSettings,
   type TwitchActivitySettings,
   type ViewersSettings,
+  type WheelSettings,
+  type BossSettings,
   type EmoteWallSettings,
   type EventListSettings,
   type GoalSettings,
@@ -72,6 +74,10 @@ export function TypeSettings({ type, settings, update, overlayId }: { type: Over
       return <CreditsTypeSettings settings={settings as CreditsSettings} update={update} />;
     case "twitch":
       return <TwitchTypeSettings settings={settings as TwitchActivitySettings} update={update} />;
+    case "wheel":
+      return <WheelTypeSettings settings={settings as WheelSettings} update={update} />;
+    case "boss":
+      return <BossTypeSettings settings={settings as BossSettings} update={update} />;
   }
 }
 
@@ -825,6 +831,65 @@ function TwitchTypeSettings({ settings: s, update }: { settings: TwitchActivityS
         <ColorField label="Bar" value={s.barColor} onChange={(barColor) => update({ ...s, barColor })} />
         <ColorField label="Bar background" value={s.barBackground} onChange={(barBackground) => update({ ...s, barBackground })} />
       </div>
+    </Group>
+  );
+}
+
+function WheelTypeSettings({ settings: s, update }: { settings: WheelSettings; update: Update }) {
+  return (
+    <Group title="Wheel">
+      <Field label="Options" hint="One per line, up to 24">
+        <textarea
+          value={s.segments}
+          rows={7}
+          maxLength={2000}
+          onChange={(event) => update({ ...s, segments: event.target.value })}
+          className="w-full resize-y rounded-(--r) border border-(--line) bg-(--surface-inset) p-2.5 text-[13px] leading-5 text-(--text) outline-none focus:border-(--accent)"
+        />
+      </Field>
+      <Field label="Spin for">
+        <Slider value={s.spinSec} min={2} max={15} step={1} format={(v) => `${v}s`} onChange={(spinSec) => update({ ...s, spinSec })} />
+      </Field>
+      <Field label="Show the result for">
+        <Slider value={s.resultSec} min={0} max={60} step={1} format={(v) => (v === 0 ? "Always visible" : `${v}s, then hide`)} onChange={(resultSec) => update({ ...s, resultSec })} />
+      </Field>
+      <Field label="Spin on a channel point reward" hint="Exact reward title">
+        <TextField value={s.redemption} onChange={(redemption) => update({ ...s, redemption })} placeholder="Spin the wheel" />
+      </Field>
+      <Toggle label="Sounds" checked={s.sound} onChange={(sound) => update({ ...s, sound })} />
+      <p className="text-xs leading-[18px] text-(--text-3)">Spin it from Live tools during your stream, or let viewers trigger it with the reward above.</p>
+    </Group>
+  );
+}
+
+function BossTypeSettings({ settings: s, update }: { settings: BossSettings; update: Update }) {
+  const [resetting, setResetting] = useState(false);
+  return (
+    <Group title="Stream boss">
+      <Field label="Title">
+        <TextField value={s.title} onChange={(title) => update({ ...s, title })} />
+      </Field>
+      <TextSize value={s.fontSize} onChange={(fontSize) => update({ ...s, fontSize })} />
+      <div className="flex flex-col gap-2.5">
+        <ColorField label="Health bar" value={s.barColor} onChange={(barColor) => update({ ...s, barColor })} />
+        <ColorField label="Bar background" value={s.barBackground} onChange={(barBackground) => update({ ...s, barBackground })} />
+      </div>
+      <Toggle label="Boss avatar" checked={s.showAvatar} onChange={(showAvatar) => update({ ...s, showAvatar })} />
+      <p className="text-xs leading-[18px] text-(--text-3)">
+        Damage: follow 10, sub 100 (tier 2 ×2, tier 3 ×5), gifted sub 100 each, 1 per bit, 100 per $1 tip, raid 2 per viewer. The final hit makes that viewer the boss, with 250 more HP.
+      </p>
+      <button
+        type="button"
+        className={`${buttonClass("control")} self-start`}
+        disabled={resetting}
+        onClick={async () => {
+          setResetting(true);
+          await fetch("/api/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "boss.reset" }) }).catch(() => null);
+          setResetting(false);
+        }}
+      >
+        {resetting ? "Resetting…" : "Reset boss"}
+      </button>
     </Group>
   );
 }

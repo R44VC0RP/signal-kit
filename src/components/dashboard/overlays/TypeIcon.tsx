@@ -14,6 +14,8 @@ const PATHS: Record<OverlayType, React.ReactNode> = {
   highlight: <path d="M12 17v5M9 10.76V6a3 3 0 016 0v4.76l3 3.24v2H6v-2z" />,
   viewers: <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z" />,
   credits: <path d="M7 4h10M5 9h14M7 14h10M9 19h6" />,
+  wheel: <path d="M12 22a10 10 0 100-20 10 10 0 000 20zM12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9L4.9 19.1" />,
+  boss: <path d="M12 2l3 5 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6L3 8l6-1z" />,
   twitch: <path d="M4 3h17v11l-5 5h-4l-3 3H7v-3H4zM11 8v4M16 8v4" />,
 };
 

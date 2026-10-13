@@ -3,7 +3,7 @@ import { getDb } from "@/db";
 import { streamStats } from "@/db/schema";
 import type { SignalKitEvent } from "@/lib/events/types";
 import { relayHub } from "@/lib/ws/relay";
-import { applyEvent, emptyCounters, emptyStats, metricValue, publicStats, type StatMetric, type StreamStats } from "./stats-core";
+import { applyEvent, emptyCounters, emptyStats, metricValue, newBoss, publicStats, type StatMetric, type StreamStats } from "./stats-core";
 
 /** Stored, live-updated stream stats per user (see stats-core.ts for what is counted). */
 
@@ -74,6 +74,16 @@ export async function ensureGoal(userId: string, overlayId: string, metric: Stat
   if (!current || current.metric !== metric || (metric === "tips" && current.currency !== currency.toUpperCase())) {
     await startGoal(userId, overlayId, metric, currency);
   }
+}
+
+/** Starts the stream boss over (the dashboard's "Reset boss"). */
+export function resetBoss(userId: string) {
+  return serial(userId, async () => {
+    const stats = structuredClone(await getStats(userId));
+    stats.boss = newBoss();
+    await save(userId, stats);
+    return stats;
+  });
 }
 
 /** Restarts session counters by hand (the dashboard's "Reset session"). */

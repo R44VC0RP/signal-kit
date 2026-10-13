@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getEvent, recentChat } from "@/lib/events/ingest";
 import { liveToolsHub } from "@/lib/live/tools";
+import { resetBoss } from "@/lib/overlays/stats";
 import { requireUser } from "@/lib/session";
 
 /** The Live tools page: current poll/giveaway/queue/highlight plus recent chat to pin from. */
@@ -23,6 +24,10 @@ export async function POST(request: Request) {
   }
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const action = String(body.action ?? "");
+  if (action === "boss.reset") {
+    await resetBoss(user.id);
+    return NextResponse.json({ ok: true, tools: await liveToolsHub.snapshot(user.id) });
+  }
   const input = { ...body };
   if (action === "highlight.pin") {
     input.event = typeof body.eventId === "string" ? await getEvent(user.id, body.eventId) : null;

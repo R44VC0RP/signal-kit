@@ -9,8 +9,8 @@
 
 import type { StatMetric } from "./stats-core";
 
-export type OverlayType = "alerts" | "chat" | "events" | "goal" | "label" | "emotewall" | "ticker" | "poll" | "giveaway" | "queue" | "highlight" | "viewers" | "credits" | "twitch";
-export const OVERLAY_TYPE_IDS: readonly OverlayType[] = ["alerts", "chat", "events", "goal", "label", "emotewall", "ticker", "poll", "giveaway", "queue", "highlight", "viewers", "credits", "twitch"];
+export type OverlayType = "alerts" | "chat" | "events" | "goal" | "label" | "emotewall" | "ticker" | "poll" | "giveaway" | "queue" | "highlight" | "viewers" | "credits" | "twitch" | "wheel" | "boss";
+export const OVERLAY_TYPE_IDS: readonly OverlayType[] = ["alerts", "chat", "events", "goal", "label", "emotewall", "ticker", "poll", "giveaway", "queue", "highlight", "viewers", "credits", "twitch", "wheel", "boss"];
 export type OverlayStyle = "classic" | "signal" | "clean" | "bold";
 export type PlatformFilter = { twitch: boolean; youtube: boolean; x: boolean };
 
@@ -446,6 +446,28 @@ export type TwitchActivitySettings = Appearance & {
   barBackground: string;
 };
 
+/** Spin wheel: spun from Live tools, or when a viewer redeems a chosen channel point reward. */
+export type WheelSettings = Appearance & {
+  /** One option per line. */
+  segments: string;
+  spinSec: number;
+  /** How long the result stays before the wheel hides (0 = always visible). */
+  resultSec: number;
+  /** Spin automatically when a channel point reward with this exact title is redeemed. */
+  redemption: string;
+  sound: boolean;
+  volume: number;
+};
+
+/** Stream boss: support deals damage; whoever lands the final hit becomes the next boss. */
+export type BossSettings = Appearance & {
+  fontSize: number;
+  title: string;
+  barColor: string;
+  barBackground: string;
+  showAvatar: boolean;
+};
+
 export type SettingsFor<T extends OverlayType> = T extends "alerts"
   ? AlertSettings
   : T extends "chat"
@@ -472,7 +494,11 @@ export type SettingsFor<T extends OverlayType> = T extends "alerts"
                         ? ViewersSettings
                         : T extends "credits"
                           ? CreditsSettings
-                          : TwitchActivitySettings;
+                          : T extends "twitch"
+                            ? TwitchActivitySettings
+                            : T extends "wheel"
+                              ? WheelSettings
+                              : BossSettings;
 export type AnySettings =
   | AlertSettings
   | ChatSettings
@@ -487,7 +513,9 @@ export type AnySettings =
   | HighlightSettings
   | ViewersSettings
   | CreditsSettings
-  | TwitchActivitySettings;
+  | TwitchActivitySettings
+  | WheelSettings
+  | BossSettings;
 
 type PresetFields = Pick<Appearance, "textColor" | "accentColor" | "panelColor" | "panelOpacity" | "radius" | "font" | "fontWeight" | "textShadow">;
 
@@ -548,6 +576,8 @@ export const OVERLAY_TYPES: {
   { type: "highlight", name: "Chat highlight", description: "Pin any chat message on stream from the dashboard.", width: 900, height: 260 },
   { type: "viewers", name: "Viewer count", description: "Live viewers across Twitch and YouTube, with uptime.", width: 420, height: 90 },
   { type: "credits", name: "Credits", description: "End-of-stream credits: followers, subs, cheers, raiders, chatters.", width: 1920, height: 1080 },
+  { type: "wheel", name: "Spin wheel", description: "Spin from the dashboard or with a channel point reward.", width: 640, height: 720 },
+  { type: "boss", name: "Stream boss", description: "Support deals damage; the final hit makes that viewer the new boss.", width: 600, height: 160 },
   { type: "twitch", name: "Twitch activity", description: "Hype trains, Twitch polls and predictions as they happen.", width: 640, height: 640 },
 ];
 
@@ -567,6 +597,8 @@ export const OVERLAY_PLACEMENT: Record<OverlayType, { x: number; y: number }> = 
   viewers: { x: 1452, y: 48 },
   credits: { x: 0, y: 0 },
   twitch: { x: 48, y: 48 },
+  wheel: { x: 640, y: 180 },
+  boss: { x: 48, y: 872 },
 };
 
 export function overlayTypeInfo(type: OverlayType) {
@@ -735,6 +767,25 @@ const DEFAULTS: { [T in OverlayType]: () => SettingsFor<T> } = {
     loop: true,
     sections: { followers: true, subscribers: true, gifters: true, cheers: true, tips: true, raiders: true, chatters: true },
   }),
+  wheel: () => ({
+    ...appearance("wheel"),
+    segments: "Hydrate\nPush-ups\nSing a song\nViewer picks a game\nNo mic for 1 minute\nGive away a key",
+    spinSec: 6,
+    resultSec: 10,
+    redemption: "",
+    sound: true,
+    volume: 0.6,
+  }),
+  boss: () => ({
+    ...appearance("boss"),
+    panelOpacity: 0.7,
+    radius: 12,
+    fontSize: 22,
+    title: "Stream boss",
+    barColor: "#e5484d",
+    barBackground: "#2a2a2a",
+    showAvatar: true,
+  }),
   twitch: () => ({
     ...appearance("twitch"),
     panelOpacity: 0.7,
@@ -822,6 +873,7 @@ const RANGES: Record<string, [number, number]> = {
   explodeCount: [5, 300],
   min: [0, 100_000_000],
   resultSec: [0, 600],
+  spinSec: [2, 20],
   maxShown: [1, 30],
   autoHideSec: [0, 600],
 };
@@ -882,7 +934,7 @@ function sanitize(fallback: unknown, value: unknown, key: string, type: OverlayT
     if (key === "endDate") {
       return value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
     }
-    if (key === "blockedWords" || key === "mutedUsers") {
+    if (key === "blockedWords" || key === "mutedUsers" || key === "segments") {
       return value.slice(0, 2000);
     }
     if (key === "customCss") {

@@ -19,6 +19,8 @@ import {
   type QueueSettings,
   type TwitchActivitySettings,
   type ViewersSettings,
+  type WheelSettings,
+  type BossSettings,
   type EmoteWallSettings,
   type EventListSettings,
   type GoalSettings,
@@ -31,7 +33,7 @@ import type { PublicStats } from "@/lib/overlays/stats-core";
 import type { CreditsData, LiveSnapshot } from "@/lib/streams/summary";
 import { alertText, defaultNameColor, hasBlockedWord, isBot, isMuted, matchesAlert, nameColor, shortAction, templateParts } from "./describe";
 import { MessageText } from "./MessageText";
-import { CreditsWidget, GiveawayWidget, HighlightWidget, PollWidget, QueueWidget, TwitchActivityWidget, ViewersWidget } from "./live-widgets";
+import { BossWidget, CreditsWidget, GiveawayWidget, HighlightWidget, PollWidget, QueueWidget, TwitchActivityWidget, ViewersWidget, WheelWidget } from "./live-widgets";
 import { EmoteWall, GoalWidget, LabelWidget, Ticker } from "./widgets";
 import "./animations.css";
 import "./overlay.css";
@@ -63,7 +65,10 @@ export function OverlayRenderer({
   tools = null,
   stream = null,
   credits = null,
+  preview = false,
 }: {
+  /** The customizer's preview: show idle widgets (e.g. the wheel) that would otherwise hide. */
+  preview?: boolean;
   type: OverlayType;
   settings: AnySettings;
   events: OverlayEvent[];
@@ -118,6 +123,10 @@ export function OverlayRenderer({
         <ViewersWidget settings={settings as ViewersSettings} stream={stream} />
       ) : type === "credits" ? (
         <CreditsWidget settings={settings as CreditsSettings} credits={credits} />
+      ) : type === "wheel" ? (
+        <WheelWidget settings={settings as WheelSettings} tools={tools} events={events} preview={preview} />
+      ) : type === "boss" ? (
+        <BossWidget settings={settings as BossSettings} stats={stats} events={events} />
       ) : (
         <TwitchActivityWidget settings={settings as TwitchActivitySettings} events={all} />
       )}

@@ -52,6 +52,7 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
   const [liveTools, setLiveTools] = useState<PublicLiveTools | null>(null);
   const [stream, setStream] = useState<LiveSnapshot | null>(null);
   const [samples] = useState(() => ({ tools: sampleLiveTools(), stream: sampleStream(), credits: sampleCredits() }));
+  const [previewSpin, setPreviewSpin] = useState<PublicLiveTools["wheel"]>(null);
   // Sample events use random ids and times, so create them in the browser only (not during SSR).
   useEffect(() => {
     const seed = setTimeout(() => setEvents(seedEvents(initial.type)), 0);
@@ -145,7 +146,7 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
   }, [demo, overlay.type, sendSample, durationSec]);
 
   const buttons = SAMPLE_BUTTONS.filter((button) => TEST_KINDS[overlay.type].includes(button.kind));
-  const toolType = overlay.type === "poll" || overlay.type === "giveaway" || overlay.type === "queue" || overlay.type === "highlight";
+  const toolType = overlay.type === "poll" || overlay.type === "giveaway" || overlay.type === "queue" || overlay.type === "highlight" || overlay.type === "wheel";
 
   // Live tools: the real poll/giveaway/queue/pin while one runs, otherwise a sample.
   useEffect(() => {
@@ -170,6 +171,8 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
     giveaway: liveTools?.giveaway ?? samples.tools.giveaway,
     queue: liveTools?.queue.open || liveTools?.queue.entries.length ? liveTools.queue : samples.tools.queue,
     highlight: liveTools?.highlight ?? samples.tools.highlight,
+    // The newest spin: one started from Live tools, or the preview's own Spin button.
+    wheel: [liveTools?.wheel, previewSpin].filter(Boolean).sort((a, b) => Date.parse(b!.at) - Date.parse(a!.at))[0] ?? null,
   };
   const info = overlayTypeInfo(overlay.type);
 
@@ -262,6 +265,13 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
               stream={stream?.live ? stream : samples.stream}
               credits={samples.credits}
             />
+            {overlay.type === "wheel" ? (
+              <div>
+                <button type="button" className={buttonClass("control")} onClick={() => setPreviewSpin({ id: `preview-${Date.now()}`, seed: Math.floor(Math.random() * 2 ** 31), at: new Date().toISOString() })}>
+                  Spin (preview only)
+                </button>
+              </div>
+            ) : null}
             {toolType ? (
               <p className="text-xs text-(--text-3)">
                 {`Showing ${
@@ -334,6 +344,8 @@ const CSS_PLACEHOLDER: Record<OverlayType, string> = {
   viewers: ".sko-viewers-label { text-transform: uppercase; }",
   credits: ".sko-credits-heading { color: gold; }",
   twitch: ".sko-box-title { text-transform: uppercase; }",
+  wheel: ".sko-wheel-result { background: crimson; }",
+  boss: ".sko-boss-name { text-transform: uppercase; }",
 };
 
 /** Test buttons each overlay type offers, and what the auto demo cycles through. */
@@ -352,6 +364,8 @@ const TEST_KINDS: Record<OverlayType, SampleKind[]> = {
   viewers: [],
   credits: [],
   twitch: [],
+  wheel: [],
+  boss: ["follow", "subscription", "subscription.gift", "cheer", "tip", "raid"],
 };
 const DEMO_KINDS: Record<OverlayType, SampleKind[]> = {
   alerts: ["follow", "cheer", "subscription", "tip", "raid", "subscription.gift", "redemption"],
@@ -368,6 +382,8 @@ const DEMO_KINDS: Record<OverlayType, SampleKind[]> = {
   viewers: [],
   credits: [],
   twitch: [],
+  wheel: [],
+  boss: ["follow", "subscription", "subscription.gift", "cheer", "tip", "raid"],
 };
 
 const WEIGHTS = [400, 500, 600, 700, 800, 900];

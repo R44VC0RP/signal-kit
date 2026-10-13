@@ -18,6 +18,7 @@ type State = {
   giveaway: (Omit<NonNullable<PublicLiveTools["giveaway"]>, "entries" | "recent"> & { entrants: Participant[] }) | null;
   queue: PublicLiveTools["queue"];
   highlight: Highlight | null;
+  wheel?: PublicLiveTools["wheel"];
 };
 
 const MAX_ENTRANTS = 50_000;
@@ -45,7 +46,7 @@ export function publicTools(state: State): PublicLiveTools {
         return { ...rest, entries: entrants.length, recent: entrants.slice(-30).reverse() };
       })()
     : null;
-  return { poll, giveaway, queue: state.queue, highlight: state.highlight };
+  return { poll, giveaway, queue: state.queue, highlight: state.highlight, wheel: state.wheel ?? null };
 }
 
 class LiveTools {
@@ -224,6 +225,9 @@ class LiveTools {
         }
         case "highlight.clear":
           state.highlight = null;
+          break;
+        case "wheel.spin":
+          state.wheel = { id: randomUUID(), seed: randomInt(1, 2 ** 31), at: now };
           break;
         default:
           return { error: "Unknown action." };

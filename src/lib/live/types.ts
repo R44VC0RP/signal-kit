@@ -33,10 +33,26 @@ export type PublicQueue = { open: boolean; title: string; entries: (Participant 
 
 export type Highlight = { id: string; platform: EventPlatform; name: string; avatarUrl?: string | null; color?: string | null; badges?: string[]; message: string; messageParts?: MessagePart[]; at: string };
 
-export type PublicLiveTools = { poll: PublicPoll | null; giveaway: PublicGiveaway | null; queue: PublicQueue; highlight: Highlight | null };
+/** A wheel spin request; each wheel overlay picks its landing segment from `seed`. */
+export type WheelSpin = { id: string; seed: number; at: string };
+
+export type PublicLiveTools = { poll: PublicPoll | null; giveaway: PublicGiveaway | null; queue: PublicQueue; highlight: Highlight | null; wheel?: WheelSpin | null };
 
 export function emptyLiveTools(): PublicLiveTools {
-  return { poll: null, giveaway: null, queue: { open: false, title: "Viewer queue", entries: [], current: null }, highlight: null };
+  return { poll: null, giveaway: null, queue: { open: false, title: "Viewer queue", entries: [], current: null }, highlight: null, wheel: null };
+}
+
+/** Which of `count` segments a spin lands on (the overlay and the dashboard agree). */
+export function wheelResult(seed: number, count: number) {
+  return count > 0 ? Math.abs(Math.floor(seed)) % count : 0;
+}
+
+export function wheelSegments(text: string) {
+  return text
+    .split(/\n|,/)
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .slice(0, 24);
 }
 
 /** The number a chat message votes for: "2", "!vote 2", "#2" or an option's exact text. */

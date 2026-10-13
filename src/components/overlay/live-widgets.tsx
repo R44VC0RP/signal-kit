@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
 import type { EventPlatform } from "@/lib/events/types";
-import type { PublicLiveTools } from "@/lib/live/types";
+import { wheelResult, wheelSegments, type PublicLiveTools } from "@/lib/live/types";
+import { applyEvent, emptyStats, newBoss, publicStats, type PublicStats, type StreamStats } from "@/lib/overlays/stats-core";
 import type {
+  BossSettings,
+  WheelSettings,
   CreditsSettings,
   GiveawaySettings,
   HighlightSettings,
@@ -372,6 +375,170 @@ function TwitchChoices({ title, meta, rows, unit }: { title: string; meta: strin
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ---- Spin wheel -----------------------------------------------------------------------------
+
+const WHEEL_COLORS = ["var(--sko-accent)", "#ff6b6b", "#ffd93d", "#6bcB77", "#4d96ff", "#c77dff", "#ff9f43", "#2ec4b6"];
+
+function hashSeed(text: string) {
+  let hash = 0;
+  for (const char of text) {
+    hash = (hash * 31 + char.charCodeAt(0)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+/**
+ * A wheel that spins to a segment chosen by the spin's seed (so the dashboard knows the result
+ * too). Spins come from Live tools or from a matching channel point redemption.
+ */
+export function WheelWidget({ settings: s, tools, events, preview }: { settings: WheelSettings; tools: PublicLiveTools | null; events: OverlayEvent[]; preview: boolean }) {
+  const segments = wheelSegments(s.segments);
+  const [mountedAt] = useState(() => Date.now());
+  const redemption = s.redemption.trim().toLowerCase();
+  const local = redemption
+    ? [...events].reverse().find((event) => event.kind === "redemption" && String((event.data?.reward as { title?: string } | undefined)?.title ?? "").trim().toLowerCase() === redemption)
+    : undefined;
+  const candidates = [tools?.wheel ?? null, local ? { id: local.id, seed: hashSeed(local.id), at: new Date(local.seenAt ?? Date.parse(local.receivedAt)).toISOString() } : null].filter(
+    (spin): spin is NonNullable<typeof spin> => Boolean(spin) && Date.parse(spin!.at) > mountedAt - 3000,
+  );
+  const spin = candidates.sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0] ?? null;
+
+  const [view, setView] = useState<{ id: string | null; rotation: number; phase: "idle" | "spinning" | "result"; index: number }>({ id: null, rotation: 0, phase: "idle", index: 0 });
+  const settingsRef = useRef(s);
+  useEffect(() => {
+    settingsRef.current = s;
+  }, [s]);
+
+  useEffect(() => {
+    if (!spin || spin.id === view.id || segments.length === 0) {
+      return;
+    }
+    const live = settingsRef.current;
+    const index = wheelResult(spin.seed, segments.length);
+    const slice = 360 / segments.length;
+    const center = (index + 0.5) * slice;
+    const base = view.rotation + 360 * 6;
+    const rotation = base + ((((360 - center - (base % 360)) % 360) + 360) % 360);
+    const play = (file: string) => {
+      if (live.sound) {
+        const audio = new Audio(file);
+        audio.volume = live.volume;
+        void audio.play().catch(() => {});
+      }
+    };
+    const start = setTimeout(() => {
+      setView({ id: spin.id, rotation, phase: "spinning", index });
+      play("/library/sounds/hype/rising-sweep.mp3");
+    }, 0);
+    const done = setTimeout(() => {
+      setView((current) => (current.id === spin.id ? { ...current, phase: "result" } : current));
+      play("/library/sounds/jingles/pizzicato-tada.mp3");
+    }, live.spinSec * 1000 + 50);
+    const hide = live.resultSec > 0 ? setTimeout(() => setView((current) => (current.id === spin.id ? { ...current, phase: "idle" } : current)), (live.spinSec + live.resultSec) * 1000) : undefined;
+    return () => {
+      clearTimeout(start);
+      clearTimeout(done);
+      clearTimeout(hide);
+    };
+    // Only a new spin should start the animation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spin?.id]);
+
+  if (segments.length === 0 || (view.phase === "idle" && s.resultSec > 0 && !preview)) {
+    return null;
+  }
+  const slice = 360 / segments.length;
+  const r = 280;
+  const point = (angle: number, radius = r) => {
+    const rad = ((angle - 90) * Math.PI) / 180;
+    return `${300 + radius * Math.cos(rad)} ${300 + radius * Math.sin(rad)}`;
+  };
+  return (
+    <div className="sko-wheel">
+      <div className="sko-wheel-pointer" />
+      <svg
+        viewBox="0 0 600 600"
+        className="sko-wheel-disc"
+        style={{ transform: `rotate(${view.rotation}deg)`, transitionDuration: view.phase === "spinning" ? `${s.spinSec}s` : "0s" }}
+      >
+        {segments.map((label, index) => {
+          const from = index * slice;
+          const to = from + slice;
+          const path = segments.length === 1 ? `M 300 20 A 280 280 0 1 1 299.9 20 Z` : `M 300 300 L ${point(from)} A ${r} ${r} 0 ${slice > 180 ? 1 : 0} 1 ${point(to)} Z`;
+          return (
+            <g key={index}>
+              <path d={path} fill={WHEEL_COLORS[index % WHEEL_COLORS.length]} stroke="rgb(0 0 0 / 35%)" strokeWidth={2} />
+              <text
+                x={300}
+                y={300 - r * 0.6}
+                transform={`rotate(${from + slice / 2} 300 300)`}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="sko-wheel-label"
+                style={{ fontSize: Math.max(13, Math.min(30, 320 / segments.length + 6)) }}
+              >
+                {label.length > 22 ? `${label.slice(0, 21)}…` : label}
+              </text>
+            </g>
+          );
+        })}
+        <circle cx={300} cy={300} r={34} className="sko-wheel-hub" />
+      </svg>
+      {view.phase === "result" ? (
+        <div className="sko-wheel-result sko-anim-zoomIn">
+          <AnimatedLetters text={segments[view.index] ?? ""} animation="tada" />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ---- Stream boss ----------------------------------------------------------------------------
+
+export function BossWidget({ settings: s, stats, events }: { settings: BossSettings; stats: PublicStats | null; events: OverlayEvent[] }) {
+  const display = useMemo(() => {
+    const copy = structuredClone(stats ?? publicStats(emptyStats()));
+    for (const event of events) {
+      if (event.test) {
+        applyEvent(copy as unknown as StreamStats, event);
+      }
+    }
+    return copy;
+  }, [stats, events]);
+  const now = useNow(1000);
+  const boss = display.boss ?? newBoss();
+  const percent = Math.max(0, Math.min(100, (boss.hp / boss.maxHp) * 100));
+  const recentHit = boss.lastHit && now - Date.parse(boss.lastHit.at) < 8000 ? boss.lastHit : null;
+  return (
+    <div className="sko-box sko-boss" style={barStyle(s.barColor, s.barBackground)}>
+      <div className="sko-box-head">
+        <span className="sko-box-title">{s.title}</span>
+        {recentHit ? <span key={recentHit.at} className="sko-boss-hit sko-anim-fadeInUp">{`−${recentHit.damage} ${recentHit.name} ${recentHit.what}`}</span> : null}
+      </div>
+      <div className="sko-boss-row">
+        {s.showAvatar ? (
+          boss.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="sko-boss-avatar" src={boss.avatarUrl} alt="" referrerPolicy="no-referrer" />
+          ) : (
+            <span className="sko-boss-avatar">{boss.name.charAt(0).toUpperCase()}</span>
+          )
+        ) : null}
+        <div className="sko-boss-body">
+          <span className="sko-boss-name">
+            {boss.platform ? <PlatformLogo platform={boss.platform} size={16} /> : null} {boss.name}
+          </span>
+          <div className="sko-poll-bar">
+            <div className="sko-poll-fill" style={{ width: `${percent}%` }} />
+            <span className="sko-poll-label" />
+            <span className="sko-poll-value">{`${Math.max(0, boss.hp).toLocaleString("en")} / ${boss.maxHp.toLocaleString("en")} HP`}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

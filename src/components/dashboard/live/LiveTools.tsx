@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
 import { buttonClass, Muted, Section } from "@/components/dashboard/ui";
 import type { EventPlatform } from "@/lib/events/types";
-import { emptyLiveTools, type PublicLiveTools } from "@/lib/live/types";
+import { emptyLiveTools, wheelResult, wheelSegments, type PublicLiveTools } from "@/lib/live/types";
 
 type ChatLine = { id: string; platform: EventPlatform; name: string; message: string | null; at: string };
 
@@ -54,6 +54,7 @@ export function LiveTools() {
         <div className="flex min-w-0 flex-col gap-10">
           <PollPanel tools={tools} act={act} />
           <GiveawayPanel tools={tools} act={act} />
+          <WheelPanel tools={tools} act={act} />
         </div>
         <div className="flex min-w-0 flex-col gap-10">
           <QueuePanel tools={tools} act={act} />
@@ -275,6 +276,45 @@ function ChatPanel({ tools, chat, act }: { tools: PublicLiveTools; chat: ChatLin
               </button>
             </div>
           ))}
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+function WheelPanel({ tools, act }: { tools: PublicLiveTools; act: Act }) {
+  const [wheels, setWheels] = useState<{ id: string; name: string; segments: string[] }[] | null>(null);
+  useEffect(() => {
+    const load = setTimeout(async () => {
+      const response = await fetch("/api/overlays").catch(() => null);
+      const json = (await response?.json().catch(() => null)) as { overlays?: { id: string; name: string; type: string; settings: { segments?: string } }[] } | null;
+      setWheels((json?.overlays ?? []).filter((overlay) => overlay.type === "wheel").map((overlay) => ({ id: overlay.id, name: overlay.name, segments: wheelSegments(overlay.settings.segments ?? "") })));
+    }, 0);
+    return () => clearTimeout(load);
+  }, []);
+  const spin = tools.wheel;
+  return (
+    <Section title="Spin wheel" aside={<Muted>{wheels?.length ? `${wheels.length} wheel overlay${wheels.length > 1 ? "s" : ""}` : "Add a Spin wheel overlay"}</Muted>}>
+      <div className="flex flex-col gap-3 border-t border-(--line) pt-4">
+        {spin && wheels?.length ? (
+          <div className="flex flex-col gap-1">
+            {wheels.map((wheel) => (
+              <span key={wheel.id} className="text-[13px] text-(--text-2)">
+                {wheels.length > 1 ? `${wheel.name}: ` : "Landed on: "}
+                <span className="font-semibold text-(--text)">{wheel.segments[wheelResult(spin.seed, wheel.segments.length)] ?? "–"}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div className="flex gap-2">
+          <button type="button" className={buttonClass("primary")} disabled={!wheels?.length} onClick={() => void act("wheel.spin")}>
+            Spin the wheel
+          </button>
+          {!wheels?.length ? (
+            <Link href="/dashboard/overlays" className={buttonClass("quiet")}>
+              Create one
+            </Link>
+          ) : null}
         </div>
       </div>
     </Section>
