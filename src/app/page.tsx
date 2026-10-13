@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ConnectButton } from "@/components/AuthButtons";
 import { CodeBlock } from "@/components/CodeBlock";
 import { Logo } from "@/components/Logo";
 
@@ -57,18 +58,12 @@ function Hero() {
           you build.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-          <a
-            href="/api/auth/twitch/start"
-            className="inline-flex items-center justify-center rounded-md bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-          >
+          <ConnectButton provider="twitch" mode="signin" className="inline-flex items-center justify-center rounded-md bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600">
             Continue with Twitch
-          </a>
-          <a
-            href="/api/auth/youtube/start"
-            className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
-          >
+          </ConnectButton>
+          <ConnectButton provider="google" mode="signin" className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950">
             Continue with YouTube
-          </a>
+          </ConnectButton>
           <Link
             href="/docs"
             className="text-sm font-semibold text-neutral-950 underline-offset-4 hover:underline"
@@ -288,18 +283,12 @@ function Outro() {
           Hook into the platforms you stream on.
         </h2>
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-          <a
-            href="/api/auth/twitch/start"
-            className="inline-flex items-center justify-center rounded-md bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-          >
+          <ConnectButton provider="twitch" mode="signin" className="inline-flex items-center justify-center rounded-md bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600">
             Continue with Twitch
-          </a>
-          <a
-            href="/api/auth/youtube/start"
-            className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
-          >
+          </ConnectButton>
+          <ConnectButton provider="google" mode="signin" className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950">
             Continue with YouTube
-          </a>
+          </ConnectButton>
           <Link
             href="/docs"
             className="text-sm font-semibold text-neutral-950 underline-offset-4 hover:underline"

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { EVENT_CATALOG, eventCatalogForUser } from "@/lib/twitch/event-catalog";
+import { getBroadcasterConnection } from "@/lib/connections/manage";
 import { getCurrentUser } from "@/lib/session";
+import { EVENT_CATALOG, eventCatalogForUser } from "@/lib/twitch/event-catalog";
 
 const YOUTUBE_LIVE_EVENTS = [
   "youtube.live_chat.message",
@@ -17,13 +18,13 @@ const YOUTUBE_LIVE_EVENTS = [
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ events: EVENT_CATALOG, youtubeLiveEvents: YOUTUBE_LIVE_EVENTS });
-  }
+  const twitch = user ? await getBroadcasterConnection(user.id, "twitch") : null;
+  const events = twitch
+    ? eventCatalogForUser({ id: twitch.platformUserId, scopes: twitch.scopes })
+    : EVENT_CATALOG;
   return NextResponse.json({
-    events: user.twitchUserId
-      ? eventCatalogForUser({ id: user.twitchUserId, scopes: user.twitchScopes })
-      : EVENT_CATALOG,
+    // buildCondition is a function; JSON drops it, so this returns the serializable catalog.
+    events,
     youtubeLiveEvents: YOUTUBE_LIVE_EVENTS,
   });
 }

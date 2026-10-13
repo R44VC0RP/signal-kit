@@ -1,13 +1,15 @@
-export function getAppUrl(request?: Request) {
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+/**
+ * The public origin of this deployment. OAuth redirects and cookies depend on it,
+ * so it always comes from configuration, never from the request's Host header.
+ */
+export function getAppUrl() {
+  const configured = process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL;
+  if (configured) {
+    return configured.replace(/\/$/, "");
   }
-
-  if (request) {
-    const url = new URL(request.url);
-    return `${url.protocol}//${url.host}`;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("NEXT_PUBLIC_APP_URL (or BETTER_AUTH_URL) must be set in production.");
   }
-
   return `http://localhost:${process.env.PORT ?? "3000"}`;
 }
 

@@ -1,20 +1,12 @@
-import { and, eq, isNull } from "drizzle-orm";
-import { getDb } from "@/db";
-import { overlayTokens } from "@/db/schema";
-import { tokenHash } from "@/lib/crypto";
+import { DEFAULT_API_KEY_PERMISSIONS, getAuth } from "@/lib/auth";
 
-export async function authenticateOverlayToken(rawToken: string) {
-  const [token] = await getDb()
-    .select()
-    .from(overlayTokens)
-    .where(and(eq(overlayTokens.tokenHash, tokenHash(rawToken)), isNull(overlayTokens.revokedAt)))
-    .limit(1);
-
-  if (!token) {
+/** Verifies an API key for the relay socket. Disabled, expired, or rate-limited keys are rejected. */
+export async function authenticateApiKey(rawKey: string) {
+  const result = await getAuth().api.verifyApiKey({
+    body: { key: rawKey, permissions: DEFAULT_API_KEY_PERMISSIONS },
+  });
+  if (!result.valid || !result.key) {
     return null;
   }
-
-  await getDb().update(overlayTokens).set({ lastUsedAt: new Date() }).where(eq(overlayTokens.id, token.id));
-  const userId = token.appUserId ?? token.twitchUserId;
-  return userId ? { userId, tokenId: token.id, label: token.label } : null;
+  return { userId: result.key.referenceId, keyId: result.key.id, label: result.key.name ?? "API key" };
 }

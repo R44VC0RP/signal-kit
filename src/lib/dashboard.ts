@@ -1,7 +1,12 @@
-import { desc, eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { getDb } from "@/db";
-import { connectedAccounts, eventSubscriptions, overlayTokens, twitchUsers } from "@/db/schema";
+import { platformSubscriptions } from "@/db/schema";
 import { getAppUrl, getWsUrl } from "@/lib/app-url";
+import { getAuth } from "@/lib/auth";
+import { getBroadcasterConnection, listConnections } from "@/lib/connections/manage";
+import { toPublicConnection } from "@/lib/connections/public";
+import { syncConnectionsForUser } from "@/lib/connections/sync";
 import { highlightCode } from "@/lib/highlighter";
 import { eventCatalogForUser } from "@/lib/twitch/event-catalog";
 
@@ -31,83 +36,64 @@ export type DashboardSnippets = {
   nodeExample: string;
 };
 
-export type DashboardConnectedAccount = {
+export type DashboardApiKey = {
   id: string;
-  provider: string;
-  providerAccountId: string;
-  login: string;
-  displayName: string;
-  profileImageUrl: string | null;
-  scopes: string[];
-  lastSyncAt: Date | null;
-  lastEventAt: Date | null;
-  lastError: string | null;
-  connectedAt: Date | null;
+  name: string | null;
+  start: string | null;
+  enabled: boolean;
+  createdAt: string;
+  lastUsedAt: string | null;
 };
 
-export async function getDashboardData(user: {
-  id: string;
-  displayName: string;
-  profileImageUrl: string | null;
-  twitchUserId: string | null;
-  twitchLogin: string | null;
-  twitchDisplayName: string | null;
-  twitchProfileImageUrl: string | null;
-  twitchScopes: string[];
-}) {
-  const [twitchAccount] = user.twitchUserId
-    ? await getDb().select().from(twitchUsers).where(eq(twitchUsers.id, user.twitchUserId)).limit(1)
-    : await getDb().select().from(twitchUsers).where(eq(twitchUsers.appUserId, user.id)).limit(1);
+/** Providers with OAuth credentials configured on this deployment. */
+export function enabledProviders() {
+  return {
+    twitch: Boolean(process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIENT_SECRET),
+    google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    twitter: Boolean(process.env.X_CLIENT_ID && process.env.X_CLIENT_SECRET),
+  };
+}
 
-  const twitchUserId = twitchAccount?.id ?? user.twitchUserId;
-  const [tokens, subscriptions, linkedAccounts] = await Promise.all([
-    getDb()
-      .select({
-        id: overlayTokens.id,
-        label: overlayTokens.label,
-        createdAt: overlayTokens.createdAt,
-        lastUsedAt: overlayTokens.lastUsedAt,
-        revokedAt: overlayTokens.revokedAt,
-      })
-      .from(overlayTokens)
-      .where(or(eq(overlayTokens.appUserId, user.id), eq(overlayTokens.twitchUserId, user.id)))
-      .orderBy(desc(overlayTokens.createdAt)),
-    twitchUserId
-      ? getDb()
-          .select({
-            type: eventSubscriptions.type,
-            version: eventSubscriptions.version,
-            status: eventSubscriptions.status,
-            error: eventSubscriptions.error,
-          })
-          .from(eventSubscriptions)
-          .where(eq(eventSubscriptions.twitchUserId, twitchUserId))
-      : Promise.resolve([]),
-    getDb()
-      .select({
-        id: connectedAccounts.id,
-        provider: connectedAccounts.provider,
-        providerAccountId: connectedAccounts.providerAccountId,
-        login: connectedAccounts.login,
-        displayName: connectedAccounts.displayName,
-        profileImageUrl: connectedAccounts.profileImageUrl,
-        scopes: connectedAccounts.scopes,
-        lastSyncAt: connectedAccounts.lastSyncAt,
-        lastEventAt: connectedAccounts.lastEventAt,
-        lastError: connectedAccounts.lastError,
-        connectedAt: connectedAccounts.connectedAt,
-      })
-      .from(connectedAccounts)
-      .where(or(eq(connectedAccounts.appUserId, user.id), eq(connectedAccounts.ownerTwitchUserId, user.id)))
-      .orderBy(desc(connectedAccounts.connectedAt)),
+export async function getDashboardData(user: { id: string }) {
+  // Picks up accounts linked since the last visit; failures surface as connection statuses.
+  await syncConnectionsForUser(user.id).catch((error) => {
+    console.error("[dashboard] connection sync failed", error);
+  });
+
+  const [connectionRows, keyList, twitch] = await Promise.all([
+    listConnections(user.id),
+    getAuth().api.listApiKeys({ headers: await headers() }),
+    getBroadcasterConnection(user.id, "twitch"),
   ]);
+  const subscriptions = twitch
+    ? await getDb()
+        .select({
+          type: platformSubscriptions.type,
+          version: platformSubscriptions.version,
+          status: platformSubscriptions.status,
+          error: platformSubscriptions.error,
+        })
+        .from(platformSubscriptions)
+        .where(eq(platformSubscriptions.connectionId, twitch.id))
+    : [];
+
+  const keys: DashboardApiKey[] = keyList.apiKeys
+    .map((key) => ({
+      id: key.id,
+      name: key.name,
+      start: key.start,
+      enabled: key.enabled,
+      createdAt: new Date(key.createdAt).toISOString(),
+      lastUsedAt: key.lastRequest ? new Date(key.lastRequest).toISOString() : null,
+    }))
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
   const subscriptionsByKey = new Map(
     subscriptions.map((subscription) => [`${subscription.type}|${subscription.version}`, subscription]),
   );
 
-  const events: DashboardEvent[] = twitchUserId
-    ? eventCatalogForUser({ id: twitchUserId, scopes: twitchAccount?.scopes ?? user.twitchScopes }).map(
+  const events: DashboardEvent[] = twitch
+    ? eventCatalogForUser({ id: twitch.platformUserId, scopes: twitch.scopes }).map(
     (item) => {
       if (!item.enabledByScopes) {
         return {
@@ -152,7 +138,7 @@ export async function getDashboardData(user: {
 <script>
   const events = new SignalKit({
     url: "${wsUrl}",
-    token: "sk_live_...",
+    token: "sk_live_...", // an API key from the dashboard
   });
 
   events.on("channel.cheer", ({ event }) => {
@@ -195,28 +181,9 @@ events.connect();`;
   ]);
 
   return {
-    tokens,
-    accounts: [
-      ...(twitchAccount
-        ? [
-            {
-              id: twitchAccount.id,
-              provider: "twitch",
-              providerAccountId: twitchAccount.id,
-              login: twitchAccount.login,
-              displayName: twitchAccount.displayName,
-              profileImageUrl: twitchAccount.profileImageUrl,
-              scopes: twitchAccount.scopes,
-              lastSyncAt: null,
-              lastEventAt: null,
-              lastError: null,
-              connectedAt: twitchAccount.connectedAt,
-            },
-          ]
-        : []),
-      ...linkedAccounts,
-    ] satisfies DashboardConnectedAccount[],
-    hasTwitch: Boolean(twitchAccount),
+    keys,
+    connections: connectionRows.map(toPublicConnection),
+    providers: enabledProviders(),
     events,
     wsUrl,
     appUrl,

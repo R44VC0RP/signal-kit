@@ -1,27 +1,3 @@
-type TwitchTokenResponse = {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  scope?: string[];
-  token_type: string;
-};
-
-type TwitchValidateResponse = {
-  client_id: string;
-  login: string;
-  scopes: string[];
-  user_id: string;
-  expires_in: number;
-};
-
-export type TwitchHelixUser = {
-  id: string;
-  login: string;
-  display_name: string;
-  email?: string;
-  profile_image_url?: string;
-};
-
 export type TwitchSubscriptionRequest = {
   type: string;
   version: string;
@@ -49,7 +25,6 @@ export type TwitchCategory = {
   box_art_url: string;
 };
 
-const TWITCH_ID_BASE = "https://id.twitch.tv/oauth2";
 const TWITCH_API_BASE = "https://api.twitch.tv/helix";
 
 export function getTwitchClientId() {
@@ -58,52 +33,6 @@ export function getTwitchClientId() {
     throw new Error("TWITCH_CLIENT_ID is required.");
   }
   return clientId;
-}
-
-function getTwitchClientSecret() {
-  const clientSecret = process.env.TWITCH_CLIENT_SECRET;
-  if (!clientSecret) {
-    throw new Error("TWITCH_CLIENT_SECRET is required.");
-  }
-  return clientSecret;
-}
-
-export async function exchangeCodeForToken(code: string, redirectUri: string) {
-  const body = new URLSearchParams({
-    client_id: getTwitchClientId(),
-    client_secret: getTwitchClientSecret(),
-    code,
-    grant_type: "authorization_code",
-    redirect_uri: redirectUri,
-  });
-  return twitchFetch<TwitchTokenResponse>(`${TWITCH_ID_BASE}/token`, { method: "POST", body });
-}
-
-export async function refreshTwitchToken(refreshToken: string) {
-  const body = new URLSearchParams({
-    client_id: getTwitchClientId(),
-    client_secret: getTwitchClientSecret(),
-    grant_type: "refresh_token",
-    refresh_token: refreshToken,
-  });
-  return twitchFetch<TwitchTokenResponse>(`${TWITCH_ID_BASE}/token`, { method: "POST", body });
-}
-
-export async function validateTwitchToken(accessToken: string) {
-  return twitchFetch<TwitchValidateResponse>(`${TWITCH_ID_BASE}/validate`, {
-    headers: { Authorization: `OAuth ${accessToken}` },
-  });
-}
-
-export async function getTwitchUser(accessToken: string) {
-  const response = await twitchFetch<{ data: TwitchHelixUser[] }>(`${TWITCH_API_BASE}/users`, {
-    headers: twitchHeaders(accessToken),
-  });
-  const user = response.data[0];
-  if (!user) {
-    throw new Error("Twitch did not return a user profile.");
-  }
-  return user;
 }
 
 export async function createEventSubSubscription(accessToken: string, request: TwitchSubscriptionRequest) {

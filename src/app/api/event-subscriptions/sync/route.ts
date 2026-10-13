@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/session";
+import { getBroadcasterConnection } from "@/lib/connections/manage";
+import { requireUser } from "@/lib/session";
 import { eventSubManager } from "@/lib/twitch/eventsub-manager";
-import { syncDesiredSubscriptionsForUser } from "@/lib/twitch/subscriptions";
+import { syncDesiredSubscriptionsForConnection } from "@/lib/twitch/subscriptions";
 
-export async function POST() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof NextResponse) {
+    return user;
   }
-  if (!user.twitchUserId) {
+  const connection = await getBroadcasterConnection(user.id, "twitch");
+  if (!connection) {
     return NextResponse.json({ error: "Connect Twitch before syncing EventSub subscriptions." }, { status: 400 });
   }
+  if (connection.status !== "active") {
+    return NextResponse.json({ error: "Reconnect Twitch before syncing EventSub subscriptions." }, { status: 409 });
+  }
 
-  const result = await syncDesiredSubscriptionsForUser(user.twitchUserId);
-  await eventSubManager.ensureUser(user.twitchUserId, user.id);
+  const result = await syncDesiredSubscriptionsForConnection(connection.id);
+  await eventSubManager.ensureConnection(connection.id, connection.platformUserId, connection.userId);
   return NextResponse.json(result);
 }

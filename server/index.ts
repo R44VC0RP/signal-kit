@@ -2,9 +2,10 @@ import { createServer } from "http";
 import next from "next";
 import { parse } from "url";
 import { WebSocketServer } from "ws";
+import { startConnectionHealthChecks } from "@/lib/connections/health";
 import { randomToken } from "@/lib/crypto";
 import { eventSubManager } from "@/lib/twitch/eventsub-manager";
-import { authenticateOverlayToken } from "@/lib/ws/auth";
+import { authenticateApiKey } from "@/lib/ws/auth";
 import { relayHub } from "@/lib/ws/relay";
 import { youtubeLiveManager } from "@/lib/youtube/live-manager";
 
@@ -16,6 +17,8 @@ const handle = app.getRequestHandler();
 
 async function main() {
   await app.prepare();
+  // Next's own upgrades (dev hot reload) must reach Next instead of being dropped.
+  const handleUpgrade = app.getUpgradeHandler();
 
   const server = createServer((req, res) => {
     void handle(req, res, parse(req.url ?? "", true));
@@ -26,7 +29,11 @@ async function main() {
   server.on("upgrade", (req, socket, head) => {
     const parsedUrl = parse(req.url ?? "", true);
     if (parsedUrl.pathname !== "/ws") {
-      socket.destroy();
+      if (parsedUrl.pathname?.startsWith("/_next/")) {
+        void handleUpgrade(req, socket, head);
+      } else {
+        socket.destroy();
+      }
       return;
     }
 
@@ -38,16 +45,16 @@ async function main() {
 
     wss.handleUpgrade(req, socket, head, (ws) => {
       void (async () => {
-        const auth = await authenticateOverlayToken(token);
+        const auth = await authenticateApiKey(token);
         if (!auth) {
-          ws.close(1008, "Invalid token");
+          ws.close(1008, "Invalid API key");
           return;
         }
 
         const clientId = randomToken(16);
         relayHub.add({
           id: clientId,
-          tokenId: auth.tokenId,
+          keyId: auth.keyId,
           userId: auth.userId,
           ws,
           connectedAt: new Date(),
@@ -72,6 +79,7 @@ async function main() {
     if (process.env.DATABASE_URL) {
       eventSubManager.start();
       youtubeLiveManager.start();
+      startConnectionHealthChecks();
     } else {
       console.warn("Signal Kit started without DATABASE_URL; EventSub manager is paused.");
     }

@@ -1,16 +1,19 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
+import { eq, inArray, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { eventSubscriptions, twitchUsers } from "@/db/schema";
-import { randomToken, stableJsonHash } from "@/lib/crypto";
+import { connections, platformSubscriptions } from "@/db/schema";
+import { stableJsonHash } from "@/lib/crypto";
 import { eventCatalogForUser } from "./event-catalog";
 
-export async function syncDesiredSubscriptionsForUser(twitchUserId: string) {
-  const [user] = await getDb().select().from(twitchUsers).where(eq(twitchUsers.id, twitchUserId)).limit(1);
-  if (!user) {
-    throw new Error("You need to connect Twitch first.");
+/** Writes the EventSub subscriptions a Twitch broadcaster connection should have, based on its scopes. */
+export async function syncDesiredSubscriptionsForConnection(connectionId: string) {
+  const db = getDb();
+  const [connection] = await db.select().from(connections).where(eq(connections.id, connectionId)).limit(1);
+  if (!connection || connection.platform !== "twitch") {
+    throw new Error("Twitch connection not found.");
   }
 
-  const catalog = eventCatalogForUser({ id: user.id, scopes: user.scopes });
+  const catalog = eventCatalogForUser({ id: connection.platformUserId, scopes: connection.scopes });
   const enabledEvents = catalog.filter((item) => item.enabledByScopes);
 
   const desiredKeys = new Set<string>();
@@ -18,11 +21,12 @@ export async function syncDesiredSubscriptionsForUser(twitchUserId: string) {
     const conditionHash = stableJsonHash(item.condition);
     desiredKeys.add(`${item.type}|${item.version}|${conditionHash}`);
 
-    await getDb()
-      .insert(eventSubscriptions)
+    await db
+      .insert(platformSubscriptions)
       .values({
-        id: randomToken(24),
-        twitchUserId: user.id,
+        id: randomUUID(),
+        connectionId: connection.id,
+        platform: "twitch",
         type: item.type,
         version: item.version,
         conditionHash,
@@ -33,24 +37,24 @@ export async function syncDesiredSubscriptionsForUser(twitchUserId: string) {
       .onDuplicateKeyUpdate({
         set: {
           requiredScopes: item.requiredScopes,
-          status: sql`if(${eventSubscriptions.status} = 'failed', 'desired', ${eventSubscriptions.status})`,
+          status: sql`if(${platformSubscriptions.status} = 'failed', 'desired', ${platformSubscriptions.status})`,
           error: null,
         },
       });
   }
 
-  const userRows = await getDb()
+  const rows = await db
     .select({
-      id: eventSubscriptions.id,
-      type: eventSubscriptions.type,
-      version: eventSubscriptions.version,
-      conditionHash: eventSubscriptions.conditionHash,
-      status: eventSubscriptions.status,
+      id: platformSubscriptions.id,
+      type: platformSubscriptions.type,
+      version: platformSubscriptions.version,
+      conditionHash: platformSubscriptions.conditionHash,
+      status: platformSubscriptions.status,
     })
-    .from(eventSubscriptions)
-    .where(eq(eventSubscriptions.twitchUserId, user.id));
+    .from(platformSubscriptions)
+    .where(eq(platformSubscriptions.connectionId, connection.id));
 
-  const stale = userRows
+  const stale = rows
     .filter(
       (row) =>
         !desiredKeys.has(`${row.type}|${row.version}|${row.conditionHash}`) &&
@@ -58,22 +62,13 @@ export async function syncDesiredSubscriptionsForUser(twitchUserId: string) {
     )
     .map((row) => row.id);
 
-  let removed = 0;
   if (stale.length > 0) {
-    await getDb().delete(eventSubscriptions).where(inArray(eventSubscriptions.id, stale));
-    removed = stale.length;
+    await db.delete(platformSubscriptions).where(inArray(platformSubscriptions.id, stale));
   }
 
   return {
     desired: enabledEvents.length,
     skippedForScopes: catalog.length - enabledEvents.length,
-    removed,
+    removed: stale.length,
   };
-}
-
-export async function listDesiredSubscriptions(twitchUserId: string) {
-  return getDb()
-    .select()
-    .from(eventSubscriptions)
-    .where(and(eq(eventSubscriptions.twitchUserId, twitchUserId), eq(eventSubscriptions.status, "desired")));
 }

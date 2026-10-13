@@ -1,5 +1,7 @@
 import {
+  boolean,
   index,
+  int,
   json,
   mysqlTable,
   text,
@@ -8,145 +10,188 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 
-export const appUsers = mysqlTable("app_users", {
-  id: varchar("id", { length: 64 }).primaryKey(),
-  displayName: varchar("display_name", { length: 255 }).notNull(),
-  profileImageUrl: text("profile_image_url"),
-  primaryProvider: varchar("primary_provider", { length: 32 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
+// Better Auth core tables (generated with `auth generate`, then adjusted):
+// - no foreign keys, because PlanetScale rejects them; ownership is enforced in code
+// - provider/account ids are varchar so a platform account can be unique across users
+
+export const users = mysqlTable("users", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  image: text("image"),
+  createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
     .defaultNow()
-    .notNull()
-    .$onUpdate(() => new Date()),
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
-export const twitchUsers = mysqlTable(
-  "twitch_users",
+export const sessions = mysqlTable(
+  "sessions",
   {
-    id: varchar("id", { length: 64 }).primaryKey(),
-    appUserId: varchar("app_user_id", { length: 64 }),
-    login: varchar("login", { length: 128 }).notNull(),
-    displayName: varchar("display_name", { length: 255 }).notNull(),
-    email: varchar("email", { length: 255 }),
-    profileImageUrl: text("profile_image_url"),
-    accessTokenEncrypted: text("access_token_encrypted").notNull(),
-    refreshTokenEncrypted: text("refresh_token_encrypted").notNull(),
-    tokenExpiresAt: timestamp("token_expires_at"),
-    scopes: json("scopes").$type<string[]>().notNull(),
-    connectedAt: timestamp("connected_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    id: varchar("id", { length: 36 }).primaryKey(),
+    expiresAt: timestamp("expires_at", { fsp: 3 }).notNull(),
+    token: varchar("token", { length: 255 }).notNull().unique(),
+    createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { fsp: 3 })
+      .$onUpdate(() => new Date())
+      .notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+  },
+  (table) => [index("sessions_user_id_idx").on(table.userId)],
+);
+
+/** OAuth credentials per platform login. Tokens are encrypted by Better Auth (encryptOAuthTokens). */
+export const accounts = mysqlTable(
+  "accounts",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    accountId: varchar("account_id", { length: 255 }).notNull(),
+    providerId: varchar("provider_id", { length: 64 }).notNull(),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { fsp: 3 }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { fsp: 3 }),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { fsp: 3 })
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("accounts_user_id_idx").on(table.userId),
+    uniqueIndex("accounts_provider_account_idx").on(table.providerId, table.accountId),
+  ],
+);
+
+export const verifications = mysqlTable(
+  "verifications",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    identifier: varchar("identifier", { length: 255 }).notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { fsp: 3 }).notNull(),
+    createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { fsp: 3 })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date()),
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
-  (table) => ({
-    appUserIdx: index("twitch_users_app_user_idx").on(table.appUserId),
-  }),
+  (table) => [index("verifications_identifier_idx").on(table.identifier)],
 );
 
-export const appSessions = mysqlTable(
-  "app_sessions",
+/** Better Auth api-key plugin table. `key` holds a hash, never the raw key. */
+export const apiKeys = mysqlTable(
+  "api_keys",
   {
-    id: varchar("id", { length: 128 }).primaryKey(),
-    appUserId: varchar("app_user_id", { length: 64 }),
-    twitchUserId: varchar("twitch_user_id", { length: 64 }),
-    expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    id: varchar("id", { length: 36 }).primaryKey(),
+    configId: varchar("config_id", { length: 255 }).default("default").notNull(),
+    name: text("name"),
+    start: text("start"),
+    referenceId: varchar("reference_id", { length: 255 }).notNull(),
+    prefix: text("prefix"),
+    key: varchar("key", { length: 255 }).notNull(),
+    refillInterval: int("refill_interval"),
+    refillAmount: int("refill_amount"),
+    lastRefillAt: timestamp("last_refill_at", { fsp: 3 }),
+    enabled: boolean("enabled").default(true),
+    rateLimitEnabled: boolean("rate_limit_enabled").default(true),
+    rateLimitTimeWindow: int("rate_limit_time_window").default(60000),
+    rateLimitMax: int("rate_limit_max").default(120),
+    requestCount: int("request_count").default(0),
+    remaining: int("remaining"),
+    lastRequest: timestamp("last_request", { fsp: 3 }),
+    expiresAt: timestamp("expires_at", { fsp: 3 }),
+    createdAt: timestamp("created_at", { fsp: 3 }).notNull(),
+    updatedAt: timestamp("updated_at", { fsp: 3 }).notNull(),
+    permissions: text("permissions"),
+    metadata: text("metadata"),
   },
-  (table) => ({
-    appUserIdx: index("app_sessions_app_user_idx").on(table.appUserId),
-    userIdx: index("app_sessions_user_idx").on(table.twitchUserId),
-  }),
+  (table) => [
+    index("api_keys_config_id_idx").on(table.configId),
+    index("api_keys_reference_id_idx").on(table.referenceId),
+    uniqueIndex("api_keys_key_idx").on(table.key),
+  ],
 );
 
-export const connectedAccounts = mysqlTable(
-  "connected_accounts",
+// SignalKit tables.
+
+export type Platform = "twitch" | "youtube" | "x";
+export type ConnectionRole = "broadcaster" | "bot";
+export type ConnectionStatus = "active" | "needs_reauth" | "error";
+
+/**
+ * A platform channel/account a user has connected. One row per Better Auth account,
+ * so a user can connect several accounts on the same platform (e.g. a channel and a bot).
+ * A platform account can belong to only one SignalKit user.
+ */
+export const connections = mysqlTable(
+  "connections",
   {
-    id: varchar("id", { length: 64 }).primaryKey(),
-    appUserId: varchar("app_user_id", { length: 64 }),
-    ownerTwitchUserId: varchar("owner_twitch_user_id", { length: 64 }),
-    provider: varchar("provider", { length: 32 }).notNull(),
-    providerAccountId: varchar("provider_account_id", { length: 128 }).notNull(),
-    login: varchar("login", { length: 128 }).notNull(),
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    accountId: varchar("account_id", { length: 36 }).notNull(),
+    platform: varchar("platform", { length: 16 }).$type<Platform>().notNull(),
+    platformUserId: varchar("platform_user_id", { length: 128 }).notNull(),
+    username: varchar("username", { length: 255 }).notNull(),
     displayName: varchar("display_name", { length: 255 }).notNull(),
-    profileImageUrl: text("profile_image_url"),
-    accessTokenEncrypted: text("access_token_encrypted").notNull(),
-    refreshTokenEncrypted: text("refresh_token_encrypted").notNull(),
-    tokenExpiresAt: timestamp("token_expires_at"),
+    avatarUrl: text("avatar_url"),
+    role: varchar("role", { length: 16 }).$type<ConnectionRole>().notNull().default("broadcaster"),
+    status: varchar("status", { length: 24 }).$type<ConnectionStatus>().notNull().default("active"),
+    statusReason: text("status_reason"),
     scopes: json("scopes").$type<string[]>().notNull(),
-    lastSyncAt: timestamp("last_sync_at"),
-    lastEventAt: timestamp("last_event_at"),
-    lastError: text("last_error"),
-    connectedAt: timestamp("connected_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    profileSyncedAt: timestamp("profile_synced_at", { fsp: 3 }),
+    lastValidatedAt: timestamp("last_validated_at", { fsp: 3 }),
+    lastEventAt: timestamp("last_event_at", { fsp: 3 }),
+    createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { fsp: 3 })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date()),
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
-  (table) => ({
-    appUserIdx: index("connected_accounts_app_user_idx").on(table.appUserId),
-    ownerIdx: index("connected_accounts_owner_idx").on(table.ownerTwitchUserId),
-    providerIdx: index("connected_accounts_provider_idx").on(table.provider),
-    uniqueAppProvider: uniqueIndex("connected_accounts_unique_app_provider_idx").on(
-      table.appUserId,
-      table.provider,
-    ),
-    uniqueProviderAccount: uniqueIndex("connected_accounts_unique_provider_account_idx").on(
-      table.ownerTwitchUserId,
-      table.provider,
-      table.providerAccountId,
-    ),
-  }),
+  (table) => [
+    index("connections_user_id_idx").on(table.userId),
+    uniqueIndex("connections_account_id_idx").on(table.accountId),
+    uniqueIndex("connections_platform_user_idx").on(table.platform, table.platformUserId),
+  ],
 );
 
-export const overlayTokens = mysqlTable(
-  "overlay_tokens",
+/** Desired and actual server-side event subscriptions per connection (Twitch EventSub today, X Activity API next). */
+export const platformSubscriptions = mysqlTable(
+  "platform_subscriptions",
   {
-    id: varchar("id", { length: 64 }).primaryKey(),
-    appUserId: varchar("app_user_id", { length: 64 }),
-    twitchUserId: varchar("twitch_user_id", { length: 64 }),
-    tokenHash: varchar("token_hash", { length: 64 }).notNull(),
-    label: varchar("label", { length: 120 }).notNull(),
-    lastUsedAt: timestamp("last_used_at"),
-    revokedAt: timestamp("revoked_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => ({
-    appUserIdx: index("overlay_tokens_app_user_idx").on(table.appUserId),
-    userIdx: index("overlay_tokens_user_idx").on(table.twitchUserId),
-    tokenHashIdx: uniqueIndex("overlay_tokens_token_hash_idx").on(table.tokenHash),
-  }),
-);
-
-export const eventSubscriptions = mysqlTable(
-  "event_subscriptions",
-  {
-    id: varchar("id", { length: 64 }).primaryKey(),
-    twitchUserId: varchar("twitch_user_id", { length: 64 })
-      .notNull()
-      .references(() => twitchUsers.id, { onDelete: "cascade" }),
+    id: varchar("id", { length: 36 }).primaryKey(),
+    connectionId: varchar("connection_id", { length: 36 }).notNull(),
+    platform: varchar("platform", { length: 16 }).$type<Platform>().notNull(),
     type: varchar("type", { length: 128 }).notNull(),
     version: varchar("version", { length: 16 }).notNull(),
     conditionHash: varchar("condition_hash", { length: 64 }).notNull(),
     conditionJson: json("condition_json").$type<Record<string, string>>().notNull(),
     requiredScopes: json("required_scopes").$type<string[]>().notNull(),
-    status: varchar("status", { length: 64 }).notNull().default("desired"),
-    twitchSubscriptionId: varchar("twitch_subscription_id", { length: 128 }),
-    twitchSessionId: varchar("twitch_session_id", { length: 128 }),
+    status: varchar("status", { length: 32 }).notNull().default("desired"),
+    remoteId: varchar("remote_id", { length: 128 }),
+    transportSessionId: varchar("transport_session_id", { length: 128 }),
     error: text("error"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { fsp: 3 }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { fsp: 3 })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date()),
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
-  (table) => ({
-    userIdx: index("event_subscriptions_user_idx").on(table.twitchUserId),
-    uniqueDesired: uniqueIndex("event_subscriptions_unique_desired_idx").on(
-      table.twitchUserId,
+  (table) => [
+    index("platform_subscriptions_connection_idx").on(table.connectionId),
+    index("platform_subscriptions_remote_idx").on(table.remoteId),
+    uniqueIndex("platform_subscriptions_unique_idx").on(
+      table.connectionId,
       table.type,
       table.version,
       table.conditionHash,
     ),
-  }),
+  ],
 );

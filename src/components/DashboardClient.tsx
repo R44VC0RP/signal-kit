@@ -1,27 +1,31 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { ConnectButton, type ProviderId } from "@/components/AuthButtons";
+import type { PublicConnection } from "@/lib/connections/public";
 
-type TokenRow = {
+type ApiKeyRow = {
   id: string;
-  label: string;
-  createdAt: Date | string;
-  lastUsedAt: Date | string | null;
-  revokedAt: Date | string | null;
+  name: string | null;
+  start: string | null;
+  enabled: boolean;
+  createdAt: string;
+  lastUsedAt: string | null;
 };
 
-type ConnectedAccount = {
-  id: string;
-  provider: string;
-  providerAccountId: string;
-  login: string;
-  displayName: string;
-  profileImageUrl: string | null;
-  scopes: string[];
-  lastSyncAt: Date | string | null;
-  lastEventAt: Date | string | null;
-  lastError: string | null;
-  connectedAt: Date | string | null;
+type EnabledProviders = Record<ProviderId, boolean>;
+
+const PLATFORM_PROVIDER: Record<PublicConnection["platform"], ProviderId> = {
+  twitch: "twitch",
+  youtube: "google",
+  x: "twitter",
+};
+
+const PLATFORM_LABEL: Record<PublicConnection["platform"], string> = {
+  twitch: "Twitch",
+  youtube: "YouTube",
+  x: "X",
 };
 
 type DashboardEventStatus =
@@ -92,51 +96,56 @@ type BroadcastSettings = {
 };
 
 export function DashboardClient({
-  initialTokens,
-  accounts,
-  hasTwitch,
+  initialKeys,
+  connections,
+  providers,
   events,
   wsUrl,
   appUrl,
   snippets,
   highlighted,
 }: {
-  initialTokens: TokenRow[];
-  accounts: ConnectedAccount[];
-  hasTwitch: boolean;
+  initialKeys: ApiKeyRow[];
+  connections: PublicConnection[];
+  providers: EnabledProviders;
   events: DashboardEvent[];
   wsUrl: string;
   appUrl: string;
   snippets: Snippets;
   highlighted: Highlighted;
 }) {
-  const [tokens, setTokens] = useState(initialTokens);
+  const [tokens, setTokens] = useState(initialKeys);
   const [newToken, setNewToken] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<DashboardPanel>("broadcast");
 
   async function createToken() {
-    setStatus("Creating token...");
-    const response = await fetch("/api/tokens", {
+    setStatus("Creating API key...");
+    const response = await fetch("/api/keys", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label: `Overlay ${tokens.length + 1}` }),
+      body: JSON.stringify({ name: `API key ${tokens.length + 1}` }),
     });
     const payload = await response.json();
     if (!response.ok) {
-      setStatus(payload.error ?? "Token creation failed.");
+      setStatus(payload.error ?? "API key creation failed.");
       return;
     }
-    setNewToken(payload.token);
-    const refreshed = await fetch("/api/tokens").then((res) => res.json());
-    setTokens(refreshed.tokens);
-    setStatus("Token created. Copy it now — it is only shown once.");
+    setNewToken(payload.key);
+    await refreshKeys();
+    setStatus("API key created. Copy it now — it is only shown once.");
   }
 
   async function revokeToken(id: string) {
-    await fetch(`/api/tokens/${id}`, { method: "DELETE" });
-    const refreshed = await fetch("/api/tokens").then((res) => res.json());
-    setTokens(refreshed.tokens);
+    const response = await fetch(`/api/keys/${id}`, { method: "DELETE" });
+    const payload = await response.json();
+    setStatus(response.ok ? "API key revoked." : (payload.error ?? "Revoke failed."));
+    await refreshKeys();
+  }
+
+  async function refreshKeys() {
+    const refreshed = await fetch("/api/keys").then((res) => res.json());
+    setTokens(refreshed.keys ?? []);
   }
 
   async function syncSubscriptions() {
@@ -165,10 +174,12 @@ export function DashboardClient({
           <DashboardTabs
             activePanel={activePanel}
             onChange={setActivePanel}
-            counts={{ accounts: accounts.length, tokens: tokens.length, subscriptions: events.length }}
+            counts={{ accounts: connections.length, tokens: tokens.length, subscriptions: events.length }}
           />
           <div className="min-h-[42rem] min-w-0 overflow-hidden rounded-[1.35rem] border border-neutral-200 bg-white shadow-sm shadow-neutral-950/[0.04] ring-1 ring-black/[0.03]">
-            {activePanel === "accounts" ? <Accounts accounts={accounts} hasTwitch={hasTwitch} /> : null}
+            {activePanel === "accounts" ? (
+              <Accounts connections={connections} providers={providers} onStatus={setStatus} />
+            ) : null}
             {activePanel === "broadcast" ? <BroadcastDetails onStatus={setStatus} /> : null}
             {activePanel === "tokens" ? (
               <Tokens
@@ -202,7 +213,7 @@ function DashboardTabs({
   const tabs: Array<{ id: DashboardPanel; label: string; meta?: string }> = [
     { id: "accounts", label: "Accounts", meta: String(counts.accounts) },
     { id: "broadcast", label: "Broadcast" },
-    { id: "tokens", label: "Tokens", meta: String(counts.tokens) },
+    { id: "tokens", label: "API keys", meta: String(counts.tokens) },
     { id: "subscriptions", label: "Twitch Events", meta: String(counts.subscriptions) },
   ];
 
@@ -415,7 +426,7 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
           <ProviderPanel title="Twitch" connected={Boolean(settings?.twitch?.connected)}>
-            {settings?.twitch?.needsReconnect ? <ReconnectNotice provider="Twitch" href="/api/auth/twitch/start" /> : null}
+            {settings?.twitch?.needsReconnect ? <ReconnectNotice provider="twitch" label="Twitch" /> : null}
             {useSharedTitle ? (
               <p className="text-sm text-neutral-600">
                 Current title: <span className="font-medium text-neutral-950">{settings?.twitch?.channel?.title ?? "Untitled"}</span>
@@ -436,7 +447,7 @@ function BroadcastDetails({ onStatus }: { onStatus: (status: string | null) => v
           </ProviderPanel>
 
           <ProviderPanel title="YouTube" connected={Boolean(settings?.youtube?.connected)}>
-            {settings?.youtube?.needsReconnect ? <ReconnectNotice provider="YouTube" href="/api/auth/youtube/start" /> : null}
+            {settings?.youtube?.needsReconnect ? <ReconnectNotice provider="google" label="YouTube" /> : null}
             {settings?.youtube?.connected && !settings.youtube.video ? (
               <p className="text-sm text-neutral-500">No active or upcoming YouTube broadcast found.</p>
             ) : null}
@@ -511,10 +522,13 @@ function ProviderPanel({ title, connected, children }: { title: string; connecte
   );
 }
 
-function ReconnectNotice({ provider, href }: { provider: string; href: string }) {
+function ReconnectNotice({ provider, label }: { provider: ProviderId; label: string }) {
   return (
     <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-      Reconnect {provider} to grant metadata update scopes. <a href={href} className="font-semibold underline">Reconnect</a>
+      Reconnect {label} to restore access or grant metadata update scopes.{" "}
+      <ConnectButton provider={provider} mode="link" className="font-semibold underline">
+        Reconnect
+      </ConnectButton>
     </div>
   );
 }
@@ -571,92 +585,149 @@ function LabelledTextarea({
   );
 }
 
-function Accounts({ accounts, hasTwitch }: { accounts: ConnectedAccount[]; hasTwitch: boolean }) {
+const primaryButton =
+  "inline-flex items-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 disabled:opacity-60";
+const secondaryButton =
+  "inline-flex items-center rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:opacity-60";
+
+function Accounts({
+  connections,
+  providers,
+  onStatus,
+}: {
+  connections: PublicConnection[];
+  providers: EnabledProviders;
+  onStatus: (status: string) => void;
+}) {
+  const router = useRouter();
+
+  async function disconnect(connection: PublicConnection) {
+    if (!window.confirm(`Disconnect ${connection.displayName} (${PLATFORM_LABEL[connection.platform]})?`)) {
+      return;
+    }
+    const response = await fetch(`/api/connections/${connection.id}`, { method: "DELETE" });
+    const payload = await response.json();
+    onStatus(response.ok ? "Account disconnected." : (payload.error ?? "Disconnect failed."));
+    router.refresh();
+  }
+
+  async function setRole(connection: PublicConnection, role: "broadcaster" | "bot") {
+    const response = await fetch(`/api/connections/${connection.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role }),
+    });
+    const payload = await response.json();
+    onStatus(response.ok ? `Marked as ${role}.` : (payload.error ?? "Update failed."));
+    router.refresh();
+  }
+
   return (
     <section>
       <div className="p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4">
           <div>
             <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
               Connected accounts
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Connect either platform, or both
+              Connect any platform, as many accounts as you need
             </h2>
             <p className="mt-2 max-w-[62ch] text-pretty text-neutral-600">
-              Twitch EventSub and YouTube Live Chat share the same relay token. Use one platform
-              independently, or connect both and route events by provider.
+              Every connected account shares the same API keys. Add a separate Twitch bot account to
+              read and send chat under its own name. Any connected account can also be used to sign in.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            {!hasTwitch ? (
-              <a
-                href="/api/auth/twitch/start"
-                className="inline-flex items-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-              >
-                Connect Twitch
-              </a>
+            {providers.twitch ? (
+              <>
+                <ConnectButton provider="twitch" mode="link" className={primaryButton}>
+                  Connect Twitch channel
+                </ConnectButton>
+                <ConnectButton provider="twitch" mode="link" role="bot" className={secondaryButton}>
+                  Connect Twitch bot
+                </ConnectButton>
+              </>
             ) : null}
-            <a
-              href="/api/auth/youtube/start"
-              className="inline-flex items-center rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white ring-1 ring-neutral-950 hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
-            >
-              Connect YouTube
-            </a>
+            {providers.google ? (
+              <ConnectButton provider="google" mode="link" className={secondaryButton}>
+                Connect YouTube
+              </ConnectButton>
+            ) : null}
+            {providers.twitter ? (
+              <ConnectButton provider="twitter" mode="link" className={secondaryButton}>
+                Connect X
+              </ConnectButton>
+            ) : null}
           </div>
         </div>
 
         <ul role="list" className="mt-8 divide-y divide-neutral-200 border-t border-neutral-200">
-          {accounts.map((account) => (
+          {connections.map((connection) => (
             <li
-              key={`${account.provider}-${account.id}`}
+              key={connection.id}
               className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex min-w-0 items-center gap-3">
-                {account.profileImageUrl ? (
+                {connection.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={account.profileImageUrl}
+                    src={connection.avatarUrl}
                     alt=""
                     className="size-10 rounded-full bg-neutral-100 object-cover"
                   />
                 ) : (
                   <div className="flex size-10 items-center justify-center rounded-full bg-neutral-100 font-mono text-xs text-neutral-500 uppercase">
-                    {account.provider.slice(0, 2)}
+                    {connection.platform.slice(0, 2)}
                   </div>
                 )}
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2">
                     <span className="truncate text-sm font-semibold tracking-tight">
-                      {account.displayName}
+                      {connection.displayName}
                     </span>
                     <span className="font-mono text-xs text-neutral-500 uppercase">
-                      {account.provider}
+                      {PLATFORM_LABEL[connection.platform]} · {connection.role}
                     </span>
                   </div>
                   <div className="mt-1 truncate font-mono text-xs text-neutral-500">
-                    {account.provider === "youtube" ? "YouTube Live Chat" : "Twitch EventSub"} · {account.scopes.length} scopes
+                    @{connection.username} · {connection.scopes.length} scopes · last event{" "}
+                    {connection.lastEventAt ? new Date(connection.lastEventAt).toLocaleString() : "none yet"}
                   </div>
-                  {account.lastError ? (
-                    <div className="mt-2 max-w-[72ch] truncate font-mono text-xs text-red-700" title={account.lastError}>
-                      {account.lastError}
+                  {connection.status !== "active" ? (
+                    <div
+                      className="mt-2 max-w-[72ch] truncate font-mono text-xs text-red-700"
+                      title={connection.statusReason ?? undefined}
+                    >
+                      {connection.status === "needs_reauth" ? "Needs reconnect" : "Error"}
+                      {connection.statusReason ? ` · ${connection.statusReason}` : ""}
                     </div>
                   ) : null}
                 </div>
               </div>
-              <div className="font-mono text-xs text-neutral-500 sm:text-right">
-                {account.provider === "youtube" ? (
-                  <>
-                    <div>
-                      last sync {account.lastSyncAt ? new Date(account.lastSyncAt).toLocaleString() : "pending"}
-                    </div>
-                    <div>
-                      last event {account.lastEventAt ? new Date(account.lastEventAt).toLocaleString() : "none yet"}
-                    </div>
-                  </>
-                ) : (
-                  <div>Twitch EventSub connected</div>
-                )}
+              <div className="flex flex-wrap items-center gap-2">
+                {connection.status !== "active" ? (
+                  <ConnectButton
+                    provider={PLATFORM_PROVIDER[connection.platform]}
+                    mode="link"
+                    role={connection.role}
+                    className={primaryButton}
+                  >
+                    Reconnect
+                  </ConnectButton>
+                ) : null}
+                {connection.platform === "twitch" ? (
+                  <button
+                    type="button"
+                    className={secondaryButton}
+                    onClick={() => setRole(connection, connection.role === "bot" ? "broadcaster" : "bot")}
+                  >
+                    {connection.role === "bot" ? "Use as channel" : "Use as bot"}
+                  </button>
+                ) : null}
+                <button type="button" className={secondaryButton} onClick={() => disconnect(connection)}>
+                  Disconnect
+                </button>
               </div>
             </li>
           ))}
@@ -676,7 +747,7 @@ function Tokens({
   onCreate,
   onRevoke,
 }: {
-  tokens: TokenRow[];
+  tokens: ApiKeyRow[];
   newToken: string | null;
   wsUrl: string;
   appUrl: string;
@@ -691,13 +762,14 @@ function Tokens({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
-              Relay tokens
+              API keys
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Tokens for overlays and bots
+              Keys for overlays, bots, and agents
             </h2>
             <p className="mt-2 max-w-[60ch] text-pretty text-neutral-600">
-              Pass a token in the WebSocket URL. Tokens are shown once and can be revoked any time.
+              Pass a key in the WebSocket URL. Keys are shown once, stored only as a hash, and revoking one
+              disconnects its open sockets immediately.
             </p>
           </div>
           <button
@@ -705,7 +777,7 @@ function Tokens({
             onClick={onCreate}
             className="inline-flex items-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
           >
-            Generate token
+            Create API key
           </button>
         </div>
 
@@ -714,7 +786,7 @@ function Tokens({
         <div className="mt-8">
           {tokens.length === 0 ? (
             <p className="border-t border-neutral-200 pt-6 text-sm text-neutral-500">
-              No tokens yet. Generate one to start connecting overlays.
+              No API keys yet. Create one to start connecting overlays.
             </p>
           ) : (
             <ul role="list" className="divide-y divide-neutral-200 border-t border-neutral-200">
@@ -724,15 +796,16 @@ function Tokens({
                   className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <div className="text-sm font-semibold tracking-tight">{token.label}</div>
+                    <div className="text-sm font-semibold tracking-tight">{token.name ?? "API key"}</div>
                     <div className="mt-1 font-mono text-xs text-neutral-500">
-                      {token.revokedAt ? "revoked" : "active"} · last used{" "}
+                      {token.start ? `${token.start}… · ` : ""}
+                      {token.enabled ? "active" : "disabled"} · last used{" "}
                       {token.lastUsedAt
                         ? new Date(token.lastUsedAt).toLocaleString()
                         : "never"}
                     </div>
                   </div>
-                  {!token.revokedAt ? (
+                  {token.enabled ? (
                     <button
                       type="button"
                       onClick={() => onRevoke(token.id)}
@@ -764,7 +837,7 @@ function NewTokenReveal({ token }: { token: string }) {
   return (
     <div className="mt-8 overflow-hidden rounded-xl border border-violet-200 bg-violet-50">
       <div className="flex items-center justify-between border-b border-violet-200 bg-white px-4 py-2.5 font-mono text-xs tracking-wide text-violet-700 uppercase">
-        <span>new token</span>
+        <span>new api key</span>
         <span>shown once</span>
       </div>
       <div className="flex items-center gap-3 p-4">
@@ -802,7 +875,7 @@ function UseTheToken({
 }) {
   const [copiedPrompt, setCopiedPrompt] = useState(false);
 
-  const tokenForPrompt = newToken ?? "<paste-your-relay-token-here>";
+  const tokenForPrompt = newToken ?? "<paste-your-api-key-here>";
   const prompt = buildAiPrompt({ wsUrl, appUrl, token: tokenForPrompt });
 
   async function copyPrompt() {

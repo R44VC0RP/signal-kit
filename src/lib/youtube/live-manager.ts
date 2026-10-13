@@ -1,6 +1,8 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { connectedAccounts } from "@/db/schema";
+import { connections } from "@/db/schema";
+import { connectionEvents } from "@/lib/connections/events";
+import { ConnectionUnavailableError, getConnectionAccessToken } from "@/lib/connections/tokens";
 import { relayHub } from "@/lib/ws/relay";
 import {
   listActiveLiveBroadcasts,
@@ -9,7 +11,6 @@ import {
   type YouTubeLiveChatMessage,
   YouTubeApiError,
 } from "./api";
-import { getUsableYouTubeAccessToken } from "./tokens";
 
 type ManagedYouTubeAccount = {
   accountId: string;
@@ -33,6 +34,12 @@ class YouTubeLiveManager {
     }
 
     this.started = true;
+    connectionEvents.on("changed", (connectionId) => {
+      void this.syncAllAccounts().catch((error) => {
+        console.error(`[youtube] sync after ${connectionId} changed failed`, error);
+      });
+    });
+    connectionEvents.on("removed", (connectionId) => this.removeAccount(connectionId));
     void this.syncAllAccounts().catch((error) => {
       console.error("[youtube] initial sync failed", error);
     });
@@ -44,11 +51,25 @@ class YouTubeLiveManager {
   }
 
   async syncAllAccounts() {
-    const accounts = await getDb()
-      .select({ id: connectedAccounts.id })
-      .from(connectedAccounts)
-      .where(eq(connectedAccounts.provider, "youtube"));
-    await Promise.all(accounts.map((account) => this.ensureAccount(account.id)));
+    const rows = await getDb()
+      .select({ id: connections.id })
+      .from(connections)
+      .where(and(eq(connections.platform, "youtube"), eq(connections.status, "active")));
+    const active = new Set(rows.map((row) => row.id));
+    for (const connectionId of this.accounts.keys()) {
+      if (!active.has(connectionId)) {
+        this.removeAccount(connectionId);
+      }
+    }
+    await Promise.all(rows.map((row) => this.ensureAccount(row.id)));
+  }
+
+  removeAccount(connectionId: string) {
+    const managed = this.accounts.get(connectionId);
+    if (managed) {
+      this.stopPolling(managed);
+      this.accounts.delete(connectionId);
+    }
   }
 
   async ensureAccount(accountId: string) {
@@ -75,14 +96,9 @@ class YouTubeLiveManager {
         return;
       }
 
-      const accessToken = await getUsableYouTubeAccessToken(accountId);
+      const { accessToken } = await getConnectionAccessToken(accountId);
       const broadcasts = await listActiveLiveBroadcasts(accessToken);
       const broadcast = broadcasts.find((item) => item.snippet?.liveChatId);
-
-      await getDb()
-        .update(connectedAccounts)
-        .set({ lastSyncAt: new Date(), lastError: null })
-        .where(eq(connectedAccounts.id, accountId));
 
       if (!broadcast?.snippet?.liveChatId) {
         this.stopPolling(managed);
@@ -143,17 +159,7 @@ class YouTubeLiveManager {
 
     this.activePollJobs.add(accountId);
     try {
-      const [account] = await getDb()
-        .select()
-        .from(connectedAccounts)
-        .where(eq(connectedAccounts.id, accountId))
-        .limit(1);
-      if (!account) {
-        this.stopPolling(managed);
-        return;
-      }
-
-      const accessToken = await getUsableYouTubeAccessToken(accountId);
+      const { accessToken, connection: account } = await getConnectionAccessToken(accountId);
       const response = await listLiveChatMessages(
         accessToken,
         managed.currentLiveChatId,
@@ -171,7 +177,7 @@ class YouTubeLiveManager {
         if (!managed.initialized) {
           continue;
         }
-        delivered += relayHub.publish(account.appUserId ?? account.ownerTwitchUserId ?? account.id, {
+        delivered += relayHub.publish(account.userId, {
           type: eventTypeForMessage(item),
           provider: "youtube",
           account: relayAccount(account),
@@ -189,17 +195,12 @@ class YouTubeLiveManager {
       managed.nextPageToken = response.nextPageToken ?? managed.nextPageToken;
       pruneSeenIds(managed.seenMessageIds);
 
-      await getDb()
-        .update(connectedAccounts)
-        .set({
-          lastSyncAt: new Date(),
-          lastEventAt: delivered > 0 ? new Date() : account.lastEventAt,
-          lastError: null,
-        })
-        .where(eq(connectedAccounts.id, accountId));
+      if (delivered > 0) {
+        await getDb().update(connections).set({ lastEventAt: new Date() }).where(eq(connections.id, accountId));
+      }
 
       if (response.offlineAt) {
-        relayHub.publish(account.appUserId ?? account.ownerTwitchUserId ?? account.id, {
+        relayHub.publish(account.userId, {
           type: "youtube.live_chat.ended",
           provider: "youtube",
           account: relayAccount(account),
@@ -228,11 +229,14 @@ class YouTubeLiveManager {
     }
   }
 
-  private async markError(accountId: string, error: unknown) {
-    await getDb()
-      .update(connectedAccounts)
-      .set({ lastSyncAt: new Date(), lastError: String(error) })
-      .where(eq(connectedAccounts.id, accountId));
+  private async markError(connectionId: string, error: unknown) {
+    if (error instanceof ConnectionUnavailableError) {
+      // Needs the user to reconnect; the periodic sync skips it until it is active again.
+      console.warn(`[youtube] ${connectionId} paused: ${error.message}`);
+      this.removeAccount(connectionId);
+      return;
+    }
+    console.error(`[youtube] ${connectionId} live chat error`, error);
   }
 }
 
@@ -267,19 +271,14 @@ function eventTypeForMessage(message: YouTubeLiveChatMessage) {
   }
 }
 
-function relayAccount(account: {
-  id: string;
-  provider: string;
-  providerAccountId: string;
-  login: string;
-  displayName: string;
-}) {
+function relayAccount(connection: { id: string; platformUserId: string; username: string; displayName: string }) {
   return {
-    id: account.id,
-    provider: account.provider,
-    providerAccountId: account.providerAccountId,
-    login: account.login,
-    displayName: account.displayName,
+    id: connection.id,
+    connectionId: connection.id,
+    provider: "youtube",
+    providerAccountId: connection.platformUserId,
+    login: connection.username,
+    displayName: connection.displayName,
   };
 }
 

@@ -22,6 +22,13 @@
       "when": 1779320124978,
       "tag": "0002_generic_app_users",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1791901829193,
+      "tag": "0003_better_auth_connections",
+      "breakpoints": true
     }
   ]
 }

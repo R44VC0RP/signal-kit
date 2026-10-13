@@ -11,15 +11,17 @@ Twitch EventSub, YouTube Live Chat, or both as one clean WebSocket for overlays,
 - Background Twitch EventSub WebSocket manager.
 - Background YouTube active-broadcast/live-chat poller.
 - Public overlay WebSocket at `/ws?token=sk_live_...`.
-- Dashboard for generating/revoking overlay tokens and syncing desired EventSub subscriptions.
+- Better Auth sign-in with Twitch, Google (YouTube), or X; connect several accounts per platform, including a Twitch bot account.
+- Dashboard for creating/revoking API keys (hashed, revocation closes live sockets) and syncing desired EventSub subscriptions.
 - Browser SDK at `/twe-client.js` and npm SDK package in `packages/client`.
 - CLI package at `@signal-kit/cli` for streaming all relay events in a terminal.
 
 ## Setup
 
 1. Copy `.env.example` to `.env.local` and fill in the values.
-2. Create a Twitch app callback URL: `http://localhost:3000/api/auth/twitch/callback`.
-3. Create a Google OAuth web client callback URL: `http://localhost:3000/api/auth/youtube/callback`.
+2. Create a Twitch app callback URL: `http://localhost:3000/api/auth/callback/twitch`.
+3. Create a Google OAuth web client callback URL: `http://localhost:3000/api/auth/callback/google`.
+   For X, add `http://localhost:3000/api/auth/callback/twitter` to the X app's OAuth 2.0 settings.
 4. Run `npm run db:generate`.
 5. Run `npm run db:migrate`.
 6. Run `npm run dev`.
@@ -28,8 +30,8 @@ Twitch EventSub, YouTube Live Chat, or both as one clean WebSocket for overlays,
 
 1. Copy `.env.example` to `.env` and fill in the values.
 2. Set `NEXT_PUBLIC_APP_URL` to the public HTTP(S) URL users will visit.
-3. Add the matching Twitch callback URL: `${NEXT_PUBLIC_APP_URL}/api/auth/twitch/callback`.
-4. Add the matching Google callback URL: `${NEXT_PUBLIC_APP_URL}/api/auth/youtube/callback`.
+3. Add the matching Twitch callback URL: `${NEXT_PUBLIC_APP_URL}/api/auth/callback/twitch`.
+4. Add the matching Google callback URL: `${NEXT_PUBLIC_APP_URL}/api/auth/callback/google` (and `/api/auth/callback/twitter` for X).
 5. Run migrations with `docker compose --profile tools run --rm migrate`.
 6. Start the app with `docker compose up --build app`.
 
@@ -69,7 +71,7 @@ If you want to use a different env file, run Compose with `SIGNAL_KIT_ENV_FILE=/
 
 ## CLI Stream
 
-Install the CLI and add a relay token to `.env`:
+Install the CLI and add an API key to `.env`:
 
 ```bash
 npm install -g @signal-kit/cli

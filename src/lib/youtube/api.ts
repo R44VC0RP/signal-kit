@@ -1,20 +1,3 @@
-type GoogleTokenResponse = {
-  access_token: string;
-  expires_in?: number;
-  refresh_token?: string;
-  scope?: string;
-  token_type: string;
-};
-
-export type YouTubeChannel = {
-  id: string;
-  snippet?: {
-    title?: string;
-    customUrl?: string;
-    thumbnails?: Record<string, { url?: string }>;
-  };
-};
-
 export type YouTubeLiveBroadcast = {
   id: string;
   snippet?: {
@@ -86,7 +69,6 @@ export type YouTubeLiveChatResponse = {
   activePollItem?: YouTubeLiveChatMessage;
 };
 
-const GOOGLE_OAUTH_BASE = "https://oauth2.googleapis.com";
 const YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3";
 
 export class YouTubeApiError extends Error {
@@ -98,55 +80,6 @@ export class YouTubeApiError extends Error {
   ) {
     super(message);
   }
-}
-
-export function getGoogleClientId() {
-  const value = process.env.GOOGLE_CLIENT_ID ?? process.env.YOUTUBE_CLIENT_ID;
-  if (!value) {
-    throw new Error("GOOGLE_CLIENT_ID or YOUTUBE_CLIENT_ID is required.");
-  }
-  return value;
-}
-
-function getGoogleClientSecret() {
-  const value = process.env.GOOGLE_CLIENT_SECRET ?? process.env.YOUTUBE_CLIENT_SECRET;
-  if (!value) {
-    throw new Error("GOOGLE_CLIENT_SECRET or YOUTUBE_CLIENT_SECRET is required.");
-  }
-  return value;
-}
-
-export async function exchangeCodeForGoogleToken(code: string, redirectUri: string) {
-  const body = new URLSearchParams({
-    client_id: getGoogleClientId(),
-    client_secret: getGoogleClientSecret(),
-    code,
-    grant_type: "authorization_code",
-    redirect_uri: redirectUri,
-  });
-  return googleFetch<GoogleTokenResponse>(`${GOOGLE_OAUTH_BASE}/token`, { method: "POST", body });
-}
-
-export async function refreshGoogleToken(refreshToken: string) {
-  const body = new URLSearchParams({
-    client_id: getGoogleClientId(),
-    client_secret: getGoogleClientSecret(),
-    grant_type: "refresh_token",
-    refresh_token: refreshToken,
-  });
-  return googleFetch<GoogleTokenResponse>(`${GOOGLE_OAUTH_BASE}/token`, { method: "POST", body });
-}
-
-export async function getMyYouTubeChannel(accessToken: string) {
-  const url = new URL(`${YOUTUBE_API_BASE}/channels`);
-  url.searchParams.set("part", "snippet");
-  url.searchParams.set("mine", "true");
-  const response = await youtubeFetch<{ items?: YouTubeChannel[] }>(accessToken, url);
-  const channel = response.items?.[0];
-  if (!channel) {
-    throw new Error("YouTube did not return a channel for this Google account.");
-  }
-  return channel;
 }
 
 export async function listActiveLiveBroadcasts(accessToken: string) {
@@ -241,10 +174,6 @@ export async function listLiveChatMessages(
     url.searchParams.set("pageToken", pageToken);
   }
   return youtubeFetch<YouTubeLiveChatResponse>(accessToken, url);
-}
-
-function googleFetch<T>(url: string, init: RequestInit) {
-  return parseGoogleResponse<T>(fetch(url, init));
 }
 
 function youtubeFetch<T>(accessToken: string, url: URL, init: RequestInit = {}) {

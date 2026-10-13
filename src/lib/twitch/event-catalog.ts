@@ -1,4 +1,4 @@
-import { hasScopes } from "./scopes";
+import { hasScopes } from "@/lib/auth/scopes";
 
 export type TwitchEventUser = {
   id: string;

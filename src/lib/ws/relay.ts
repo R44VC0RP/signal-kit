@@ -11,7 +11,7 @@ export type RelayPayload = {
 
 type RelayClient = {
   id: string;
-  tokenId: string;
+  keyId: string;
   userId: string;
   ws: WebSocket;
   connectedAt: Date;
@@ -48,6 +48,20 @@ class RelayHub {
       }
     }
     return delivered;
+  }
+
+  /** Closes every socket opened with this API key, e.g. right after it is revoked. */
+  disconnectKey(keyId: string, reason: string) {
+    let closed = 0;
+    for (const userClients of this.clients.values()) {
+      for (const client of userClients.values()) {
+        if (client.keyId === keyId) {
+          client.ws.close(1008, reason);
+          closed += 1;
+        }
+      }
+    }
+    return closed;
   }
 
   stats(userId: string) {

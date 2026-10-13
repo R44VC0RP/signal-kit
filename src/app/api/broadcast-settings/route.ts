@@ -1,27 +1,29 @@
-import { and, eq, or } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getDb } from "@/db";
-import { connectedAccounts } from "@/db/schema";
-import { getCurrentUser } from "@/lib/session";
+import type { connections } from "@/db/schema";
+import { getBroadcasterConnection } from "@/lib/connections/manage";
+import { ConnectionUnavailableError, getConnectionAccessToken } from "@/lib/connections/tokens";
+import { requireUser } from "@/lib/session";
 import {
   getChannelInformation,
   modifyChannelInformation,
   searchTwitchCategories,
 } from "@/lib/twitch/api";
-import { getUsableAccessToken } from "@/lib/twitch/tokens";
 import { getVideo, listOwnedLiveBroadcasts, updateVideo } from "@/lib/youtube/api";
-import { getUsableYouTubeAccessToken } from "@/lib/youtube/tokens";
+
+type Connection = typeof connections.$inferSelect;
 
 const updateSchema = z.discriminatedUnion("provider", [
   z.object({
     provider: z.literal("twitch"),
+    connectionId: z.string().optional(),
     title: z.string().trim().min(1).max(140).optional(),
     categoryName: z.string().trim().max(120).optional(),
     gameId: z.string().trim().max(32).optional(),
   }),
   z.object({
     provider: z.literal("youtube"),
+    connectionId: z.string().optional(),
     broadcastId: z.string().trim().min(1),
     title: z.string().trim().min(1).max(100).optional(),
     description: z.string().max(5000).optional(),
@@ -31,34 +33,70 @@ const updateSchema = z.discriminatedUnion("provider", [
 ]);
 
 const YOUTUBE_WRITE_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
+const TWITCH_WRITE_SCOPE = "channel:manage:broadcast";
 
-export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof NextResponse) {
+    return user;
   }
 
-  const [twitch, youtube] = await Promise.all([getTwitchSettings(user), getYouTubeSettings(user)]);
+  const [twitchConnection, youtubeConnection] = await Promise.all([
+    getBroadcasterConnection(user.id, "twitch"),
+    getBroadcasterConnection(user.id, "youtube"),
+  ]);
+  const [twitch, youtube] = await Promise.all([
+    reconnectOnUnavailable(twitchConnection, () => getTwitchSettings(twitchConnection)),
+    reconnectOnUnavailable(youtubeConnection, () => getYouTubeSettings(youtubeConnection)),
+  ]);
   return NextResponse.json({ twitch, youtube });
 }
 
+/** A connection whose grant is gone shows a reconnect prompt instead of failing the whole request. */
+async function reconnectOnUnavailable<T>(connection: Connection | null, load: () => Promise<T>) {
+  try {
+    return await load();
+  } catch (error) {
+    if (connection && error instanceof ConnectionUnavailableError) {
+      return { connected: true, canUpdate: false, needsReconnect: true, connectionId: connection.id };
+    }
+    throw error;
+  }
+}
+
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await requireUser(request);
+  if (user instanceof NextResponse) {
+    return user;
   }
 
-  const body = updateSchema.parse(await request.json());
+  const parsed = updateSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid broadcast settings.", issues: parsed.error.issues }, { status: 400 });
+  }
+  const body = parsed.data;
+  try {
+    return await applyUpdate(user.id, body);
+  } catch (error) {
+    if (error instanceof ConnectionUnavailableError) {
+      return NextResponse.json({ error: `Reconnect ${body.provider === "twitch" ? "Twitch" : "YouTube"}: ${error.message}` }, { status: 409 });
+    }
+    throw error;
+  }
+}
+
+async function applyUpdate(userId: string, body: z.infer<typeof updateSchema>) {
 
   if (body.provider === "twitch") {
-    if (!user.twitchUserId) {
+    const connection = await getBroadcasterConnection(userId, "twitch", body.connectionId);
+    if (!connection) {
       return NextResponse.json({ error: "Connect Twitch first." }, { status: 400 });
     }
-    if (!user.twitchScopes.includes("channel:manage:broadcast")) {
-      return NextResponse.json({ error: "Reconnect Twitch to grant channel:manage:broadcast." }, { status: 403 });
+    if (!connection.scopes.includes(TWITCH_WRITE_SCOPE)) {
+      return NextResponse.json({ error: `Reconnect Twitch to grant ${TWITCH_WRITE_SCOPE}.` }, { status: 403 });
     }
 
-    const accessToken = await getUsableAccessToken(user.twitchUserId);
+    const { accessToken } = await getConnectionAccessToken(connection.id);
     const update: { title?: string; game_id?: string } = {};
     if (body.title) {
       update.title = body.title;
@@ -79,19 +117,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No Twitch changes provided." }, { status: 400 });
     }
 
-    await modifyChannelInformation(accessToken, user.twitchUserId, update);
-    return NextResponse.json({ ok: true, twitch: await getTwitchSettings(user) });
+    await modifyChannelInformation(accessToken, connection.platformUserId, update);
+    return NextResponse.json({ ok: true, twitch: await getTwitchSettings(connection) });
   }
 
-  const account = await getYouTubeAccount(user.id);
-  if (!account) {
+  const connection = await getBroadcasterConnection(userId, "youtube", body.connectionId);
+  if (!connection) {
     return NextResponse.json({ error: "Connect YouTube first." }, { status: 400 });
   }
-  if (!account.scopes.includes(YOUTUBE_WRITE_SCOPE)) {
+  if (!connection.scopes.includes(YOUTUBE_WRITE_SCOPE)) {
     return NextResponse.json({ error: "Reconnect YouTube to grant broadcast update access." }, { status: 403 });
   }
 
-  const accessToken = await getUsableYouTubeAccessToken(account.id);
+  const { accessToken } = await getConnectionAccessToken(connection.id);
   const video = await getVideo(accessToken, body.broadcastId);
   if (!video) {
     return NextResponse.json({ error: "YouTube broadcast video not found." }, { status: 404 });
@@ -103,29 +141,30 @@ export async function POST(request: Request) {
     categoryId: body.categoryId,
     privacyStatus: body.privacyStatus,
   });
-  return NextResponse.json({ ok: true, youtube: await getYouTubeSettings(user) });
+  return NextResponse.json({ ok: true, youtube: await getYouTubeSettings(connection) });
 }
 
-async function getTwitchSettings(user: { twitchUserId: string | null; twitchScopes: string[] }) {
-  if (!user.twitchUserId) {
+async function getTwitchSettings(connection: Connection | null) {
+  if (!connection) {
     return { connected: false };
   }
-  const accessToken = await getUsableAccessToken(user.twitchUserId);
-  const channel = await getChannelInformation(accessToken, user.twitchUserId);
-  return {
-    connected: true,
-    canUpdate: user.twitchScopes.includes("channel:manage:broadcast"),
-    needsReconnect: !user.twitchScopes.includes("channel:manage:broadcast"),
-    channel,
-  };
+  if (connection.status === "needs_reauth") {
+    return { connected: true, canUpdate: false, needsReconnect: true, connectionId: connection.id };
+  }
+  const { accessToken } = await getConnectionAccessToken(connection.id);
+  const channel = await getChannelInformation(accessToken, connection.platformUserId);
+  const canUpdate = connection.scopes.includes(TWITCH_WRITE_SCOPE);
+  return { connected: true, canUpdate, needsReconnect: !canUpdate, connectionId: connection.id, channel };
 }
 
-async function getYouTubeSettings(user: { id: string; twitchUserId: string | null }) {
-  const account = await getYouTubeAccount(user.id, user.twitchUserId);
-  if (!account) {
+async function getYouTubeSettings(connection: Connection | null) {
+  if (!connection) {
     return { connected: false };
   }
-  const accessToken = await getUsableYouTubeAccessToken(account.id);
+  if (connection.status === "needs_reauth") {
+    return { connected: true, canUpdate: false, needsReconnect: true, connectionId: connection.id };
+  }
+  const { accessToken } = await getConnectionAccessToken(connection.id);
   const broadcasts = await listOwnedLiveBroadcasts(accessToken);
   const editableBroadcasts = broadcasts
     .filter((broadcast) => !["complete", "revoked"].includes(broadcast.status?.lifeCycleStatus ?? ""))
@@ -135,8 +174,9 @@ async function getYouTubeSettings(user: { id: string; twitchUserId: string | nul
 
   return {
     connected: true,
-    canUpdate: account.scopes.includes(YOUTUBE_WRITE_SCOPE),
-    needsReconnect: !account.scopes.includes(YOUTUBE_WRITE_SCOPE),
+    canUpdate: connection.scopes.includes(YOUTUBE_WRITE_SCOPE),
+    needsReconnect: !connection.scopes.includes(YOUTUBE_WRITE_SCOPE),
+    connectionId: connection.id,
     broadcasts: editableBroadcasts.map((broadcast) => ({
       id: broadcast.id,
       title: broadcast.snippet?.title ?? broadcast.id,
@@ -153,22 +193,6 @@ async function getYouTubeSettings(user: { id: string; twitchUserId: string | nul
         }
       : null,
   };
-}
-
-async function getYouTubeAccount(appUserId: string, twitchUserId?: string | null) {
-  const [account] = await getDb()
-    .select()
-    .from(connectedAccounts)
-    .where(
-      and(
-        eq(connectedAccounts.provider, "youtube"),
-        twitchUserId
-          ? or(eq(connectedAccounts.appUserId, appUserId), eq(connectedAccounts.ownerTwitchUserId, twitchUserId))
-          : eq(connectedAccounts.appUserId, appUserId),
-      ),
-    )
-    .limit(1);
-  return account ?? null;
 }
 
 function scoreBroadcast(broadcast: { status?: { lifeCycleStatus?: string }; snippet?: { scheduledStartTime?: string } }) {
