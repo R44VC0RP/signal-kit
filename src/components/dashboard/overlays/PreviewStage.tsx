@@ -4,20 +4,9 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { OverlayRenderer } from "@/components/overlay/Overlays";
 import type { PublicStats } from "@/lib/overlays/stats-core";
 import type { SignalKitEvent } from "@/lib/events/types";
-import { overlayTypeInfo, type AnySettings, type OverlayType } from "@/lib/overlays/settings";
+import { OVERLAY_PLACEMENT, overlayTypeInfo, type AnySettings, type OverlayType } from "@/lib/overlays/settings";
 
 export type StageBackground = "gameplay" | "chatting" | "transparent";
-
-/** Where each overlay sits on a 1920×1080 stream in the preview (chat bottom left, list top right). */
-const PLACEMENT: Record<OverlayType, CSSProperties> = {
-  alerts: { left: 0, top: 0 },
-  chat: { left: 48, bottom: 48 },
-  events: { right: 48, top: 48 },
-  goal: { left: 48, top: 48 },
-  label: { left: 48, top: 48 },
-  emotewall: { left: 0, top: 0 },
-  ticker: { left: 0, bottom: 0 },
-};
 
 /**
  * A fake stream with the overlay rendered on top at true 1080p size, scaled to fit. Uses the
@@ -51,7 +40,7 @@ export function PreviewStage({
   }, []);
 
   const info = overlayTypeInfo(type);
-  const box: CSSProperties = { ...PLACEMENT[type], width: info.width, height: info.height };
+  const box: CSSProperties = { left: OVERLAY_PLACEMENT[type].x, top: OVERLAY_PLACEMENT[type].y, width: info.width, height: info.height };
 
   return (
     <div ref={frame} className="relative aspect-video w-full overflow-hidden rounded-[8px] border border-(--line) bg-black">

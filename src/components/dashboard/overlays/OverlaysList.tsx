@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { buttonClass, Muted, Row, Section } from "@/components/dashboard/ui";
 import { timeAgo } from "@/lib/format";
-import { OVERLAY_TYPES, overlayTypeInfo, type OverlayType } from "@/lib/overlays/settings";
+import { OVERLAY_PLACEMENT, OVERLAY_TYPES, overlayTypeInfo, type OverlayType } from "@/lib/overlays/settings";
 import type { OverlayView } from "@/lib/overlays/store";
+import { ObsConnect } from "./ObsConnect";
 import { LiveBadge } from "./OverlayEditor";
 import { ThemePacks } from "./ThemePacks";
 import { TypeIcon } from "./TypeIcon";
@@ -88,6 +89,12 @@ export function OverlaysList({ initial }: { initial: Overlay[] }) {
               </Row>
             );
           })}
+          <div className="border-t border-(--line) pt-4">
+            <ObsConnect
+              label="Add all to OBS"
+              sources={initial.map((overlay) => ({ name: `Signal Kit · ${overlay.name}`, url: overlay.url, width: overlay.width, height: overlay.height, ...OVERLAY_PLACEMENT[overlay.type] }))}
+            />
+          </div>
         </Section>
       ) : null}
 

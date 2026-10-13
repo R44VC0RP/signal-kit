@@ -445,6 +445,17 @@ export const OVERLAY_TYPES: {
   { type: "ticker", name: "Ticker", description: "A scrolling strip of recent supporters.", width: 1920, height: 60 },
 ];
 
+/** Default top-left position on a 1920×1080 canvas (preview stage and automatic OBS setup). */
+export const OVERLAY_PLACEMENT: Record<OverlayType, { x: number; y: number }> = {
+  alerts: { x: 0, y: 0 },
+  chat: { x: 48, y: 312 },
+  events: { x: 1472, y: 48 },
+  goal: { x: 48, y: 48 },
+  label: { x: 48, y: 260 },
+  emotewall: { x: 0, y: 0 },
+  ticker: { x: 0, y: 1020 },
+};
+
 export function overlayTypeInfo(type: OverlayType) {
   return OVERLAY_TYPES.find((info) => info.type === type)!;
 }

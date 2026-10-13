@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { buttonClass } from "@/components/dashboard/ui";
 import { fillGuide, SETUP_GUIDES } from "@/lib/overlays/guides";
+import { OVERLAY_PLACEMENT } from "@/lib/overlays/settings";
+import { ObsConnect } from "./ObsConnect";
 import type { OverlayView } from "@/lib/overlays/store";
 
 type Overlay = OverlayView & { live: boolean };
@@ -72,7 +74,12 @@ export function SetupPanel({
         </header>
 
         <section className="flex flex-col gap-3">
-          <span className="text-[13px] font-medium text-(--text)">Browser source URL</span>
+          <span className="text-[13px] font-medium text-(--text)">OBS Studio</span>
+          <ObsConnect sources={[{ name: `Signal Kit · ${overlay.name}`, url: overlay.url, width: overlay.width, height: overlay.height, ...OVERLAY_PLACEMENT[overlay.type] }]} />
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <span className="text-[13px] font-medium text-(--text)">Or paste the browser source URL</span>
           <div className="flex items-center gap-2 rounded-(--r) border border-(--line) bg-(--surface-inset) py-1.5 pr-1.5 pl-3">
             <code className="sk-mono min-w-0 flex-1 truncate text-xs text-(--text-2)">{revealed ? overlay.url : masked}</code>
             <button type="button" className={buttonClass("quiet")} onClick={() => setRevealed((value) => !value)}>
