@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 import { getAppUrl, getWsUrl } from "@/lib/app-url";
 import { getAuth } from "@/lib/auth";
@@ -20,6 +20,9 @@ export function enabledProviders() {
 /** The signed-in user, or a redirect to sign-in. Cached per request. */
 export const requireDashboardUser = cache(async () => {
   const user = await getCurrentUser().catch((error) => {
+    // Let Next's own signals through. Swallowing the "needs request cookies" signal made
+    // `next build` prerender this page as signed out, which looped /sign-in <-> /dashboard.
+    unstable_rethrow(error);
     console.error("[dashboard] session check failed", error);
     return null;
   });

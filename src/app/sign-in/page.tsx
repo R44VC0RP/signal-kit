@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { ConnectButton, type ProviderId } from "@/components/AuthButtons";
 import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
 import { buttonClass } from "@/components/dashboard/ui";
@@ -23,6 +23,9 @@ const OPTIONS: { platform: Platform; provider: ProviderId; label: string }[] = [
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await getCurrentUser().catch((error) => {
+    // Let Next's own signals through. Swallowing the "needs request cookies" signal made
+    // `next build` prerender this page as signed out, which looped /sign-in <-> /dashboard.
+    unstable_rethrow(error);
     console.error("[sign-in] session check failed", error);
     return null;
   });
