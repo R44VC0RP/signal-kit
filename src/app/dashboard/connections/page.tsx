@@ -49,7 +49,7 @@ export default async function ConnectionsPage({ searchParams }: { searchParams: 
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-[13px] font-medium text-(--text)">{connection.displayName}</span>
               <Muted>
-                {PLATFORM_NAME[connection.platform]} · @{connection.username} · {connection.scopes.length} {connection.scopes.length === 1 ? "permission" : "permissions"} · connected{" "}
+                {PLATFORM_NAME[connection.platform]} · @{connection.username.replace(/^@/, "")} · {connection.scopes.length} {connection.scopes.length === 1 ? "permission" : "permissions"} · connected{" "}
                 {shortDate(connection.createdAt)}
               </Muted>
               {connection.statusReason && connection.status !== "active" ? (
