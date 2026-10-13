@@ -1,5 +1,5 @@
 import type { SignalKitEvent } from "@/lib/events/types";
-import { DEFAULT_TEMPLATES, type AlertKind, type AlertSettings, type AlertTemplate, type AlertVariation, type PlatformFilter, type TEMPLATE_VARIABLES } from "@/lib/overlays/settings";
+import { defaultArt, DEFAULT_TEMPLATES, type AlertKind, type AlertSettings, type AlertTemplate, type AlertVariation, type PlatformFilter, type TEMPLATE_VARIABLES } from "@/lib/overlays/settings";
 
 /** The alert kind an event shows as: Bits tips are cheers; other kinds map one-to-one. */
 export function alertKindOf(event: SignalKitEvent): AlertKind | null {
@@ -102,7 +102,7 @@ export function alertText(event: SignalKitEvent, templates: Record<AlertKind, Al
     title: fillTemplate(title, event),
     parts: templateParts(title, event),
     detail,
-    image: template.showImage ? variation?.image || template.image || `/alerts/art/${kind}.webp` : null,
+    image: template.showImage ? variation?.image || template.image || defaultArt(kind) : null,
     /** Only art the streamer set (the card styles show the avatar instead of default art). */
     customImage: template.showImage ? variation?.image || template.image || null : null,
     sound: variation?.sound || template.sound || `/alerts/sounds/${kind === "cheer" ? "cheer" : kind === "subscription.gift" ? "gift" : kind}.mp3`,

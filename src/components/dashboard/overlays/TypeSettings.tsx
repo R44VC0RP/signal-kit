@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { buttonClass } from "@/components/dashboard/ui";
+import { ALERT_PACKS, artCredit, soundName } from "@/lib/library";
 import {
   ALERT_KIND_LABEL,
   ALERT_KINDS,
   ANIMATIONS_IN,
+  defaultArt,
   ANIMATIONS_OUT,
   LABEL_KINDS,
   TEMPLATE_VARIABLES,
@@ -24,6 +26,7 @@ import {
   type TickerSettings,
 } from "@/lib/overlays/settings";
 import { ColorField, DateField, Field, Group, NumberField, PositionGrid, Segmented, SelectField, Slider, TemplateField, TextField, Toggle } from "./controls";
+import { MediaPicker } from "./MediaPicker";
 
 type Update = (next: AnySettings) => void;
 
@@ -55,6 +58,7 @@ export function TypeSettings({ type, settings, update, overlayId }: { type: Over
 
 function AlertTypeSettings({ settings: s, update }: { settings: AlertSettings; update: Update }) {
   const [kind, setKind] = useState<AlertKind>("follow");
+  const [picker, setPicker] = useState<"art" | "sound" | null>(null);
   const template = s.templates[kind];
   const setTemplate = (patch: Partial<AlertTemplate>) => update({ ...s, templates: { ...s.templates, [kind]: { ...template, ...patch } } });
   const enabledCount = ALERT_KINDS.filter((k) => s.templates[k].enabled).length;
@@ -83,6 +87,19 @@ function AlertTypeSettings({ settings: s, update }: { settings: AlertSettings; u
       </Group>
 
       <Group title="Alert content">
+        <Field label="Alert pack" hint="Art and sound for every alert">
+          <SelectField
+            value=""
+            options={[{ value: "", label: "Choose a pack…" }, ...ALERT_PACKS.map((pack) => ({ value: pack.id, label: `${pack.name}: ${pack.description}` }))]}
+            onChange={(id) => {
+              const pack = ALERT_PACKS.find((item) => item.id === id);
+              if (pack) {
+                const templates = Object.fromEntries(ALERT_KINDS.map((k) => [k, { ...s.templates[k], ...pack.media[k], showImage: true }])) as AlertSettings["templates"];
+                update({ ...s, templates });
+              }
+            }}
+          />
+        </Field>
         <Field label="Edit alert">
           <SelectField value={kind} options={ALERT_KINDS.map((k) => ({ value: k, label: ALERT_KIND_LABEL[k] }))} onChange={setKind} />
         </Field>
@@ -99,19 +116,47 @@ function AlertTypeSettings({ settings: s, update }: { settings: AlertSettings; u
           <Field label="Image, GIF or video" hint="HTTPS URL">
             <div className="flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={template.image || `/alerts/art/${kind}.webp`} alt="" className="size-8 shrink-0 rounded-[4px] bg-(--surface-inset) object-contain" />
+              <img src={template.image || defaultArt(kind)} alt="" className="size-8 shrink-0 rounded-[4px] bg-(--surface-inset) object-contain" />
               <TextField value={template.image} onChange={(image) => setTemplate({ image: image.trim() })} placeholder={classic ? "Signal Kit art" : "Avatar (no image)"} maxLength={2048} mono />
+              <button type="button" className={`${buttonClass("control")} shrink-0`} onClick={() => setPicker("art")}>
+                Library
+              </button>
             </div>
+            {artCredit(template.image) ? <span className="text-[11px] text-(--text-3)">{artCredit(template.image)}</span> : null}
           </Field>
         ) : null}
         <Field label="Sound" hint="HTTPS URL to MP3, OGG or WAV">
           <div className="flex items-center gap-2">
-            <TextField value={template.sound} onChange={(sound) => setTemplate({ sound: sound.trim() })} placeholder="Signal Kit sound" maxLength={2048} mono />
+            {soundName(template.sound) ? (
+              <span className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-(--r) border border-(--line) bg-(--surface-inset) pr-1 pl-2.5 text-[13px] text-(--text)">
+                <span className="flex-1 truncate">{soundName(template.sound)}</span>
+                <button type="button" aria-label="Use the default sound" className="px-1.5 text-(--text-3) hover:text-(--text)" onClick={() => setTemplate({ sound: "" })}>
+                  ✕
+                </button>
+              </span>
+            ) : (
+              <TextField value={template.sound} onChange={(sound) => setTemplate({ sound: sound.trim() })} placeholder="Signal Kit sound" maxLength={2048} mono />
+            )}
             <button type="button" className={`${buttonClass("control")} shrink-0`} onClick={() => void new Audio(template.sound || `/alerts/sounds/${soundFile}.mp3`).play().catch(() => {})}>
               Play
             </button>
+            <button type="button" className={`${buttonClass("control")} shrink-0`} onClick={() => setPicker("sound")}>
+              Library
+            </button>
           </div>
         </Field>
+        {picker ? (
+          <MediaPicker
+            mode={picker}
+            kind={kind}
+            current={picker === "art" ? template.image : template.sound}
+            onClose={() => setPicker(null)}
+            onPick={(value) => {
+              setTemplate(picker === "art" ? { image: value, showImage: true } : { sound: value });
+              setPicker(null);
+            }}
+          />
+        ) : null}
         {unit ? <Variations template={template} unit={unit} onChange={(variations) => setTemplate({ variations })} /> : null}
       </Group>
 

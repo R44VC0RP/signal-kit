@@ -1,0 +1,1800 @@
+[
+  {
+    "id": "noto/party-popper",
+    "name": "Party popper",
+    "category": "celebrate",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription",
+      "subscription.gift",
+      "follow"
+    ]
+  },
+  {
+    "id": "noto/confetti-ball",
+    "name": "Confetti ball",
+    "category": "celebrate",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f38a/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription",
+      "subscription.gift",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/trophy",
+    "name": "Trophy",
+    "category": "celebrate",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3c6/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "subscription",
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/crown",
+    "name": "Crown",
+    "category": "celebrate",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription",
+      "tip",
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/birthday-cake",
+    "name": "Birthday cake",
+    "category": "celebrate",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f382/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "noto/popping-cork",
+    "name": "Bottle with popping cork",
+    "category": "celebrate",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f37e/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription",
+      "cheer",
+      "tip"
+    ]
+  },
+  {
+    "id": "noto/clinking-glasses",
+    "name": "Clinking glasses",
+    "category": "celebrate",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f942/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription",
+      "tip"
+    ]
+  },
+  {
+    "id": "noto/mirror-ball",
+    "name": "Mirror ball",
+    "category": "celebrate",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1faa9/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/pinata",
+    "name": "Piñata",
+    "category": "celebrate",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1fa85/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription.gift",
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/red-heart",
+    "name": "Red heart",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription"
+    ]
+  },
+  {
+    "id": "noto/sparkling-heart",
+    "name": "Sparkling heart",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f496/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription"
+    ]
+  },
+  {
+    "id": "noto/growing-heart",
+    "name": "Growing heart",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f497/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "noto/beating-heart",
+    "name": "Beating heart",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f493/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "tip"
+    ]
+  },
+  {
+    "id": "noto/revolving-hearts",
+    "name": "Revolving hearts",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f49e/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "noto/heart-with-ribbon",
+    "name": "Heart with ribbon",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f49d/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription.gift",
+      "subscription"
+    ]
+  },
+  {
+    "id": "noto/heart-on-fire",
+    "name": "Heart on fire",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/2764_fe0f_200d_1f525/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/purple-heart",
+    "name": "Purple heart",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f49c/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription"
+    ]
+  },
+  {
+    "id": "noto/heart-hands",
+    "name": "Heart hands",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1faf6/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "tip",
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/heart-eyes",
+    "name": "Heart eyes",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f60d/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "tip"
+    ]
+  },
+  {
+    "id": "noto/smiling-face-with-hearts",
+    "name": "Smiling face with hearts",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f970/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "noto/love-letter",
+    "name": "Love letter",
+    "category": "love",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f48c/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/fire",
+    "name": "Fire",
+    "category": "hype",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "raid",
+      "subscription"
+    ]
+  },
+  {
+    "id": "noto/rocket",
+    "name": "Rocket",
+    "category": "hype",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/hundred-points",
+    "name": "Hundred points",
+    "category": "hype",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4af/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "tip"
+    ]
+  },
+  {
+    "id": "noto/high-voltage",
+    "name": "High voltage",
+    "category": "hype",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/collision",
+    "name": "Collision",
+    "category": "hype",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a5/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/mind-blown",
+    "name": "Mind blown",
+    "category": "hype",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f92f/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "tip",
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/police-light",
+    "name": "Police car light",
+    "category": "hype",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f6a8/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/bomb",
+    "name": "Bomb",
+    "category": "hype",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a3/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/volcano",
+    "name": "Volcano",
+    "category": "hype",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f30b/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/phoenix",
+    "name": "Phoenix",
+    "category": "hype",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f426_200d_1f525/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid",
+      "subscription"
+    ]
+  },
+  {
+    "id": "noto/money-mouth-face",
+    "name": "Money-mouth face",
+    "category": "money",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f911/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "tip",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/money-with-wings",
+    "name": "Money with wings",
+    "category": "money",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4b8/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "tip"
+    ]
+  },
+  {
+    "id": "noto/coin",
+    "name": "Coin",
+    "category": "money",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1fa99/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "tip",
+      "cheer",
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/gem-stone",
+    "name": "Gem stone",
+    "category": "money",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f48e/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "tip",
+      "subscription"
+    ]
+  },
+  {
+    "id": "noto/treasure-chest",
+    "name": "Treasure chest",
+    "category": "money",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1fa8e/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "tip",
+      "redemption",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "noto/chart-increasing",
+    "name": "Chart increasing",
+    "category": "money",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4c8/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "tip",
+      "follow"
+    ]
+  },
+  {
+    "id": "noto/star",
+    "name": "Star",
+    "category": "stars",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/2b50/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription",
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/glowing-star",
+    "name": "Glowing star",
+    "category": "stars",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f31f/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/sparkles",
+    "name": "Sparkles",
+    "category": "stars",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/2728/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "redemption",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "noto/comet",
+    "name": "Comet",
+    "category": "stars",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/2604_fe0f/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/milky-way",
+    "name": "Milky way",
+    "category": "stars",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f30c/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/rainbow",
+    "name": "Rainbow",
+    "category": "stars",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f308/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "noto/magic-wand",
+    "name": "Magic wand",
+    "category": "stars",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1fa84/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/crystal-ball",
+    "name": "Crystal ball",
+    "category": "stars",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f52e/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/partying-face",
+    "name": "Partying face",
+    "category": "faces",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f973/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription",
+      "subscription.gift",
+      "follow"
+    ]
+  },
+  {
+    "id": "noto/star-struck",
+    "name": "Star-struck",
+    "category": "faces",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f929/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "tip",
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/hug-face",
+    "name": "Hugging face",
+    "category": "faces",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f917/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "tip"
+    ]
+  },
+  {
+    "id": "noto/rofl",
+    "name": "Rolling on the floor laughing",
+    "category": "faces",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f923/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/astonished",
+    "name": "Astonished",
+    "category": "faces",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f632/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "tip",
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/salute",
+    "name": "Saluting face",
+    "category": "faces",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1fae1/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid",
+      "follow"
+    ]
+  },
+  {
+    "id": "noto/sunglasses",
+    "name": "Smiling face with sunglasses",
+    "category": "faces",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f60e/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription",
+      "follow"
+    ]
+  },
+  {
+    "id": "noto/happy-cry",
+    "name": "Happy crying",
+    "category": "faces",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f972/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "tip",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "noto/halo",
+    "name": "Halo",
+    "category": "faces",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f607/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription.gift",
+      "tip"
+    ]
+  },
+  {
+    "id": "noto/alien-monster",
+    "name": "Alien monster",
+    "category": "gaming",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f47e/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid",
+      "redemption",
+      "follow"
+    ]
+  },
+  {
+    "id": "noto/game-die",
+    "name": "Game die",
+    "category": "gaming",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3b2/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/slot-machine",
+    "name": "Slot machine",
+    "category": "gaming",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3b0/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "redemption",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/direct-hit",
+    "name": "Direct hit",
+    "category": "gaming",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3af/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "redemption",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/gold-medal",
+    "name": "Gold medal",
+    "category": "gaming",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f947/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "subscription",
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/chequered-flag",
+    "name": "Chequered flag",
+    "category": "gaming",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3c1/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/pool-8-ball",
+    "name": "Pool 8 ball",
+    "category": "gaming",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f3b1/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/dragon",
+    "name": "Dragon",
+    "category": "gaming",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f409/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid",
+      "cheer"
+    ]
+  },
+  {
+    "id": "noto/unicorn",
+    "name": "Unicorn",
+    "category": "gaming",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f984/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription.gift",
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/bell",
+    "name": "Bell",
+    "category": "misc",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f514/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription"
+    ]
+  },
+  {
+    "id": "noto/wrapped-gift",
+    "name": "Wrapped gift",
+    "category": "misc",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f381/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription.gift",
+      "subscription"
+    ]
+  },
+  {
+    "id": "noto/balloon",
+    "name": "Balloon",
+    "category": "misc",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f388/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "noto/waving-hand",
+    "name": "Waving hand",
+    "category": "misc",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f44b/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/clapping-hands",
+    "name": "Clapping hands",
+    "category": "misc",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f44f/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "cheer",
+      "tip",
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/raising-hands",
+    "name": "Raising hands",
+    "category": "misc",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f64c/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "subscription",
+      "cheer",
+      "raid"
+    ]
+  },
+  {
+    "id": "noto/folded-hands",
+    "name": "Folded hands",
+    "category": "misc",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f64f/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "tip",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "noto/megaphone",
+    "name": "Megaphone",
+    "category": "misc",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f4e3/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "raid",
+      "redemption"
+    ]
+  },
+  {
+    "id": "noto/admission-tickets",
+    "name": "Admission tickets",
+    "category": "misc",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f39f_fe0f/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "redemption",
+      "subscription"
+    ]
+  },
+  {
+    "id": "noto/eyes",
+    "name": "Eyes",
+    "category": "misc",
+    "url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f440/512.webp",
+    "animated": true,
+    "license": "CC BY 4.0",
+    "attribution": "Noto Emoji animations by Google, CC BY 4.0",
+    "sourceUrl": "https://googlefonts.github.io/noto-emoji-animation/",
+    "suggestedFor": [
+      "follow",
+      "raid"
+    ]
+  },
+  {
+    "id": "fluent/party-popper",
+    "name": "Party popper",
+    "category": "celebrate",
+    "url": "/library/art/fluent/party-popper.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "subscription",
+      "subscription.gift",
+      "follow"
+    ]
+  },
+  {
+    "id": "fluent/confetti-ball",
+    "name": "Confetti ball",
+    "category": "celebrate",
+    "url": "/library/art/fluent/confetti-ball.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "subscription",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "fluent/fireworks",
+    "name": "Fireworks",
+    "category": "celebrate",
+    "url": "/library/art/fluent/fireworks.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "raid",
+      "cheer"
+    ]
+  },
+  {
+    "id": "fluent/trophy",
+    "name": "Trophy",
+    "category": "celebrate",
+    "url": "/library/art/fluent/trophy.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "cheer",
+      "subscription",
+      "redemption"
+    ]
+  },
+  {
+    "id": "fluent/crown",
+    "name": "Crown",
+    "category": "celebrate",
+    "url": "/library/art/fluent/crown.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "subscription",
+      "tip",
+      "redemption"
+    ]
+  },
+  {
+    "id": "fluent/first-place-medal",
+    "name": "1st place medal",
+    "category": "celebrate",
+    "url": "/library/art/fluent/first-place-medal.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "cheer",
+      "redemption"
+    ]
+  },
+  {
+    "id": "fluent/birthday-cake",
+    "name": "Birthday cake",
+    "category": "celebrate",
+    "url": "/library/art/fluent/birthday-cake.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "subscription",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "fluent/popping-cork",
+    "name": "Bottle with popping cork",
+    "category": "celebrate",
+    "url": "/library/art/fluent/popping-cork.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "subscription",
+      "tip"
+    ]
+  },
+  {
+    "id": "fluent/mirror-ball",
+    "name": "Mirror ball",
+    "category": "celebrate",
+    "url": "/library/art/fluent/mirror-ball.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "raid",
+      "cheer"
+    ]
+  },
+  {
+    "id": "fluent/red-heart",
+    "name": "Red heart",
+    "category": "love",
+    "url": "/library/art/fluent/red-heart.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "subscription"
+    ]
+  },
+  {
+    "id": "fluent/sparkling-heart",
+    "name": "Sparkling heart",
+    "category": "love",
+    "url": "/library/art/fluent/sparkling-heart.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "fluent/heart-on-fire",
+    "name": "Heart on fire",
+    "category": "love",
+    "url": "/library/art/fluent/heart-on-fire.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "subscription",
+      "cheer"
+    ]
+  },
+  {
+    "id": "fluent/purple-heart",
+    "name": "Purple heart",
+    "category": "love",
+    "url": "/library/art/fluent/purple-heart.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "subscription"
+    ]
+  },
+  {
+    "id": "fluent/heart-hands",
+    "name": "Heart hands",
+    "category": "love",
+    "url": "/library/art/fluent/heart-hands.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "tip"
+    ]
+  },
+  {
+    "id": "fluent/heart-eyes",
+    "name": "Heart eyes",
+    "category": "love",
+    "url": "/library/art/fluent/heart-eyes.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "tip"
+    ]
+  },
+  {
+    "id": "fluent/fire",
+    "name": "Fire",
+    "category": "hype",
+    "url": "/library/art/fluent/fire.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "cheer",
+      "raid",
+      "subscription"
+    ]
+  },
+  {
+    "id": "fluent/rocket",
+    "name": "Rocket",
+    "category": "hype",
+    "url": "/library/art/fluent/rocket.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "raid",
+      "cheer"
+    ]
+  },
+  {
+    "id": "fluent/high-voltage",
+    "name": "High voltage",
+    "category": "hype",
+    "url": "/library/art/fluent/high-voltage.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "cheer",
+      "raid"
+    ]
+  },
+  {
+    "id": "fluent/collision",
+    "name": "Collision",
+    "category": "hype",
+    "url": "/library/art/fluent/collision.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "cheer",
+      "raid"
+    ]
+  },
+  {
+    "id": "fluent/hundred-points",
+    "name": "Hundred points",
+    "category": "hype",
+    "url": "/library/art/fluent/hundred-points.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "cheer",
+      "tip"
+    ]
+  },
+  {
+    "id": "fluent/money-bag",
+    "name": "Money bag",
+    "category": "money",
+    "url": "/library/art/fluent/money-bag.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "tip",
+      "cheer"
+    ]
+  },
+  {
+    "id": "fluent/money-with-wings",
+    "name": "Money with wings",
+    "category": "money",
+    "url": "/library/art/fluent/money-with-wings.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "tip"
+    ]
+  },
+  {
+    "id": "fluent/coin",
+    "name": "Coin",
+    "category": "money",
+    "url": "/library/art/fluent/coin.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "tip",
+      "cheer",
+      "redemption"
+    ]
+  },
+  {
+    "id": "fluent/gem-stone",
+    "name": "Gem stone",
+    "category": "money",
+    "url": "/library/art/fluent/gem-stone.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "cheer",
+      "tip",
+      "subscription"
+    ]
+  },
+  {
+    "id": "fluent/dollar-banknote",
+    "name": "Dollar banknote",
+    "category": "money",
+    "url": "/library/art/fluent/dollar-banknote.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "tip"
+    ]
+  },
+  {
+    "id": "fluent/star",
+    "name": "Star",
+    "category": "stars",
+    "url": "/library/art/fluent/star.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "subscription",
+      "redemption"
+    ]
+  },
+  {
+    "id": "fluent/glowing-star",
+    "name": "Glowing star",
+    "category": "stars",
+    "url": "/library/art/fluent/glowing-star.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "subscription",
+      "cheer"
+    ]
+  },
+  {
+    "id": "fluent/sparkles",
+    "name": "Sparkles",
+    "category": "stars",
+    "url": "/library/art/fluent/sparkles.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "redemption",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "fluent/dizzy",
+    "name": "Dizzy",
+    "category": "stars",
+    "url": "/library/art/fluent/dizzy.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "cheer"
+    ]
+  },
+  {
+    "id": "fluent/shooting-star",
+    "name": "Shooting star",
+    "category": "stars",
+    "url": "/library/art/fluent/shooting-star.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "raid",
+      "follow"
+    ]
+  },
+  {
+    "id": "fluent/partying-face",
+    "name": "Partying face",
+    "category": "faces",
+    "url": "/library/art/fluent/partying-face.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "subscription",
+      "subscription.gift",
+      "follow"
+    ]
+  },
+  {
+    "id": "fluent/star-struck",
+    "name": "Star-struck",
+    "category": "faces",
+    "url": "/library/art/fluent/star-struck.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "cheer",
+      "tip",
+      "raid"
+    ]
+  },
+  {
+    "id": "fluent/saluting-face",
+    "name": "Saluting face",
+    "category": "faces",
+    "url": "/library/art/fluent/saluting-face.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "raid",
+      "follow"
+    ]
+  },
+  {
+    "id": "fluent/video-game",
+    "name": "Video game controller",
+    "category": "gaming",
+    "url": "/library/art/fluent/video-game.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "redemption",
+      "raid"
+    ]
+  },
+  {
+    "id": "fluent/joystick",
+    "name": "Joystick",
+    "category": "gaming",
+    "url": "/library/art/fluent/joystick.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "redemption",
+      "follow"
+    ]
+  },
+  {
+    "id": "fluent/game-die",
+    "name": "Game die",
+    "category": "gaming",
+    "url": "/library/art/fluent/game-die.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "redemption"
+    ]
+  },
+  {
+    "id": "fluent/bullseye",
+    "name": "Bullseye",
+    "category": "gaming",
+    "url": "/library/art/fluent/bullseye.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "redemption",
+      "cheer"
+    ]
+  },
+  {
+    "id": "fluent/crossed-swords",
+    "name": "Crossed swords",
+    "category": "gaming",
+    "url": "/library/art/fluent/crossed-swords.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "raid"
+    ]
+  },
+  {
+    "id": "fluent/alien-monster",
+    "name": "Alien monster",
+    "category": "gaming",
+    "url": "/library/art/fluent/alien-monster.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "raid",
+      "redemption"
+    ]
+  },
+  {
+    "id": "fluent/wrapped-gift",
+    "name": "Wrapped gift",
+    "category": "misc",
+    "url": "/library/art/fluent/wrapped-gift.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "subscription.gift",
+      "subscription"
+    ]
+  },
+  {
+    "id": "fluent/bell",
+    "name": "Bell",
+    "category": "misc",
+    "url": "/library/art/fluent/bell.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "subscription"
+    ]
+  },
+  {
+    "id": "fluent/balloon",
+    "name": "Balloon",
+    "category": "misc",
+    "url": "/library/art/fluent/balloon.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "fluent/megaphone",
+    "name": "Megaphone",
+    "category": "misc",
+    "url": "/library/art/fluent/megaphone.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "raid",
+      "redemption"
+    ]
+  },
+  {
+    "id": "fluent/ticket",
+    "name": "Ticket",
+    "category": "misc",
+    "url": "/library/art/fluent/ticket.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "redemption",
+      "subscription"
+    ]
+  },
+  {
+    "id": "fluent/waving-hand",
+    "name": "Waving hand",
+    "category": "misc",
+    "url": "/library/art/fluent/waving-hand.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "follow",
+      "raid"
+    ]
+  },
+  {
+    "id": "fluent/raising-hands",
+    "name": "Raising hands",
+    "category": "misc",
+    "url": "/library/art/fluent/raising-hands.webp",
+    "animated": false,
+    "license": "MIT",
+    "attribution": "Fluent Emoji by Microsoft, MIT",
+    "sourceUrl": "https://github.com/microsoft/fluentui-emoji",
+    "suggestedFor": [
+      "subscription",
+      "cheer",
+      "raid"
+    ]
+  },
+  {
+    "id": "signal-kit/follow",
+    "name": "Follow",
+    "category": "signal-kit",
+    "url": "/alerts/art/follow.webp",
+    "animated": false,
+    "license": "Signal Kit original",
+    "attribution": "Signal Kit",
+    "sourceUrl": "/alerts/art/follow.webp",
+    "suggestedFor": [
+      "follow"
+    ]
+  },
+  {
+    "id": "signal-kit/subscription",
+    "name": "Subscription",
+    "category": "signal-kit",
+    "url": "/alerts/art/subscription.webp",
+    "animated": false,
+    "license": "Signal Kit original",
+    "attribution": "Signal Kit",
+    "sourceUrl": "/alerts/art/subscription.webp",
+    "suggestedFor": [
+      "subscription"
+    ]
+  },
+  {
+    "id": "signal-kit/gift",
+    "name": "Gift",
+    "category": "signal-kit",
+    "url": "/alerts/art/gift.webp",
+    "animated": false,
+    "license": "Signal Kit original",
+    "attribution": "Signal Kit",
+    "sourceUrl": "/alerts/art/gift.webp",
+    "suggestedFor": [
+      "subscription.gift"
+    ]
+  },
+  {
+    "id": "signal-kit/tip",
+    "name": "Tip",
+    "category": "signal-kit",
+    "url": "/alerts/art/tip.webp",
+    "animated": false,
+    "license": "Signal Kit original",
+    "attribution": "Signal Kit",
+    "sourceUrl": "/alerts/art/tip.webp",
+    "suggestedFor": [
+      "tip"
+    ]
+  },
+  {
+    "id": "signal-kit/cheer",
+    "name": "Cheer",
+    "category": "signal-kit",
+    "url": "/alerts/art/cheer.webp",
+    "animated": false,
+    "license": "Signal Kit original",
+    "attribution": "Signal Kit",
+    "sourceUrl": "/alerts/art/cheer.webp",
+    "suggestedFor": [
+      "cheer"
+    ]
+  },
+  {
+    "id": "signal-kit/raid",
+    "name": "Raid",
+    "category": "signal-kit",
+    "url": "/alerts/art/raid.webp",
+    "animated": false,
+    "license": "Signal Kit original",
+    "attribution": "Signal Kit",
+    "sourceUrl": "/alerts/art/raid.webp",
+    "suggestedFor": [
+      "raid"
+    ]
+  },
+  {
+    "id": "signal-kit/redemption",
+    "name": "Redemption",
+    "category": "signal-kit",
+    "url": "/alerts/art/redemption.webp",
+    "animated": false,
+    "license": "Signal Kit original",
+    "attribution": "Signal Kit",
+    "sourceUrl": "/alerts/art/redemption.webp",
+    "suggestedFor": [
+      "redemption"
+    ]
+  },
+  {
+    "id": "signal-kit/default",
+    "name": "Default",
+    "category": "signal-kit",
+    "url": "/alerts/art/default.webp",
+    "animated": false,
+    "license": "Signal Kit original",
+    "attribution": "Signal Kit",
+    "sourceUrl": "/alerts/art/default.webp",
+    "suggestedFor": [
+      "follow",
+      "subscription",
+      "subscription.gift",
+      "cheer",
+      "tip",
+      "raid",
+      "redemption"
+    ]
+  }
+]

@@ -58,6 +58,11 @@ export type AlertTemplate = {
   variations: AlertVariation[];
 };
 
+/** Signal Kit's default art for an alert kind (files in public/alerts/art). */
+export function defaultArt(kind: AlertKind) {
+  return `/alerts/art/${kind === "subscription.gift" ? "gift" : kind}.webp`;
+}
+
 /** Fonts the overlay can load (Google Fonts, plus the two brand fonts that are always loaded). */
 export const FONTS: { id: string; name: string; family: string; google?: string }[] = [
   { id: "open-sans", name: "Open Sans", family: "'Open Sans', sans-serif", google: "Open+Sans:wght@400;600;700;800" },
@@ -686,7 +691,8 @@ function sanitize(fallback: unknown, value: unknown, key: string, type: OverlayT
       return /^#[0-9a-f]{6}$/i.test(value) ? value.toLowerCase() : fallback;
     }
     if (key === "image" || key === "sound") {
-      return value === "" || /^https:\/\/[^\s"'<>]+$/i.test(value) ? value.slice(0, 2048) : fallback;
+      // A streamer's HTTPS URL, or a file from Signal Kit's own library.
+      return value === "" || /^https:\/\/[^\s"'<>]+$/i.test(value) || /^\/(library|alerts)\/(?!.*\.\.)[\w./-]+$/.test(value) ? value.slice(0, 2048) : fallback;
     }
     if (key === "currency") {
       return /^[a-z]{3}$/i.test(value) ? value.toUpperCase() : fallback;

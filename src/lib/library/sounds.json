@@ -1,0 +1,1049 @@
+[
+  {
+    "id": "chimes/rising-confirm",
+    "name": "Rising confirm",
+    "category": "chime",
+    "file": "/library/sounds/chimes/rising-confirm.mp3",
+    "durationSec": 0.52,
+    "tags": [
+      "bright",
+      "short",
+      "ui"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Interface Sounds",
+    "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+    "suggestedFor": [
+      "follow",
+      "redemption"
+    ],
+    "originalFiles": [
+      "confirmation_002.ogg"
+    ]
+  },
+  {
+    "id": "chimes/soft-confirm",
+    "name": "Soft confirm",
+    "category": "chime",
+    "file": "/library/sounds/chimes/soft-confirm.mp3",
+    "durationSec": 0.48,
+    "tags": [
+      "soft",
+      "short",
+      "ui"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Interface Sounds",
+    "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+    "suggestedFor": [
+      "follow",
+      "redemption"
+    ],
+    "originalFiles": [
+      "confirmation_004.ogg"
+    ]
+  },
+  {
+    "id": "chimes/crystal-ping",
+    "name": "Crystal ping",
+    "category": "chime",
+    "file": "/library/sounds/chimes/crystal-ping.mp3",
+    "durationSec": 0.61,
+    "tags": [
+      "glass",
+      "bright",
+      "short"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Interface Sounds",
+    "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+    "suggestedFor": [
+      "follow",
+      "cheer"
+    ],
+    "originalFiles": [
+      "glass_004.ogg"
+    ]
+  },
+  {
+    "id": "chimes/two-note-ding",
+    "name": "Two-note ding",
+    "category": "chime",
+    "file": "/library/sounds/chimes/two-note-ding.mp3",
+    "durationSec": 0.48,
+    "tags": [
+      "notification",
+      "short"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Interface Sounds",
+    "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+    "suggestedFor": [
+      "follow",
+      "redemption"
+    ],
+    "originalFiles": [
+      "question_001.ogg"
+    ]
+  },
+  {
+    "id": "chimes/sparkle-rise",
+    "name": "Sparkle rise",
+    "category": "chime",
+    "file": "/library/sounds/chimes/sparkle-rise.mp3",
+    "durationSec": 0.51,
+    "tags": [
+      "bright",
+      "rising"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Interface Sounds",
+    "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+    "suggestedFor": [
+      "follow",
+      "cheer"
+    ],
+    "originalFiles": [
+      "maximize_005.ogg"
+    ]
+  },
+  {
+    "id": "chimes/big-bell",
+    "name": "Big bell",
+    "category": "chime",
+    "file": "/library/sounds/chimes/big-bell.mp3",
+    "durationSec": 1.13,
+    "tags": [
+      "bell",
+      "ring"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Impact Sounds",
+    "sourceUrl": "https://kenney.nl/assets/impact-sounds",
+    "suggestedFor": [
+      "subscription",
+      "tip"
+    ],
+    "originalFiles": [
+      "impactBell_heavy_000.ogg"
+    ]
+  },
+  {
+    "id": "chimes/deep-bell",
+    "name": "Deep bell",
+    "category": "chime",
+    "file": "/library/sounds/chimes/deep-bell.mp3",
+    "durationSec": 1.38,
+    "tags": [
+      "bell",
+      "low"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Impact Sounds",
+    "sourceUrl": "https://kenney.nl/assets/impact-sounds",
+    "suggestedFor": [
+      "raid",
+      "subscription"
+    ],
+    "originalFiles": [
+      "impactBell_heavy_001.ogg"
+    ]
+  },
+  {
+    "id": "chimes/digital-three-tone",
+    "name": "Digital three-tone",
+    "category": "chime",
+    "file": "/library/sounds/chimes/digital-three-tone.mp3",
+    "durationSec": 0.58,
+    "tags": [
+      "digital",
+      "notification"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Digital Audio",
+    "sourceUrl": "https://kenney.nl/assets/digital-audio",
+    "suggestedFor": [
+      "follow",
+      "redemption"
+    ],
+    "originalFiles": [
+      "threeTone2.ogg"
+    ]
+  },
+  {
+    "id": "jingles/sax-victory",
+    "name": "Sax victory",
+    "category": "jingle",
+    "file": "/library/sounds/jingles/sax-victory.mp3",
+    "durationSec": 1.71,
+    "tags": [
+      "sax",
+      "big",
+      "celebrate"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "subscription",
+      "raid"
+    ],
+    "originalFiles": [
+      "jingles_SAX07.ogg"
+    ]
+  },
+  {
+    "id": "jingles/sax-riff",
+    "name": "Sax riff",
+    "category": "jingle",
+    "file": "/library/sounds/jingles/sax-riff.mp3",
+    "durationSec": 1.02,
+    "tags": [
+      "sax",
+      "groovy"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "subscription",
+      "tip"
+    ],
+    "originalFiles": [
+      "jingles_SAX03.ogg"
+    ]
+  },
+  {
+    "id": "jingles/sax-flourish",
+    "name": "Sax flourish",
+    "category": "jingle",
+    "file": "/library/sounds/jingles/sax-flourish.mp3",
+    "durationSec": 0.8,
+    "tags": [
+      "sax",
+      "short"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "follow",
+      "cheer"
+    ],
+    "originalFiles": [
+      "jingles_SAX01.ogg"
+    ]
+  },
+  {
+    "id": "jingles/steel-drum-party",
+    "name": "Steel drum party",
+    "category": "jingle",
+    "file": "/library/sounds/jingles/steel-drum-party.mp3",
+    "durationSec": 1.38,
+    "tags": [
+      "steel drum",
+      "tropical",
+      "happy"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "subscription",
+      "subscription.gift"
+    ],
+    "originalFiles": [
+      "jingles_STEEL01.ogg"
+    ]
+  },
+  {
+    "id": "jingles/steel-drum-cheer",
+    "name": "Steel drum cheer",
+    "category": "jingle",
+    "file": "/library/sounds/jingles/steel-drum-cheer.mp3",
+    "durationSec": 1.56,
+    "tags": [
+      "steel drum",
+      "tropical"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "cheer",
+      "tip"
+    ],
+    "originalFiles": [
+      "jingles_STEEL07.ogg"
+    ]
+  },
+  {
+    "id": "jingles/steel-drum-hop",
+    "name": "Steel drum hop",
+    "category": "jingle",
+    "file": "/library/sounds/jingles/steel-drum-hop.mp3",
+    "durationSec": 1.26,
+    "tags": [
+      "steel drum",
+      "playful"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "follow",
+      "redemption"
+    ],
+    "originalFiles": [
+      "jingles_STEEL12.ogg"
+    ]
+  },
+  {
+    "id": "jingles/pizzicato-tada",
+    "name": "Pizzicato ta-da",
+    "category": "jingle",
+    "file": "/library/sounds/jingles/pizzicato-tada.mp3",
+    "durationSec": 1.32,
+    "tags": [
+      "strings",
+      "playful"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "subscription.gift",
+      "redemption"
+    ],
+    "originalFiles": [
+      "jingles_PIZZI07.ogg"
+    ]
+  },
+  {
+    "id": "jingles/pizzicato-skip",
+    "name": "Pizzicato skip",
+    "category": "jingle",
+    "file": "/library/sounds/jingles/pizzicato-skip.mp3",
+    "durationSec": 1.14,
+    "tags": [
+      "strings",
+      "light"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "follow",
+      "redemption"
+    ],
+    "originalFiles": [
+      "jingles_PIZZI03.ogg"
+    ]
+  },
+  {
+    "id": "jingles/band-hit-fanfare",
+    "name": "Band hit fanfare",
+    "category": "jingle",
+    "file": "/library/sounds/jingles/band-hit-fanfare.mp3",
+    "durationSec": 1.12,
+    "tags": [
+      "band",
+      "big",
+      "celebrate"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "raid",
+      "subscription"
+    ],
+    "originalFiles": [
+      "jingles_HIT15.ogg"
+    ]
+  },
+  {
+    "id": "jingles/band-hit-stinger",
+    "name": "Band hit stinger",
+    "category": "jingle",
+    "file": "/library/sounds/jingles/band-hit-stinger.mp3",
+    "durationSec": 0.93,
+    "tags": [
+      "band",
+      "stinger"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "cheer",
+      "tip"
+    ],
+    "originalFiles": [
+      "jingles_HIT11.ogg"
+    ]
+  },
+  {
+    "id": "coins/coin-purse",
+    "name": "Coin purse",
+    "category": "coins",
+    "file": "/library/sounds/coins/coin-purse.mp3",
+    "durationSec": 0.7,
+    "tags": [
+      "coins",
+      "real",
+      "jingle"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – RPG Audio",
+    "sourceUrl": "https://kenney.nl/assets/rpg-audio",
+    "suggestedFor": [
+      "tip",
+      "cheer"
+    ],
+    "originalFiles": [
+      "handleCoins.ogg"
+    ]
+  },
+  {
+    "id": "coins/chip-stack",
+    "name": "Chip stack",
+    "category": "coins",
+    "file": "/library/sounds/coins/chip-stack.mp3",
+    "durationSec": 0.83,
+    "tags": [
+      "casino",
+      "chips"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Casino Audio",
+    "sourceUrl": "https://kenney.nl/assets/casino-audio",
+    "suggestedFor": [
+      "tip",
+      "cheer"
+    ],
+    "originalFiles": [
+      "chips-handle-5.ogg"
+    ]
+  },
+  {
+    "id": "coins/chip-clack",
+    "name": "Chip clack",
+    "category": "coins",
+    "file": "/library/sounds/coins/chip-clack.mp3",
+    "durationSec": 0.38,
+    "tags": [
+      "casino",
+      "chips",
+      "short"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Casino Audio",
+    "sourceUrl": "https://kenney.nl/assets/casino-audio",
+    "suggestedFor": [
+      "cheer"
+    ],
+    "originalFiles": [
+      "chips-handle-1.ogg"
+    ]
+  },
+  {
+    "id": "coins/coin-burst",
+    "name": "Coin burst",
+    "category": "coins",
+    "file": "/library/sounds/coins/coin-burst.mp3",
+    "durationSec": 0.93,
+    "tags": [
+      "coins",
+      "arcade",
+      "bright"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "tip",
+      "cheer"
+    ],
+    "originalFiles": [
+      "sfx_coin_cluster8.wav"
+    ]
+  },
+  {
+    "id": "coins/coin-double",
+    "name": "Coin double",
+    "category": "coins",
+    "file": "/library/sounds/coins/coin-double.mp3",
+    "durationSec": 0.69,
+    "tags": [
+      "coins",
+      "arcade",
+      "short"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "cheer",
+      "redemption"
+    ],
+    "originalFiles": [
+      "sfx_coin_cluster1.wav"
+    ]
+  },
+  {
+    "id": "coins/coin-cascade",
+    "name": "Coin cascade",
+    "category": "coins",
+    "file": "/library/sounds/coins/coin-cascade.mp3",
+    "durationSec": 1.48,
+    "tags": [
+      "coins",
+      "big",
+      "layered"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – RPG Audio + Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt) + Kenney – Casino Audio",
+    "sourceUrl": "https://kenney.nl/assets/rpg-audio",
+    "suggestedFor": [
+      "tip",
+      "subscription.gift"
+    ],
+    "originalFiles": [
+      "handleCoins.ogg",
+      "sfx_coin_cluster3.wav",
+      "handleCoins2.ogg",
+      "sfx_coin_cluster8.wav",
+      "chips-handle-2.ogg"
+    ],
+    "sourceUrls": [
+      "https://kenney.nl/assets/rpg-audio",
+      "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "https://kenney.nl/assets/casino-audio"
+    ]
+  },
+  {
+    "id": "sparkles/magic-twinkle",
+    "name": "Magic twinkle",
+    "category": "sparkle",
+    "file": "/library/sounds/sparkles/magic-twinkle.mp3",
+    "durationSec": 1.38,
+    "tags": [
+      "magic",
+      "twinkle"
+    ],
+    "license": "CC0 1.0",
+    "source": "JaggedStone – Magic Spell SFX (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/magic-spell-sfx",
+    "suggestedFor": [
+      "redemption",
+      "follow"
+    ],
+    "originalFiles": [
+      "magical_2.ogg"
+    ]
+  },
+  {
+    "id": "sparkles/spell-shimmer",
+    "name": "Spell shimmer",
+    "category": "sparkle",
+    "file": "/library/sounds/sparkles/spell-shimmer.mp3",
+    "durationSec": 1.81,
+    "tags": [
+      "magic",
+      "shimmer"
+    ],
+    "license": "CC0 1.0",
+    "source": "JaggedStone – Magic Spell SFX (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/magic-spell-sfx",
+    "suggestedFor": [
+      "redemption",
+      "subscription.gift"
+    ],
+    "originalFiles": [
+      "magical_3.ogg"
+    ]
+  },
+  {
+    "id": "sparkles/glitter-burst",
+    "name": "Glitter burst",
+    "category": "sparkle",
+    "file": "/library/sounds/sparkles/glitter-burst.mp3",
+    "durationSec": 1.37,
+    "tags": [
+      "magic",
+      "bright"
+    ],
+    "license": "CC0 1.0",
+    "source": "JaggedStone – Magic Spell SFX (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/magic-spell-sfx",
+    "suggestedFor": [
+      "cheer",
+      "redemption"
+    ],
+    "originalFiles": [
+      "magical_5.ogg"
+    ]
+  },
+  {
+    "id": "sparkles/enchant-swell",
+    "name": "Enchant swell",
+    "category": "sparkle",
+    "file": "/library/sounds/sparkles/enchant-swell.mp3",
+    "durationSec": 1.59,
+    "tags": [
+      "magic",
+      "swell"
+    ],
+    "license": "CC0 1.0",
+    "source": "JaggedStone – Magic Spell SFX (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/magic-spell-sfx",
+    "suggestedFor": [
+      "subscription",
+      "redemption"
+    ],
+    "originalFiles": [
+      "magical_1_0.ogg"
+    ]
+  },
+  {
+    "id": "sparkles/fairy-dust",
+    "name": "Fairy dust",
+    "category": "sparkle",
+    "file": "/library/sounds/sparkles/fairy-dust.mp3",
+    "durationSec": 1.31,
+    "tags": [
+      "magic",
+      "airy"
+    ],
+    "license": "CC0 1.0",
+    "source": "JaggedStone – Magic Spell SFX (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/magic-spell-sfx",
+    "suggestedFor": [
+      "subscription.gift",
+      "follow"
+    ],
+    "originalFiles": [
+      "magical_7_0.ogg"
+    ]
+  },
+  {
+    "id": "sparkles/bling",
+    "name": "Bling",
+    "category": "sparkle",
+    "file": "/library/sounds/sparkles/bling.mp3",
+    "durationSec": 1.03,
+    "tags": [
+      "rising",
+      "bright",
+      "retro"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "cheer",
+      "tip"
+    ],
+    "originalFiles": [
+      "sfx_sound_bling.wav"
+    ]
+  },
+  {
+    "id": "pops/boop-up",
+    "name": "Boop up",
+    "category": "pop",
+    "file": "/library/sounds/pops/boop-up.mp3",
+    "durationSec": 0.32,
+    "tags": [
+      "boop",
+      "short",
+      "cute"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Digital Audio",
+    "sourceUrl": "https://kenney.nl/assets/digital-audio",
+    "suggestedFor": [
+      "follow",
+      "redemption"
+    ],
+    "originalFiles": [
+      "pepSound3.ogg"
+    ]
+  },
+  {
+    "id": "pops/blip-hop",
+    "name": "Blip hop",
+    "category": "pop",
+    "file": "/library/sounds/pops/blip-hop.mp3",
+    "durationSec": 0.36,
+    "tags": [
+      "blip",
+      "short"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Digital Audio",
+    "sourceUrl": "https://kenney.nl/assets/digital-audio",
+    "suggestedFor": [
+      "follow",
+      "cheer"
+    ],
+    "originalFiles": [
+      "phaseJump1.ogg"
+    ]
+  },
+  {
+    "id": "pops/bright-pop",
+    "name": "Bright pop",
+    "category": "pop",
+    "file": "/library/sounds/pops/bright-pop.mp3",
+    "durationSec": 0.4,
+    "tags": [
+      "pop",
+      "bright",
+      "short"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Interface Sounds",
+    "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+    "suggestedFor": [
+      "follow",
+      "redemption"
+    ],
+    "originalFiles": [
+      "maximize_004.ogg"
+    ]
+  },
+  {
+    "id": "pops/bubble-gloop",
+    "name": "Bubble gloop",
+    "category": "pop",
+    "file": "/library/sounds/pops/bubble-gloop.mp3",
+    "durationSec": 0.5,
+    "tags": [
+      "bubble",
+      "squishy"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Sci-fi Sounds",
+    "sourceUrl": "https://kenney.nl/assets/sci-fi-sounds",
+    "suggestedFor": [
+      "redemption",
+      "cheer"
+    ],
+    "originalFiles": [
+      "slime_000.ogg"
+    ]
+  },
+  {
+    "id": "pops/bubble-trio",
+    "name": "Bubble trio",
+    "category": "pop",
+    "file": "/library/sounds/pops/bubble-trio.mp3",
+    "durationSec": 0.4,
+    "tags": [
+      "bubble",
+      "pop",
+      "layered"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Interface Sounds",
+    "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+    "suggestedFor": [
+      "follow",
+      "cheer"
+    ],
+    "originalFiles": [
+      "drop_002.ogg",
+      "drop_004.ogg",
+      "pluck_002.ogg"
+    ]
+  },
+  {
+    "id": "hype/rising-sweep",
+    "name": "Rising sweep",
+    "category": "hype",
+    "file": "/library/sounds/hype/rising-sweep.mp3",
+    "durationSec": 1.67,
+    "tags": [
+      "riser",
+      "whoosh",
+      "build"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "raid",
+      "subscription"
+    ],
+    "originalFiles": [
+      "sfx_movement_portal6.wav"
+    ]
+  },
+  {
+    "id": "hype/warp-whoosh",
+    "name": "Warp whoosh",
+    "category": "hype",
+    "file": "/library/sounds/hype/warp-whoosh.mp3",
+    "durationSec": 1.08,
+    "tags": [
+      "whoosh",
+      "sci-fi"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "raid",
+      "redemption"
+    ],
+    "originalFiles": [
+      "sfx_movement_portal4.wav"
+    ]
+  },
+  {
+    "id": "hype/rocket-whoosh",
+    "name": "Rocket whoosh",
+    "category": "hype",
+    "file": "/library/sounds/hype/rocket-whoosh.mp3",
+    "durationSec": 0.78,
+    "tags": [
+      "whoosh",
+      "fast"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "raid",
+      "cheer"
+    ],
+    "originalFiles": [
+      "sfx_wpn_missilelaunch.wav"
+    ]
+  },
+  {
+    "id": "hype/sub-boom",
+    "name": "Sub boom",
+    "category": "hype",
+    "file": "/library/sounds/hype/sub-boom.mp3",
+    "durationSec": 2.0,
+    "tags": [
+      "bass",
+      "boom",
+      "impact"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Sci-fi Sounds",
+    "sourceUrl": "https://kenney.nl/assets/sci-fi-sounds",
+    "suggestedFor": [
+      "raid",
+      "subscription"
+    ],
+    "originalFiles": [
+      "lowFrequency_explosion_000.ogg"
+    ]
+  },
+  {
+    "id": "hype/double-blast",
+    "name": "Double blast",
+    "category": "hype",
+    "file": "/library/sounds/hype/double-blast.mp3",
+    "durationSec": 1.49,
+    "tags": [
+      "explosion",
+      "retro",
+      "impact"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "raid",
+      "cheer"
+    ],
+    "originalFiles": [
+      "sfx_exp_double1.wav"
+    ]
+  },
+  {
+    "id": "hype/heavy-punch",
+    "name": "Heavy punch",
+    "category": "hype",
+    "file": "/library/sounds/hype/heavy-punch.mp3",
+    "durationSec": 0.49,
+    "tags": [
+      "impact",
+      "punch",
+      "short"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Impact Sounds",
+    "sourceUrl": "https://kenney.nl/assets/impact-sounds",
+    "suggestedFor": [
+      "cheer",
+      "redemption"
+    ],
+    "originalFiles": [
+      "impactPunch_heavy_000.ogg"
+    ]
+  },
+  {
+    "id": "hype/riser-drop",
+    "name": "Riser drop",
+    "category": "hype",
+    "file": "/library/sounds/hype/riser-drop.mp3",
+    "durationSec": 2.15,
+    "tags": [
+      "riser",
+      "bass",
+      "big",
+      "layered"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt) + Kenney – Sci-fi Sounds",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "raid",
+      "subscription.gift"
+    ],
+    "originalFiles": [
+      "sfx_movement_portal1.wav",
+      "lowFrequency_explosion_001.ogg"
+    ],
+    "sourceUrls": [
+      "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "https://kenney.nl/assets/sci-fi-sounds"
+    ]
+  },
+  {
+    "id": "retro/8bit-victory",
+    "name": "8-bit victory",
+    "category": "retro",
+    "file": "/library/sounds/retro/8bit-victory.mp3",
+    "durationSec": 1.7,
+    "tags": [
+      "8-bit",
+      "jingle",
+      "celebrate"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "subscription",
+      "raid"
+    ],
+    "originalFiles": [
+      "jingles_NES00.ogg"
+    ]
+  },
+  {
+    "id": "retro/8bit-level-up",
+    "name": "8-bit level up",
+    "category": "retro",
+    "file": "/library/sounds/retro/8bit-level-up.mp3",
+    "durationSec": 1.01,
+    "tags": [
+      "8-bit",
+      "jingle"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Music Jingles",
+    "sourceUrl": "https://kenney.nl/assets/music-jingles",
+    "suggestedFor": [
+      "subscription",
+      "cheer"
+    ],
+    "originalFiles": [
+      "jingles_NES13.ogg"
+    ]
+  },
+  {
+    "id": "retro/power-up",
+    "name": "Power up",
+    "category": "retro",
+    "file": "/library/sounds/retro/power-up.mp3",
+    "durationSec": 0.84,
+    "tags": [
+      "8-bit",
+      "power-up"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "cheer",
+      "redemption"
+    ],
+    "originalFiles": [
+      "sfx_sounds_powerup1.wav"
+    ]
+  },
+  {
+    "id": "retro/arcade-coin",
+    "name": "Arcade coin",
+    "category": "retro",
+    "file": "/library/sounds/retro/arcade-coin.mp3",
+    "durationSec": 0.46,
+    "tags": [
+      "8-bit",
+      "coin",
+      "short"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "tip",
+      "cheer"
+    ],
+    "originalFiles": [
+      "sfx_coin_single6.wav"
+    ]
+  },
+  {
+    "id": "retro/charge-up",
+    "name": "Charge up",
+    "category": "retro",
+    "file": "/library/sounds/retro/charge-up.mp3",
+    "durationSec": 1.61,
+    "tags": [
+      "8-bit",
+      "rising",
+      "build"
+    ],
+    "license": "CC0 1.0",
+    "source": "Juhani Junkala – The Essential Retro Video Game Sound Effects Collection (OpenGameArt)",
+    "sourceUrl": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+    "suggestedFor": [
+      "raid",
+      "redemption"
+    ],
+    "originalFiles": [
+      "sfx_sound_poweron.wav"
+    ]
+  },
+  {
+    "id": "retro/three-tone-zap",
+    "name": "Three-tone zap",
+    "category": "retro",
+    "file": "/library/sounds/retro/three-tone-zap.mp3",
+    "durationSec": 1.1,
+    "tags": [
+      "synth",
+      "zap"
+    ],
+    "license": "CC0 1.0",
+    "source": "Kenney – Digital Audio",
+    "sourceUrl": "https://kenney.nl/assets/digital-audio",
+    "suggestedFor": [
+      "follow",
+      "redemption"
+    ],
+    "originalFiles": [
+      "zapThreeToneUp.ogg"
+    ]
+  }
+]
