@@ -14,12 +14,14 @@ export function ConnectButton({
   mode,
   role = "broadcaster",
   className,
+  wrapperClassName = "inline-flex flex-col gap-1",
   children,
 }: {
   provider: ProviderId;
   mode: "signin" | "link";
   role?: "broadcaster" | "bot";
   className?: string;
+  wrapperClassName?: string;
   children: ReactNode;
 }) {
   const [pending, setPending] = useState(false);
@@ -30,11 +32,11 @@ export function ConnectButton({
     setError(null);
     const result =
       mode === "signin"
-        ? await authClient.signIn.social({ provider, callbackURL: "/dashboard", errorCallbackURL: "/dashboard" })
+        ? await authClient.signIn.social({ provider, callbackURL: "/dashboard", errorCallbackURL: "/sign-in" })
         : await authClient.linkSocial({
             provider,
-            callbackURL: "/dashboard",
-            errorCallbackURL: "/dashboard",
+            callbackURL: "/dashboard/connections",
+            errorCallbackURL: "/dashboard/connections",
             additionalData: { role },
           });
     if (result.error) {
@@ -44,11 +46,11 @@ export function ConnectButton({
   }
 
   return (
-    <span className="inline-flex flex-col gap-1">
+    <span className={wrapperClassName}>
       <button type="button" onClick={start} disabled={pending} className={className}>
         {pending ? "Redirecting…" : children}
       </button>
-      {error ? <span className="text-xs text-red-700">{error}</span> : null}
+      {error ? <span className="text-xs text-red-500">{error}</span> : null}
     </span>
   );
 }

@@ -1,157 +1,150 @@
 import Link from "next/link";
-import { ConnectButton, SignOutButton } from "@/components/AuthButtons";
-import { DashboardClient } from "@/components/DashboardClient";
-import { Logo } from "@/components/Logo";
-import { enabledProviders, getDashboardData } from "@/lib/dashboard";
-import { getCurrentUser } from "@/lib/session";
+import { ConnectButton, type ProviderId } from "@/components/AuthButtons";
+import { CopyButton, RevokeKeyButton } from "@/components/dashboard/actions";
+import { ConnectionStatus } from "@/components/dashboard/ConnectionStatus";
+import { PLATFORM_NAME, PlatformTile } from "@/components/dashboard/PlatformLogo";
+import { buttonClass, Muted, PageHeader, Row, Section, Status } from "@/components/dashboard/ui";
+import type { Platform } from "@/db/schema";
+import { enabledProviders, loadApiKeys, loadConnections, requireDashboardUser } from "@/lib/dashboard";
+import { timeAgo } from "@/lib/format";
 
-/** Better Auth error codes that reach the dashboard via errorCallbackURL. */
-const AUTH_ERRORS: Record<string, string> = {
-  account_not_linked:
-    "That account isn't connected to a Signal Kit user yet. Sign in with an account you already connected, then connect this one from Accounts.",
-  account_already_linked_to_different_user: "That account is already connected to a different Signal Kit user.",
-  "email_doesn't_match": "That account's email doesn't match. Sign in first, then connect it from Accounts.",
-  access_denied: "Sign-in was cancelled.",
+const PROVIDER: Record<Platform, ProviderId> = { twitch: "twitch", youtube: "google", x: "twitter" };
+const PLATFORM_BLURB: Record<Platform, string> = {
+  twitch: "Follows, subs, cheers, raids and chat",
+  youtube: "Live chat, Super Chats and memberships",
+  x: "Live chat, follows and broadcasts",
 };
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const user = await getCurrentUser().catch(() => null);
-  const { error } = await searchParams;
-  const errorMessage = error ? (AUTH_ERRORS[error] ?? `Sign-in failed (${error}).`) : null;
+export default async function OverviewPage() {
+  const user = await requireDashboardUser();
+  const [connections, keys] = await Promise.all([loadConnections(user.id), loadApiKeys()]);
   const providers = enabledProviders();
+  const missing = (["twitch", "youtube", "x"] as const).filter((platform) => !connections.some((c) => c.platform === platform));
+  const listened = keys.some((key) => key.lastUsedAt);
+  const steps = [
+    { title: "Connect an account", done: connections.length > 0 },
+    { title: "Create an API key", done: keys.length > 0 },
+    { title: "Listen for events", done: listened },
+  ];
+  const doneCount = steps.filter((step) => step.done).length;
 
-  if (!user) {
-    return (
-      <>
-        <DashboardHeader />
-        <main className="flex-1">
-          <section>
-            <div className="mx-auto w-full max-w-3xl px-6 pt-16 pb-24 sm:pt-24">
-              <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
-                Sign in
-              </p>
-              {errorMessage ? <AuthError message={errorMessage} /> : null}
-              <h1 className="mt-4 max-w-[28ch] text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-                Sign in with Twitch, YouTube, or X to start the relay.
-              </h1>
-              <p className="mt-5 max-w-[60ch] text-pretty text-neutral-600">
-                Start with any platform. You can connect more accounts from the dashboard later.
-                Platform tokens are stored encrypted and never leave the server.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-                <ConnectButton provider="twitch" mode="signin" className="inline-flex items-center justify-center rounded-md bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600">
-            Continue with Twitch
-          </ConnectButton>
-                <ConnectButton provider="google" mode="signin" className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950">
-            Continue with YouTube
-          </ConnectButton>
-                {providers.twitter ? (
-                  <ConnectButton
-                    provider="twitter"
-                    mode="signin"
-                    className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
-                  >
-                    Continue with X
-                  </ConnectButton>
-                ) : null}
-                <Link
-                  href="/docs"
-                  className="text-sm font-semibold text-neutral-950 underline-offset-4 hover:underline"
-                >
-                  Read the docs <span aria-hidden="true">→</span>
-                </Link>
-              </div>
-            </div>
-          </section>
-        </main>
-        <DashboardFooter />
-      </>
-    );
-  }
-
-  const data = await getDashboardData(user);
   return (
     <>
-      <DashboardHeader />
-      <main className="flex-1">
-        <section className="border-b border-neutral-200">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 pt-12 pb-8 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
-                Workspace
-              </p>
-              <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-                {user.name}
-              </h1>
-              <p className="mt-2 font-mono text-sm text-neutral-500">
-                {data.connections.length} connected account{data.connections.length === 1 ? "" : "s"}
-              </p>
-              {errorMessage ? <AuthError message={errorMessage} /> : null}
+      <PageHeader title="Overview" description="Your connected accounts and the keys your apps use to listen." />
+
+      <Section
+        title="Connections"
+        aside={
+          <Link href="/dashboard/connections" className={buttonClass("control")}>
+            Connect account
+          </Link>
+        }
+      >
+        {connections.map((connection) => (
+          <Row key={connection.id}>
+            <PlatformTile platform={connection.platform} />
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="truncate text-[13px] font-medium text-(--text)">{connection.displayName}</span>
+              <Muted>
+                {PLATFORM_NAME[connection.platform]} · {connection.role === "bot" ? "chat bot" : "channel"}
+              </Muted>
             </div>
-            <SignOutButton className="inline-flex items-center rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950" />
-          </div>
-        </section>
-        <DashboardClient
-          initialKeys={data.keys}
-          connections={data.connections}
-          providers={data.providers}
-          events={data.events}
-          wsUrl={data.wsUrl}
-          appUrl={data.appUrl}
-          snippets={data.snippets}
-          highlighted={data.highlighted}
-        />
-      </main>
-      <DashboardFooter />
-    </>
-  );
-}
+            <div className="w-40 shrink-0"><ConnectionStatus connection={connection} /></div>
+            <div className="flex w-28 shrink-0 justify-end">
+              {connection.status === "active" ? (
+                <Link href="/dashboard/connections" className={buttonClass("control")}>
+                  Manage
+                </Link>
+              ) : (
+                <ConnectButton provider={PROVIDER[connection.platform]} mode="link" role={connection.role} className={buttonClass("primary")}>
+                  Reconnect
+                </ConnectButton>
+              )}
+            </div>
+          </Row>
+        ))}
+        {missing.map((platform) => (
+          <Row key={platform}>
+            <PlatformTile platform={platform} />
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-[13px] font-medium text-(--text)">{PLATFORM_NAME[platform]}</span>
+              <Muted>{PLATFORM_BLURB[platform]}</Muted>
+            </div>
+            <div className="w-40 shrink-0">
+              <Status tone="off">{providers[PROVIDER[platform]] ? "Not connected" : "Coming soon"}</Status>
+            </div>
+            <div className="flex w-28 shrink-0 justify-end">
+              {providers[PROVIDER[platform]] ? (
+                <ConnectButton provider={PROVIDER[platform]} mode="link" className={buttonClass("control")}>
+                  Connect
+                </ConnectButton>
+              ) : null}
+            </div>
+          </Row>
+        ))}
+      </Section>
 
-function AuthError({ message }: { message: string }) {
-  return (
-    <div role="alert" className="mt-4 max-w-[70ch] rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-      {message}
-    </div>
-  );
-}
-
-function DashboardHeader() {
-  return (
-    <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-6">
-        <Logo />
-        <nav className="flex items-center gap-1 text-sm text-neutral-600">
-          <Link
-            href="/docs"
-            className="rounded-md px-3 py-2 hover:bg-neutral-100 hover:text-neutral-950"
+      <div className="flex gap-12">
+        <div className="min-w-0 flex-1">
+          <Section
+            title="API keys"
+            aside={
+              <Link href="/dashboard/keys" className={buttonClass("control")}>
+                Create key
+              </Link>
+            }
           >
-            Docs
-          </Link>
-          <Link href="/dashboard" className="rounded-md px-3 py-2 text-neutral-950">
-            Dashboard
-          </Link>
-        </nav>
-      </div>
-    </header>
-  );
-}
+            {keys.length === 0 ? (
+              <Row>
+                <Muted>No keys yet. Create one for each overlay, bot or agent.</Muted>
+              </Row>
+            ) : (
+              keys.slice(0, 4).map((key) => (
+                <Row key={key.id}>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="truncate text-[13px] font-medium text-(--text)">{key.name ?? "API key"}</span>
+                    <span className="sk-mono text-[11px] text-(--text-3)">{key.start}…</span>
+                  </div>
+                  <Muted>{key.lastUsedAt ? `Used ${timeAgo(key.lastUsedAt)}` : "Never used"}</Muted>
+                  <RevokeKeyButton id={key.id} name={key.name ?? "API key"} />
+                </Row>
+              ))
+            )}
+            <p className="border-t border-(--line) pt-3 text-xs leading-[18px] text-(--text-3)">
+              Keys are shown once. Revoking a key disconnects anything using it right away.
+            </p>
+          </Section>
+        </div>
 
-function DashboardFooter() {
-  return (
-    <footer className="border-t border-neutral-200">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-8 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
-          Signal Kit · An indie project
-        </p>
-        <nav className="flex items-center gap-6 text-sm text-neutral-600">
-          <Link href="/" className="font-normal hover:text-neutral-950">
-            Home
-          </Link>
-          <Link href="/docs" className="font-normal hover:text-neutral-950">
-            Docs
-          </Link>
-        </nav>
+        {doneCount < steps.length ? (
+          <div className="w-100 shrink-0">
+            <Section title="Get started" aside={<Muted>{`${doneCount} of ${steps.length} done`}</Muted>}>
+              {steps.map((step, index) => (
+                <div key={step.title} className="flex gap-3 border-t border-(--line) py-3.5">
+                  <span
+                    className={`flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                      step.done ? "sk-grain bg-(--accent) text-white" : "border border-[#707070] text-(--text-2)"
+                    }`}
+                  >
+                    {step.done ? "✓" : index + 1}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <span className={`text-[13px] font-medium ${step.done ? "text-(--text-3)" : "text-(--text)"}`}>{step.title}</span>
+                    {index === 2 && !step.done ? (
+                      <div className="flex items-start gap-2">
+                        <pre className="sk-mono flex-1 overflow-x-auto rounded-(--r) border border-(--line) bg-(--surface-inset) px-2.5 py-2 text-[11px] leading-[17px] text-(--text-2)">
+                          {`npm i @signal-kit/client\n\nkit.on("*", (e) => console.log(e))`}
+                        </pre>
+                        <CopyButton value="npm i @signal-kit/client" />
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </Section>
+          </div>
+        ) : null}
       </div>
-    </footer>
+    </>
   );
 }

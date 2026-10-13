@@ -5,7 +5,8 @@ import { WebSocketServer } from "ws";
 import { startConnectionHealthChecks } from "@/lib/connections/health";
 import { randomToken } from "@/lib/crypto";
 import { eventSubManager } from "@/lib/twitch/eventsub-manager";
-import { authenticateApiKey } from "@/lib/ws/auth";
+import { getAppUrl } from "@/lib/app-url";
+import { authenticateApiKey, authenticateSession } from "@/lib/ws/auth";
 import { relayHub } from "@/lib/ws/relay";
 import { youtubeLiveManager } from "@/lib/youtube/live-manager";
 
@@ -38,16 +39,18 @@ async function main() {
     }
 
     const token = Array.isArray(parsedUrl.query.token) ? parsedUrl.query.token[0] : parsedUrl.query.token;
-    if (!token) {
+    // Without a key, only the dashboard (same origin, signed-in session) may connect.
+    // The Origin check stops other sites from riding the session cookie.
+    if (!token && req.headers.origin !== getAppUrl()) {
       socket.destroy();
       return;
     }
 
     wss.handleUpgrade(req, socket, head, (ws) => {
       void (async () => {
-        const auth = await authenticateApiKey(token);
+        const auth = token ? await authenticateApiKey(token) : await authenticateSession(req.headers.cookie);
         if (!auth) {
-          ws.close(1008, "Invalid API key");
+          ws.close(1008, token ? "Invalid API key" : "Not signed in");
           return;
         }
 

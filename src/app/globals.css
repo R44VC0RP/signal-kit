@@ -84,3 +84,60 @@ html {
   background: var(--color-violet-200);
   color: var(--color-violet-900);
 }
+
+/*
+ * Dashboard theme ("Console" direction): neutral blacks, 1px hairlines,
+ * one cobalt accent, green for live, orange for attention. Scoped to .sk-app so
+ * the marketing pages keep their own look until they are redesigned.
+ */
+.sk-app {
+  --surface-stage: #080808;
+  --surface-inset: #0b0b0b;
+  --surface-panel: #141414;
+  --hover: #1f1f1f;
+  --control: #2a2a2a;
+  --control-hover: #343434;
+  --line: #242424;
+  --line-strong: #333333;
+  --selected: #161e36;
+  --text: #f5f5f5;
+  --text-2: #bbbbbb;
+  --text-3: #8f8f8f;
+  --accent: #3d6bff;
+  --accent-fill: #2f5df5;
+  --accent-fill-hover: #4470ff;
+  --accent-text: #7fa0ff;
+  --accent-soft: rgb(61 107 255 / 16%);
+  --onair: #3dcb63;
+  --onair-fill: #2eae50;
+  --warning: #ff8f3f;
+  --danger: #ff4d43;
+  --danger-text: #ff6f67;
+  --r: 6px;
+
+  font-family: var(--font-mona), ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--surface-stage);
+  color: var(--text);
+  color-scheme: dark;
+}
+
+.sk-app ::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.sk-brand {
+  font-family: var(--font-hubot), var(--font-mona), sans-serif;
+}
+
+.sk-mono {
+  font-family: var(--font-martian), ui-monospace, monospace;
+  font-weight: 300;
+}
+
+/* Fine grain on filled controls (Arc's transparent noise tile, 2x density). */
+.sk-grain {
+  background-image: url("/noise-light.png");
+  background-repeat: repeat;
+  background-size: 110px 110px;
+}
