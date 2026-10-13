@@ -6,6 +6,8 @@ export type DescribedEvent = {
   platform: EventPlatform;
   kind: string;
   from: string;
+  /** Sender's profile picture when the platform provides one (YouTube, X). */
+  avatarUrl: string | null;
   details: string;
   value: string;
   category: EventCategory;
@@ -50,6 +52,7 @@ export function describeEvent(event: Partial<SignalKitEvent> & { type?: string }
     platform: event.platform,
     kind,
     from: event.actor?.name ?? "",
+    avatarUrl: event.actor?.avatarUrl ?? null,
     details: event.message ?? detailsFor(event.kind, data),
     value: event.amount?.display ?? valueFor(event.kind, data),
     category: categoryFor(event.kind),

@@ -153,7 +153,7 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
           <span className="w-17.5 shrink-0">Time</span>
           <span className="w-4 shrink-0" />
           <span className="w-32.5 shrink-0">Type</span>
-          <span className="w-32.5 shrink-0">From</span>
+          <span className="w-40 shrink-0">From</span>
           <span className="flex-1">Details</span>
           <span className="w-20 shrink-0 text-right">Value</span>
         </div>
@@ -180,7 +180,10 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
                   <PlatformLogo platform={row.platform} size={13} />
                 </span>
                 <span className={`w-32.5 shrink-0 truncate text-xs ${fresh ? "text-(--accent-text)" : "text-(--text-2)"}`}>{row.kind}</span>
-                <span className="w-32.5 shrink-0 truncate text-[13px] font-medium text-(--text)">{row.from || "—"}</span>
+                <span className="flex w-40 shrink-0 items-center gap-2">
+                  {row.from ? <Avatar name={row.from} url={row.avatarUrl} /> : null}
+                  <span className="truncate text-[13px] font-medium text-(--text)">{row.from || "—"}</span>
+                </span>
                 <span className="min-w-0 flex-1 truncate text-[13px] text-(--text-2)">{row.details}</span>
                 <span className="sk-mono w-20 shrink-0 text-right text-xs text-(--text)">{row.value}</span>
               </div>
@@ -189,6 +192,32 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
         )}
       </div>
     </>
+  );
+}
+
+/** Sender avatar, or their initial when the platform sends no picture (e.g. Twitch chat). */
+function Avatar({ name, url }: { name: string; url: string | null }) {
+  const [failed, setFailed] = useState(false);
+  if (url && !failed) {
+    return (
+      // Remote avatars from many CDNs; next/image would need every host allow-listed.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={url}
+        alt=""
+        width={18}
+        height={18}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
+        className="size-4.5 shrink-0 rounded-full bg-(--control) object-cover outline outline-1 -outline-offset-1 outline-white/10"
+      />
+    );
+  }
+  return (
+    <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-(--control) text-[10px] font-semibold text-(--text-2) uppercase">
+      {name.replace(/^@/, "").charAt(0)}
+    </span>
   );
 }
 
