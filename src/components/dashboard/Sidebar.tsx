@@ -15,6 +15,7 @@ const NAV = [
   { href: "/dashboard", label: "Overview", icon: icon(<path d="M3 10.5L12 3l9 7.5V21H3z" />) },
   { href: "/dashboard/connections", label: "Connections", count: "connections", icon: icon(<path d="M9 17H7A5 5 0 017 7h2M15 7h2a5 5 0 010 10h-2M8 12h8" />) },
   { href: "/dashboard/live", label: "Live tools", icon: icon(<><circle cx="12" cy="12" r="2.5" /><path d="M7.8 7.8a6 6 0 000 8.4M16.2 7.8a6 6 0 010 8.4M4.9 4.9a10 10 0 000 14.2M19.1 4.9a10 10 0 010 14.2" /></>) },
+  { href: "/dashboard/bot", label: "Chat bot", icon: icon(<><rect x="4" y="8" width="16" height="12" rx="3" /><path d="M12 4v4M9 13h.01M15 13h.01M9.5 17h5" /></>) },
   { href: "/dashboard/streams", label: "Streams", icon: icon(<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />) },
   { href: "/dashboard/overlays", label: "Overlays", count: "overlays", icon: icon(<><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 13l9 5 9-5" /></>) },
   { href: "/dashboard/library", label: "Library", icon: icon(<><path d="M4 19V5a1 1 0 011-1h3v16H5a1 1 0 01-1-1zM8 4h4v16H8z" /><path d="M14.5 5.5l3.9-1 3.6 14.5-3.9 1z" /></>) },

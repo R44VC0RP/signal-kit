@@ -30,7 +30,11 @@ export const TWITCH_BROADCASTER_SCOPES = [
   "channel:read:redemptions",
   "channel:read:subscriptions",
   "channel:read:vips",
+  "clips:edit",
   "moderation:read",
+  "moderator:manage:banned_users",
+  "moderator:manage:chat_messages",
+  "moderator:manage:shoutouts",
   "moderator:read:chat_settings",
   "moderator:read:chatters",
   "moderator:read:followers",
@@ -40,8 +44,11 @@ export const TWITCH_BROADCASTER_SCOPES = [
   "user:write:chat",
 ];
 
-/** A separate Twitch account that reads and sends chat as a bot. */
-export const TWITCH_BOT_SCOPES = ["user:bot", "user:read:chat", "user:write:chat"];
+/** A separate Twitch account that reads and sends chat as a bot (and moderates, once it's a mod). */
+export const TWITCH_BOT_SCOPES = ["user:bot", "user:read:chat", "user:write:chat", "moderator:manage:chat_messages", "moderator:manage:banned_users", "moderator:manage:shoutouts"];
+
+/** What the chat bot's moderation, !so, !clip and !marker need from the broadcaster's connection. */
+export const TWITCH_BOT_FEATURE_SCOPES = ["moderator:manage:chat_messages", "moderator:manage:banned_users", "moderator:manage:shoutouts", "clips:edit", "channel:manage:broadcast"];
 
 /** Reading broadcasts and live chat only needs read access, which has a far milder consent screen. */
 export const YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"];

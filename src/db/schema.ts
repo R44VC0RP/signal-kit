@@ -356,3 +356,31 @@ export const userSettings = mysqlTable(
       .notNull(),
   },
 );
+
+/** Chat bot configuration per user: commands, timers, spam filters, loyalty, markers, quotes. */
+export const botConfigs = mysqlTable("bot_configs", {
+  userId: varchar("user_id", { length: 36 }).primaryKey(),
+  config: json("config").$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp("updated_at", { fsp: 3 })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+/** Loyalty points per viewer per platform, earned by chatting and watching. */
+export const loyalty = mysqlTable(
+  "loyalty",
+  {
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    platform: varchar("platform", { length: 16 }).$type<Platform>().notNull(),
+    chatterId: varchar("chatter_id", { length: 128 }).notNull(),
+    name: varchar("name", { length: 128 }).notNull(),
+    points: int("points").notNull().default(0),
+    watchMinutes: int("watch_minutes").notNull().default(0),
+    updatedAt: timestamp("updated_at", { fsp: 3 })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.platform, table.chatterId] }), index("loyalty_user_points_idx").on(table.userId, table.points)],
+);

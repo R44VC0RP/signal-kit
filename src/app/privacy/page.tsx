@@ -69,7 +69,11 @@ export default function PrivacyPage() {
       <ul>
         <li>To sign you in and keep your connected accounts working.</li>
         <li>To deliver your stream events, in real time, only to clients that hold one of your API keys or to your own dashboard.</li>
-        <li>To perform actions on your own channels that you request, such as updating a stream title.</li>
+        <li>
+          To perform actions on your own channels that you request, such as updating a stream title, or, if you turn on the Twitch chat
+          bot: replying to commands, posting timed messages, deleting spam or timing out users under your filter rules, shoutouts,
+          clips and stream markers. Loyalty points store each viewer&apos;s name, platform id, points and watch time on your channel.
+        </li>
         <li>
           To show you stream statistics (viewers, chatters, follows, subs and support per stream) and, if you turn them on, to post
           go-live and recap messages to your Discord through a webhook you provide, and to publish a public stats page at an address you

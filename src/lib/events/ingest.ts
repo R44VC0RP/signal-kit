@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gt, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { connections, events, type Platform } from "@/db/schema";
+import { chatBot } from "@/lib/bot/engine";
 import { liveToolsHub } from "@/lib/live/tools";
 import { recordStats } from "@/lib/overlays/stats";
 import { streamTracker } from "@/lib/streams/tracker";
@@ -71,6 +72,7 @@ export async function ingestEvent(
   void recordStats(source.userId, event);
   void streamTracker.record(source.userId, source.connectionId, event);
   liveToolsHub.onEvent(source.userId, event);
+  chatBot.onEvent(source.userId, event);
   touchConnection(source.connectionId);
   return event;
 }
