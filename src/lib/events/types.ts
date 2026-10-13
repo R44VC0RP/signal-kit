@@ -30,6 +30,17 @@ export type EventKind =
   | "stream.update"
   | "other";
 
+/**
+ * A chat message split for display: plain text, emotes (Twitch, BTTV, FFZ, 7TV; animated when
+ * the emote is; zero-width emotes draw on top of the previous one), cheermotes with their bits
+ * and tier colour, and @mentions.
+ */
+export type MessagePart =
+  | { type: "text"; text: string }
+  | { type: "emote"; name: string; url: string; animated: boolean; zeroWidth?: boolean; source: "twitch" | "bttv" | "ffz" | "7tv" | "youtube" }
+  | { type: "cheer"; name: string; bits: number; url: string; color: string }
+  | { type: "mention"; text: string };
+
 export type EventActor = {
   /** The platform's id for the person (Twitch user id, YouTube channel id, X user id). */
   id: string | null;
@@ -65,6 +76,8 @@ export type SignalKitEvent = {
   actor: EventActor | null;
   /** Free text attached to the event (chat text, cheer message, Super Chat comment…). */
   message: string | null;
+  /** `message` split into text, emotes and cheermotes for display, when known. */
+  messageParts?: MessagePart[];
   /** Money-like value for tips, Bits, Super Chats and charity donations. */
   amount: EventAmount | null;
   /** Kind-specific details (tier, months, viewers, reward, level…). */

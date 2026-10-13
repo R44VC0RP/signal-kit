@@ -16,6 +16,7 @@ import {
   type OverlayType,
 } from "@/lib/overlays/settings";
 import { alertText, hasBlockedWord, isBot, matchesAlert, nameColor } from "./describe";
+import { MessageText } from "./MessageText";
 import "./overlay.css";
 
 /**
@@ -155,7 +156,11 @@ function AlertsOverlay({ settings, events }: { settings: AlertSettings; events: 
               )}
             </div>
             {text.detail ? <div className="sko-alert-detail">{text.detail}</div> : null}
-            {message ? <div className="sko-alert-message">{message}</div> : null}
+            {message ? (
+              <div className="sko-alert-message">
+                <MessageText text={message} parts={event.messageParts} />
+              </div>
+            ) : null}
           </div>
           <span className="sko-alert-countdown" aria-hidden="true" />
         </div>
@@ -265,7 +270,7 @@ function ChatOverlay({ settings, events }: { settings: ChatSettings; events: Sig
                   {settings.showBadges ? <Verified event={event} /> : null}
                   {highlight ? <span className="sko-chat-amount">{event.kind === "tip" ? event.amount?.display : alertText(event).title.replace(name, "").trim()}</span> : null}
                 </div>
-                {event.message ? <div className="sko-chat-text">{event.message}</div> : null}
+                {event.message ? <MessageText className="sko-chat-text" text={event.message} parts={event.messageParts} /> : null}
               </div>
             </div>
           );

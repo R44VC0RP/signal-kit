@@ -7,6 +7,7 @@ import { connectionEvents } from "@/lib/connections/events";
 import { markNeedsReauth } from "@/lib/connections/tokens";
 import { type EventSource, ingestEvent } from "@/lib/events/ingest";
 import { normalizeTwitch } from "@/lib/events/normalize";
+import { twitchMessageParts, warmEmotes } from "@/lib/emotes/twitch";
 import { resolveTwitchBadges } from "./badges";
 import {
   assignShard,
@@ -208,6 +209,10 @@ class ConduitManager {
         () => undefined,
       );
     }
+    const fragments = twitchFragments(subscription.type, event);
+    if (fragments) {
+      normalized.messageParts = await twitchMessageParts(String(event.broadcaster_user_id ?? source.platformUserId), fragments).catch(() => undefined);
+    }
     await ingestEvent(source, {
       rawType: subscription.type,
       raw: event,
@@ -322,6 +327,9 @@ class ConduitManager {
       let created = 0;
       let failed = 0;
 
+      for (const platformUserId of new Set(rows.map(({ connection }) => connection.platformUserId))) {
+        warmEmotes(platformUserId);
+      }
       for (const { sub: row, connection } of rows) {
         const key = subscriptionKey(row.type, row.version, row.conditionJson);
         const existing = remoteByKey.get(key);
@@ -369,6 +377,52 @@ class ConduitManager {
 }
 
 /** Twitch echoes conditions with unused fields as "" (e.g. reward_id), so ignore empty values when matching. */
+type Fragment = { type?: string; text?: string; emote?: { id?: string; format?: string[] } | null; cheermote?: { prefix?: string; bits?: number; tier?: number } | null };
+
+/**
+ * The message of a Twitch event as EventSub-style fragments: chat messages and notices carry
+ * them; resub messages give emote positions instead; cheer messages are plain text with
+ * "Cheer100"-style tokens.
+ */
+function twitchFragments(type: string, event: Record<string, unknown>): Fragment[] | null {
+  const message = event.message as { text?: string; fragments?: Fragment[]; emotes?: { begin: number; end: number; id: string }[] } | string | undefined;
+  if (!message) {
+    return null;
+  }
+  if (typeof message === "string") {
+    if (type !== "channel.cheer") {
+      return null;
+    }
+    return message.split(/(\s+)/).map((token) => {
+      const match = /^([a-z]+)(\d+)$/i.exec(token);
+      return match ? { type: "cheermote", text: token, cheermote: { prefix: match[1], bits: Number(match[2]) } } : { type: "text", text: token };
+    });
+  }
+  if (Array.isArray(message.fragments)) {
+    return message.fragments;
+  }
+  if (typeof message.text === "string" && Array.isArray(message.emotes)) {
+    const chars = [...message.text];
+    const fragments: Fragment[] = [];
+    let cursor = 0;
+    for (const emote of [...message.emotes].sort((a, b) => a.begin - b.begin)) {
+      if (emote.begin > cursor) {
+        fragments.push({ type: "text", text: chars.slice(cursor, emote.begin).join("") });
+      }
+      fragments.push({ type: "emote", text: chars.slice(emote.begin, emote.end + 1).join(""), emote: { id: emote.id, format: ["static"] } });
+      cursor = emote.end + 1;
+    }
+    if (cursor < chars.length) {
+      fragments.push({ type: "text", text: chars.slice(cursor).join("") });
+    }
+    return fragments;
+  }
+  if (typeof message.text === "string") {
+    return [{ type: "text", text: message.text }];
+  }
+  return null;
+}
+
 function subscriptionKey(type: string, version: string, condition: Record<string, string>) {
   const meaningful = Object.fromEntries(Object.entries(condition).filter(([, value]) => value !== "" && value != null));
   return `${type}|${version}|${stableJsonHash(meaningful)}`;

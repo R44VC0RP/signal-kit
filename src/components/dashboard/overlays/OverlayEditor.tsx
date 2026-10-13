@@ -45,7 +45,12 @@ export function OverlayEditor({ initial, openSetup }: { initial: Overlay; openSe
   const [settings, setSettings] = useState<AnySettings>(initial.settings);
   const [name, setName] = useState(initial.name);
   const [save, setSave] = useState<SaveState>("saved");
-  const [events, setEvents] = useState<SignalKitEvent[]>(() => seedEvents(initial.type));
+  const [events, setEvents] = useState<SignalKitEvent[]>([]);
+  // Sample events use random ids and times, so create them in the browser only (not during SSR).
+  useEffect(() => {
+    const seed = setTimeout(() => setEvents(seedEvents(initial.type)), 0);
+    return () => clearTimeout(seed);
+  }, [initial.type]);
   const [demo, setDemo] = useState(initial.type !== "alerts");
   const [background, setBackground] = useState<StageBackground>("gameplay");
   const [setupOpen, setSetupOpen] = useState(openSetup);

@@ -1,4 +1,4 @@
-import type { EventActor, EventAmount, EventKind } from "./types";
+import type { EventActor, EventAmount, EventKind, MessagePart } from "./types";
 
 /** The platform-independent part of an event; ids, channel and timestamps are added at ingest. */
 export type NormalizedFields = {
@@ -8,6 +8,8 @@ export type NormalizedFields = {
   amount: EventAmount | null;
   data: Record<string, unknown>;
   occurredAt?: string;
+  /** Message split into text, emotes and cheermotes (filled in by platform managers). */
+  messageParts?: MessagePart[];
 };
 
 // Raw payloads are third-party JSON; read them defensively.

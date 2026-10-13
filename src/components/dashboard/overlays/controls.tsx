@@ -50,21 +50,26 @@ export function Segmented<T extends string>({ value, options, onChange }: { valu
 }
 
 export function Toggle({ label, checked, onChange, children }: { label: string; checked: boolean; onChange: (checked: boolean) => void; children?: ReactNode }) {
+  // A row you can click anywhere on. Not a <label> around the switch: a label forwards its click
+  // to the button inside, which toggled the switch twice and left it unchanged.
   return (
-    <label className="flex cursor-pointer items-center gap-3 text-[13px] text-(--text-2)">
+    <div className="flex cursor-pointer items-center gap-3 text-[13px] text-(--text-2)" onClick={() => onChange(!checked)}>
       {children}
-      <span className="flex-1">{label}</span>
+      <span className="flex-1 select-none">{label}</span>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
         aria-label={label}
-        onClick={() => onChange(!checked)}
+        onClick={(event) => {
+          event.stopPropagation();
+          onChange(!checked);
+        }}
         className={`relative h-5 w-8.5 shrink-0 rounded-full transition-colors ${checked ? "sk-grain bg-(--accent-fill)" : "bg-(--control)"}`}
       >
         <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-[left] ${checked ? "left-4" : "left-0.5"}`} />
       </button>
-    </label>
+    </div>
   );
 }
 

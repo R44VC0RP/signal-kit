@@ -1,4 +1,4 @@
-import type { EventKind, EventPlatform, SignalKitEvent } from "@/lib/events/types";
+import type { EventKind, EventPlatform, MessagePart, SignalKitEvent } from "@/lib/events/types";
 
 /**
  * Realistic sample events for previews and test alerts. Shared by the customizer (in the
@@ -36,15 +36,26 @@ const PEOPLE: { name: string; platform: EventPlatform; badges: string[]; badgeIm
   { name: "StreamerGuild", platform: "twitch", badges: ["partner", "vip"], badgeImages: [TWITCH_BADGE.vip, TWITCH_BADGE.partner] },
 ];
 
-const CHAT = [
-  "that clutch was insane",
-  "first time catching you live!",
-  "does the SDK work in Bun?",
-  "GG 👏",
-  "how long have you been streaming today?",
-  "the new overlay looks so clean",
-  "lol that jump",
-  "hello from Lisbon 👋",
+const twitchEmote = (name: string, id: string, animated = false): MessagePart => ({
+  type: "emote",
+  name,
+  url: `https://static-cdn.jtvnw.net/emoticons/v2/${id}/${animated ? "animated" : "static"}/dark/3.0`,
+  animated,
+  source: "twitch",
+});
+const sevenTv = (name: string, id: string, animated = false): MessagePart => ({ type: "emote", name, url: `https://cdn.7tv.app/emote/${id}/4x.webp`, animated, source: "7tv" });
+const t = (text: string): MessagePart => ({ type: "text", text });
+
+/** Sample chat lines; Twitch ones include real Twitch and 7TV emotes so previews show them. */
+const CHAT: { text: string; parts?: MessagePart[] }[] = [
+  { text: "that clutch was insane LUL", parts: [t("that clutch was insane "), twitchEmote("LUL", "425618")] },
+  { text: "first time catching you live! HeyGuys", parts: [t("first time catching you live! "), twitchEmote("HeyGuys", "30259")] },
+  { text: "does the SDK work in Bun?" },
+  { text: "GG Clap Clap", parts: [t("GG "), sevenTv("Clap", "01FGW8E11800064MEQW00DPD11", true), t(" "), sevenTv("Clap", "01FGW8E11800064MEQW00DPD11", true)] },
+  { text: "how long have you been streaming today?" },
+  { text: "OMEGALUL that jump", parts: [sevenTv("OMEGALUL", "01GDR51Q1R0006171NHFCC48HX"), t(" that jump")] },
+  { text: "the new overlay looks so clean Kappa", parts: [t("the new overlay looks so clean "), twitchEmote("Kappa", "25")] },
+  { text: "hello from Lisbon 👋" },
 ];
 
 const TIP_MESSAGES = ["Take my money.", "For the coffee fund ☕", "Love the stream!", null];
@@ -93,6 +104,11 @@ export function sampleEvent(kind: SampleKind, seed = Math.floor(Math.random() * 
       if (platform === "twitch") {
         base.amount = { value: 500, currency: "BITS", display: "500 bits" };
         base.data = { source: "cheer" };
+        base.message = "Cheer500 Love the stream!";
+        (base as { messageParts?: MessagePart[] }).messageParts = [
+          { type: "cheer", name: "Cheer500", bits: 500, url: "https://d3aqoihi2n8ty8.cloudfront.net/actions/cheer/dark/animated/100/3.gif", color: "#9c3ee8" },
+          t(" Love the stream!"),
+        ];
       } else {
         base.amount = { value: 20, currency: "USD", display: "$20.00" };
         base.data = { source: platform === "youtube" ? "super_chat" : "tip" };
@@ -106,9 +122,15 @@ export function sampleEvent(kind: SampleKind, seed = Math.floor(Math.random() * 
       base.data = { reward: { title: "Hydrate!", cost: 500 } };
       base.message = null;
       break;
-    case "chat.message":
-      base.message = pick(CHAT, seed + counter);
+    case "chat.message": {
+      const line = pick(CHAT, seed);
+      base.message = line.text;
+      // Emote images are Twitch's; other platforms get the plain text.
+      if (platform === "twitch" && line.parts) {
+        (base as { messageParts?: MessagePart[] }).messageParts = line.parts;
+      }
       break;
+    }
   }
   return {
     ...base,

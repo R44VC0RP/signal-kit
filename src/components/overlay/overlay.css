@@ -326,6 +326,7 @@
   color: var(--sko-accent);
 }
 .sko-chat-text {
+  display: block;
   font-size: 1.1875em;
   line-height: 1.37;
   overflow-wrap: anywhere;
@@ -383,6 +384,35 @@
     opacity: 0;
     transform: translateY(0.5em);
   }
+}
+
+/* ---- Emotes ---- */
+
+.sko-emote {
+  display: inline-block;
+  height: 1.75em;
+  width: auto;
+  margin: -0.4em 0.05em;
+  vertical-align: middle;
+}
+.sko-emote-stack {
+  position: relative;
+  display: inline-grid;
+  vertical-align: middle;
+}
+.sko-emote-stack > .sko-emote {
+  grid-area: 1 / 1;
+  justify-self: center;
+  margin: -0.4em 0.05em;
+}
+.sko-cheer {
+  white-space: nowrap;
+}
+.sko-cheer-bits {
+  font-weight: 700;
+}
+.sko-mention {
+  font-weight: 700;
 }
 
 /* ---- Event list ---- */

@@ -35,6 +35,7 @@ export async function ingestEvent(
     channel: { connectionId: source.connectionId, id: source.platformUserId, name: source.displayName },
     actor: input.normalized.actor,
     message: input.normalized.message,
+    ...(input.normalized.messageParts?.length ? { messageParts: input.normalized.messageParts } : {}),
     amount: input.normalized.amount,
     data: input.normalized.data,
     occurredAt: validDate(input.normalized.occurredAt) ?? receivedAt,
