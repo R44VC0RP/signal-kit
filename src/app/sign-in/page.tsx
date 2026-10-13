@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ConnectButton, type ProviderId } from "@/components/AuthButtons";
 import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
@@ -59,6 +60,15 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
 
         <p className="text-center text-xs leading-[18px] text-(--text-3)">
           Signal Kit only asks for the permissions it needs to read your stream events. Your platform tokens stay encrypted on our server.
+          By continuing you agree to the{" "}
+          <Link href="/terms" className="text-(--text-2) underline underline-offset-2 hover:text-(--text)">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-(--text-2) underline underline-offset-2 hover:text-(--text)">
+            Privacy Policy
+          </Link>
+          .
         </p>
       </div>
     </main>
