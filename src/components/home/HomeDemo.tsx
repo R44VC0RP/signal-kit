@@ -7,7 +7,7 @@ import { defaultSettings, type AlertSettings, type ChatSettings, type GoalSettin
 import { applyTheme, THEMES } from "@/lib/overlays/themes";
 import type { LiveSnapshot } from "@/lib/streams/summary";
 
-export type DemoScene = { id: string; game: string; image: string; imageSmall: string; video?: string };
+export type DemoScene = { id: string; game: string; image: string; imageSmall: string; video?: string; author?: string; license?: string; licenseUrl?: string; sourceUrl?: string };
 
 /** Where each overlay sits on the 1920×1080 demo stream. */
 const BOXES: { type: OverlayType; style: CSSProperties }[] = [
@@ -146,6 +146,22 @@ export function HomeDemo({ scenes, fallback }: { scenes: DemoScene[]; fallback: 
           </div>
         ) : null}
       </div>
+      {scene.author ? (
+        <p className="text-[11px] text-(--text-3)">
+          Gameplay:{" "}
+          <a href={scene.sourceUrl} className="underline-offset-2 hover:text-(--text-2) hover:underline">
+            {scene.game}
+          </a>{" "}
+          by {scene.author},{" "}
+          <a href={scene.licenseUrl} className="underline-offset-2 hover:text-(--text-2) hover:underline">
+            {scene.license}
+          </a>
+          . Overlays are Signal Kit, chat and alerts are samples.{" "}
+          <a href="/credits" className="underline-offset-2 hover:text-(--text-2) hover:underline">
+            Credits
+          </a>
+        </p>
+      ) : null}
     </div>
   );
 }

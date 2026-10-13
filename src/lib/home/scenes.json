@@ -1,1 +1,94 @@
-[]
+[
+  {
+    "id": "supertuxkart-race",
+    "game": "SuperTuxKart",
+    "title": "Pack racing down the straight on a road-track Grand Prix",
+    "image": "/home/scenes/supertuxkart-race.webp",
+    "imageSmall": "/home/scenes/supertuxkart-race-sm.webp",
+    "video": "/home/scenes/supertuxkart-race.webm",
+    "author": "kimden STK",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:SuperTuxKart_2.x_GP_with_24%25_handicap_and_road_tracks_(open_source_Mario_Kart-like_Linux_game).webm",
+    "modified": "Still frame and 8 s clip extracted from the video; resized to 1280×720 (clip) and 1920×1080/960×540 (stills); loop crossfaded; audio removed; re-encoded as VP9 WebM and WebP",
+    "genre": "kart racing"
+  },
+  {
+    "id": "red-eclipse-edge",
+    "game": "Red Eclipse 2",
+    "title": "Mid-firefight on the neon map Edge",
+    "image": "/home/scenes/red-eclipse-edge.webp",
+    "imageSmall": "/home/scenes/red-eclipse-edge-sm.webp",
+    "author": "TucanHolmes",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Red_Eclipse_2_Screenshot_-_Edge.png",
+    "modified": "Resized and converted to WebP",
+    "genre": "arena FPS"
+  },
+  {
+    "id": "veloren-horizon",
+    "game": "Veloren",
+    "title": "Adventurer overlooking mountains at dusk",
+    "image": "/home/scenes/veloren-horizon.webp",
+    "imageSmall": "/home/scenes/veloren-horizon-sm.webp",
+    "author": "Antimundo",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Veloren-0.17-screenshot-horizon.jpg",
+    "modified": "Resized and converted to WebP",
+    "genre": "fantasy open world"
+  },
+  {
+    "id": "zero-ad-spartans",
+    "game": "0 A.D.",
+    "title": "Building up a Spartan city",
+    "image": "/home/scenes/zero-ad-spartans.webp",
+    "imageSmall": "/home/scenes/zero-ad-spartans-sm.webp",
+    "author": "Wildfire Games",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:0_A.D._alpha_25_-_playing_as_Spartans.jpg",
+    "modified": "Resized and converted to WebP",
+    "genre": "RTS / strategy"
+  },
+  {
+    "id": "minetest-village",
+    "game": "Minetest",
+    "title": "Exploring a hillside village with horses",
+    "image": "/home/scenes/minetest-village.webp",
+    "imageSmall": "/home/scenes/minetest-village-sm.webp",
+    "author": "SoylentCow (build by SittingDuck)",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Minetest-5.3.0-animals.jpg",
+    "modified": "Resized and converted to WebP",
+    "genre": "voxel sandbox"
+  },
+  {
+    "id": "mineclonia-friends",
+    "game": "Luanti (Mineclonia)",
+    "title": "Squad photo on snowy hills in multiplayer",
+    "image": "/home/scenes/mineclonia-friends.webp",
+    "imageSmall": "/home/scenes/mineclonia-friends-sm.webp",
+    "author": "Antimundo",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Luanti-5.15-mineclonia-multiplayer.jpg",
+    "modified": "Upscaled from 1600×900, resized and converted to WebP",
+    "genre": "voxel survival"
+  },
+  {
+    "id": "teeworlds-jungle",
+    "game": "Teeworlds",
+    "title": "Jungle level shootout",
+    "image": "/home/scenes/teeworlds-jungle.webp",
+    "imageSmall": "/home/scenes/teeworlds-jungle-sm.webp",
+    "author": "LimiT",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Teeworlds_0.6.0_preview_jungle.png",
+    "modified": "Resized and converted to WebP",
+    "genre": "2D platformer shooter"
+  }
+]
