@@ -1,322 +1,308 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { ConnectButton } from "@/components/AuthButtons";
-import { CodeBlock } from "@/components/CodeBlock";
-import { Logo } from "@/components/Logo";
+import type { ReactNode } from "react";
+import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
+import { buttonClass } from "@/components/dashboard/ui";
+import { CopyIconButton } from "@/components/home/CopyIconButton";
+import type { Platform } from "@/db/schema";
 
-export default function Home() {
-  return (
-    <>
-      <SiteHeader />
-      <main className="flex-1">
-        <Hero />
-        <ProviderModes />
-        <LivePreview />
-        <CodeSection />
-        <Prose />
-        <Faq />
-        <Outro />
-      </main>
-      <SiteFooter />
-    </>
-  );
-}
+export const metadata: Metadata = {
+  title: "Signal Kit · Every stream event, one socket",
+  description: "Chat, follows, subs, tips and raids from Twitch, YouTube and X, normalized into one format and delivered over a single WebSocket.",
+};
 
-function SiteHeader() {
+const INSTALL = "npm i @signal-kit/client";
+
+/** Syntax tones: keyword, name, string, punctuation. */
+type Tone = "k" | "n" | "s" | "p";
+type Token = [string, Tone];
+
+const SNIPPET: Token[][] = [
+  [["import", "k"], [" { ", "p"], ["SignalKit", "n"], [" } ", "p"], ["from", "k"], [" ", "p"], ['"@signal-kit/client"', "s"], [";", "p"]],
+  [],
+  [
+    ["const", "k"],
+    [" ", "p"],
+    ["kit", "n"],
+    [" = ", "p"],
+    ["new", "k"],
+    [" ", "p"],
+    ["SignalKit", "n"],
+    ["({ token: process.env.", "p"],
+    ["SIGNAL_KIT_KEY", "n"],
+    [" });", "p"],
+  ],
+  [],
+  [["kit", "n"], [".", "p"], ["on", "n"], ["(", "p"], ['"tip"', "s"], [", (e) => console.log(`${e.actor?.name} sent ${e.amount?.display}`));", "p"]],
+  [["kit", "n"], [".", "p"], ["on", "n"], ["(", "p"], ['"chat.message"', "s"], [", (e) => console.log(e.actor?.name, e.message));", "p"]],
+  [["kit", "n"], [".", "p"], ["connect", "n"], ["();", "p"]],
+];
+
+const SNIPPET_TEXT = SNIPPET.map((line) => line.map(([text]) => text).join("")).join("\n");
+
+const TONE: Record<Tone, string> = {
+  k: "text-(--text-3)",
+  n: "text-(--text)",
+  s: "text-(--accent-text)",
+  p: "text-(--text-2)",
+};
+
+const OUTPUT: { platform: Platform; name: string; rest: string }[] = [
+  { platform: "youtube", name: "mira.codes", rest: "sent $20.00" },
+  { platform: "twitch", name: "pixelpilot", rest: "sent 500 bits" },
+  { platform: "twitch", name: "devon_k", rest: "does the SDK work in Bun?" },
+];
+
+const EXAMPLES: { platform: Platform; label: string; actor: string; message: string; amount: [string, string, string] }[] = [
+  { platform: "twitch", label: "Twitch cheer", actor: "pixelpilot", message: "the websocket is SO clean", amount: ["500", '"BITS"', '"500 bits"'] },
+  { platform: "youtube", label: "YouTube Super Chat", actor: "mira.codes", message: "Take my money.", amount: ["20", '"USD"', '"$20.00"'] },
+];
+
+const DETAILS = [
+  ["Replay on reconnect", "Events are kept for 24 hours. When the SDK reconnects it replays what you missed, without duplicates."],
+  ["Push, not polling", "Twitch arrives through EventSub conduits, YouTube chat through the streamList gRPC push API."],
+  ["Every channel you run", "Connect several accounts per platform. Each event says which channel it came from."],
+  ["A CLI for the terminal", "The same events, streamed to your terminal while you build."],
+];
+
+export default function HomePage() {
   return (
-    <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/85 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between px-6">
-        <Logo />
-        <nav className="flex items-center gap-1 text-sm text-neutral-600">
-          <Link
-            href="/docs"
-            className="rounded-md px-3 py-2 hover:bg-neutral-100 hover:text-neutral-950"
-          >
-            Docs
+    <div className="sk-app flex flex-1 justify-center px-5 sm:px-8">
+      <div className="flex w-full max-w-4xl flex-col">
+        <header className="flex h-15 items-center justify-between sm:h-18">
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="sk-grain flex size-7 items-center justify-center rounded-(--r) bg-(--accent-fill)">
+              <span className="size-2 rounded-full bg-white" />
+            </span>
+            <span className="sk-brand text-[15px] leading-5 font-semibold text-(--text)">Signal Kit</span>
           </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-md px-3 py-2 hover:bg-neutral-100 hover:text-neutral-950"
-          >
-            Dashboard
+          <Link href="/sign-in" className={`${buttonClass("control")} h-8 px-3.5`}>
+            Sign in
           </Link>
-        </nav>
-      </div>
-    </header>
-  );
-}
+        </header>
 
-function Hero() {
-  return (
-    <section>
-      <div className="mx-auto w-full max-w-3xl px-6 pt-16 pb-10 sm:pt-24">
-        <h1 className="max-w-[28ch] text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          One event stream for Twitch, YouTube, or both.
-        </h1>
-        <p className="mt-5 max-w-[60ch] text-pretty text-neutral-600">
-          Start with the platform you use today. Connect Twitch EventSub, YouTube Live Chat, or
-          both, then pipe subs, cheers, redemptions, Super Chats, and live messages into whatever
-          you build.
-        </p>
-        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-          <ConnectButton provider="twitch" mode="signin" className="inline-flex items-center justify-center rounded-md bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600">
-            Continue with Twitch
-          </ConnectButton>
-          <ConnectButton provider="google" mode="signin" className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950">
-            Continue with YouTube
-          </ConnectButton>
-          <Link
-            href="/docs"
-            className="text-sm font-semibold text-neutral-950 underline-offset-4 hover:underline"
-          >
-            Read the docs <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ProviderModes() {
-  const modes = [
-    {
-      label: "Twitch only",
-      title: "EventSub without webhook plumbing",
-      body: "Follows, subs, Bits, raids, redemptions, polls, predictions, goals, charity, ads, chat, and more through one relay token.",
-    },
-    {
-      label: "YouTube only",
-      title: "Live Chat without a custom poller",
-      body: "Messages, Super Chats, Super Stickers, memberships, moderation events, and live-chat lifecycle events while your broadcast is active.",
-    },
-    {
-      label: "Twitch + YouTube",
-      title: "One socket for multi-platform streams",
-      body: "Connect both accounts and receive normalized envelopes with raw provider payloads. Route by type or provider in your overlay, bot, or local agent.",
-    },
-  ];
-
-  return (
-    <section>
-      <div className="mx-auto w-full max-w-3xl px-6 pb-16 sm:pb-20">
-        <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
-          Pick your setup
-        </p>
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          {modes.map((mode) => (
-            <article key={mode.label} className="rounded-xl border border-neutral-200 bg-white p-4">
-              <p className="font-mono text-xs tracking-wide text-violet-700 uppercase">{mode.label}</p>
-              <h2 className="mt-3 text-base font-semibold tracking-tight text-neutral-950">
-                {mode.title}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-neutral-600">{mode.body}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function LivePreview() {
-  const events = [
-    { type: "channel.cheer", user: "ryan", note: "100 bits", time: "12s" },
-    { type: "youtube.live_chat.super_chat", user: "jules", note: '"keep building"', time: "18s" },
-    { type: "channel.subscribe", user: "morgan", note: "tier 1", time: "24s" },
-    { type: "channel.follow", user: "alex", note: "", time: "38s" },
-    { type: "channel.chat.message", user: "ki", note: '"GG"', time: "1m" },
-    { type: "channel.channel_points_custom_reward_redemption.add", user: "sam", note: "hydrate", time: "2m", muted: true },
-  ];
-
-  return (
-    <section>
-      <div className="mx-auto w-full max-w-3xl px-6 pb-16 sm:pb-20">
-        <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
-          live preview
-        </p>
-        <p className="mt-3 max-w-[60ch] text-pretty text-sm text-neutral-600">
-          A mixed sample over one relay token. Twitch and YouTube keep their raw provider payloads,
-          with a shared envelope for routing.
-        </p>
-        <div className="mt-6 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm shadow-violet-200/40 ring-1 ring-black/5">
-          <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-4 py-2 text-xs text-neutral-600">
-            <div className="flex items-center gap-2">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-violet-500 opacity-60" />
-                <span className="relative inline-flex size-2 rounded-full bg-violet-600" />
-              </span>
-              <span className="font-mono">wss://signal.ryan.ceo/ws</span>
+        <main className="flex flex-col">
+          <section className="flex flex-col pt-12 sm:pt-30">
+            <h1 className="sk-brand text-[36px] leading-10 font-semibold tracking-[-0.03em] text-balance text-(--text) sm:text-[56px] sm:leading-15">
+              Every stream event.
+              <br />
+              One socket.
+            </h1>
+            <p className="mt-4 max-w-145 text-base leading-[25px] text-pretty text-(--text-2) sm:mt-5 sm:text-[17px] sm:leading-[27px]">
+              Chat, follows, subs, tips and raids from Twitch, YouTube and X, normalized into one format and delivered over a single
+              WebSocket.
+            </p>
+            <div className="mt-9 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+              <Link href="/sign-in" className={`${buttonClass("primary", "lg")} px-4.5`}>
+                Get an API key
+              </Link>
+              <div className="flex h-10 items-center justify-between gap-3.5 rounded-(--r) border border-(--line) bg-(--surface-inset) pr-3 pl-3.5">
+                <code className="sk-mono text-xs leading-4">
+                  <span className="text-[#555555] select-none">$ </span>
+                  <span className="text-(--text)">{INSTALL}</span>
+                </code>
+                <CopyIconButton value={INSTALL} label="Copy install command" />
+              </div>
             </div>
-            <span className="font-mono tracking-wide uppercase">connected</span>
-          </div>
-          <ul role="list" className="divide-y divide-neutral-200">
-            {events.map((event) => (
-              <li
-                key={`${event.type}-${event.time}`}
-                className={`grid grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-3 text-sm ${event.muted ? "text-neutral-500" : "text-neutral-900"}`}
-              >
-                <span className="font-mono text-xs text-violet-700">{event.type}</span>
-                <span className="truncate">
-                  <span className="font-medium">{event.user}</span>
-                  {event.note ? (
-                    <span className="text-neutral-500"> · {event.note}</span>
-                  ) : null}
+            <ul className="mt-10 flex flex-wrap items-center gap-5 sm:mt-11 sm:gap-6">
+              <PlatformItem platform="twitch" name="Twitch" />
+              <PlatformItem platform="youtube" name="YouTube" />
+              <PlatformItem platform="x" name="X">
+                <span className="sk-mono rounded-sm border border-(--line-strong) px-1.5 py-0.75 text-[10px] leading-3 tracking-[0.04em] text-(--text-3)">
+                  soon
                 </span>
-                <span className="font-mono text-xs tabular-nums text-neutral-500">{event.time}</span>
+              </PlatformItem>
+            </ul>
+          </section>
+
+          <Block title="Listen in a few lines" description="Create a key, then handle events by kind.">
+            <Panel>
+              <div className="flex h-10 items-center justify-between border-b border-(--line) px-5">
+                <span className="sk-mono text-[11px] leading-3.5 text-(--text-2)">index.ts</span>
+                <CopyIconButton value={SNIPPET_TEXT} label="Copy code" />
+              </div>
+              <pre className="sk-mono overflow-x-auto px-5 py-4.5 text-[11px] leading-6 sm:text-xs">
+                {SNIPPET.map((line, index) => (
+                  <div key={index} className="flex gap-5">
+                    <span className="w-4 shrink-0 text-right text-[#555555] select-none">{index + 1}</span>
+                    <code>
+                      {line.length === 0
+                        ? " "
+                        : line.map(([text, tone], part) => (
+                            <span key={part} className={TONE[tone]}>
+                              {text}
+                            </span>
+                          ))}
+                    </code>
+                  </div>
+                ))}
+              </pre>
+              <div className="border-t border-(--line) px-5 pt-3.5 pb-4.5">
+                <div className="flex items-center justify-between pb-1.5">
+                  <span className="sk-mono text-[11px] text-(--text-3)">Output</span>
+                  <span className="inline-flex items-center gap-2 text-xs text-(--text-2)">
+                    <span className="size-[7px] rounded-full bg-(--onair)" />
+                    Listening
+                  </span>
+                </div>
+                {OUTPUT.map((row) => (
+                  <div key={row.name} className="sk-mono flex h-6 items-center gap-5 text-[11px] sm:text-xs">
+                    <span className="flex w-4 shrink-0 justify-center">
+                      <PlatformLogo platform={row.platform} size={12} />
+                    </span>
+                    <span className="truncate">
+                      <span className="text-(--text)">{row.name}</span> <span className="text-(--text-2)">{row.rest}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          </Block>
+
+          <Block
+            title="One shape for every platform"
+            description="A Twitch cheer and a YouTube Super Chat are both a tip with an amount. Write the handler once."
+          >
+            <Panel className="grid sm:grid-cols-2">
+              {EXAMPLES.map((example, index) => (
+                <div key={example.platform} className={index > 0 ? "border-t border-(--line) sm:border-t-0 sm:border-l" : ""}>
+                  <div className="flex h-10 items-center gap-2.5 border-b border-(--line) px-5">
+                    <span className="flex w-4 justify-center">
+                      <PlatformLogo platform={example.platform} size={13} />
+                    </span>
+                    <span className="text-[13px] font-medium text-(--text)">{example.label}</span>
+                  </div>
+                  <pre className="sk-mono overflow-x-auto pt-4 pb-4.5 text-[11px] leading-[22px] text-(--text-2) sm:text-xs">
+                    <JsonLine>{"{"}</JsonLine>
+                    <JsonLine indent={1} highlight>
+                      <Key strong>kind</Key>
+                      <Str>&quot;tip&quot;</Str>,
+                    </JsonLine>
+                    <JsonLine indent={1}>
+                      <Key>platform</Key>
+                      <Str>&quot;{example.platform}&quot;</Str>,
+                    </JsonLine>
+                    <JsonLine indent={1}>
+                      <Key>actor</Key>
+                      {"{ "}
+                      <Key>name</Key>
+                      <Str>&quot;{example.actor}&quot;</Str>
+                      {" },"}
+                    </JsonLine>
+                    <JsonLine indent={1}>
+                      <Key>message</Key>
+                      <Str>&quot;{example.message}&quot;</Str>,
+                    </JsonLine>
+                    <JsonLine indent={1}>
+                      <Key>amount</Key>
+                      {"{"}
+                    </JsonLine>
+                    <JsonLine indent={2}>
+                      <Key>value</Key>
+                      <span className="text-(--text)">{example.amount[0]}</span>,
+                    </JsonLine>
+                    <JsonLine indent={2}>
+                      <Key>currency</Key>
+                      <Str>{example.amount[1]}</Str>,
+                    </JsonLine>
+                    <JsonLine indent={2}>
+                      <Key>display</Key>
+                      <Str>{example.amount[2]}</Str>
+                    </JsonLine>
+                    <JsonLine indent={1}>{"}"}</JsonLine>
+                    <JsonLine>{"}"}</JsonLine>
+                  </pre>
+                </div>
+              ))}
+            </Panel>
+          </Block>
+
+          <ul className="mt-20 flex flex-col border-b border-(--line) sm:mt-28">
+            {DETAILS.map(([label, description]) => (
+              <li key={label} className="flex flex-col gap-1 border-t border-(--line) py-4.5 sm:flex-row sm:gap-6 sm:py-5.5">
+                <span className="text-[15px] leading-6 font-medium text-(--text) sm:w-106 sm:shrink-0">{label}</span>
+                <span className="text-sm leading-[22px] text-pretty text-(--text-2) sm:text-[15px] sm:leading-6">{description}</span>
               </li>
             ))}
           </ul>
-        </div>
-      </div>
-    </section>
-  );
-}
 
-function CodeSection() {
-  const code = `// npm install @signal-kit/client
-import { SignalKit } from "@signal-kit/client";
-
-const events = new SignalKit({
-  url: "wss://signal.ryan.ceo/ws",
-  token: process.env.SIGNAL_KIT_TOKEN!,
-});
-
-events.on("channel.cheer", ({ event }) => {
-  overlay.bits({
-    user: event.user_name,
-    bits: event.bits,
-    message: event.message,
-  });
-});
-
-events.on("youtube.live_chat.super_chat", ({ event }) => {
-  overlay.superChat({
-    user: event.authorDetails?.displayName,
-    message: event.snippet?.displayMessage,
-  });
-});
-
-events.connect();`;
-
-  return (
-    <section>
-      <div className="mx-auto w-full max-w-3xl px-6 pb-16 sm:pb-20">
-        <p className="mb-3 font-mono text-xs tracking-wide text-neutral-500 uppercase">
-          SDK
-        </p>
-        <CodeBlock filename="overlay.ts" code={code} lang="typescript" />
-      </div>
-    </section>
-  );
-}
-
-function Prose() {
-  return (
-    <section>
-      <div className="mx-auto w-full max-w-3xl px-6 pb-16 sm:pb-20">
-        <h2 className="max-w-[32ch] text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-          What is Signal Kit?
-        </h2>
-        <div className="mt-5 max-w-[68ch] space-y-4 text-pretty text-neutral-700">
-          <p>
-            Signal Kit is a small piece of infrastructure between you and livestream provider APIs.
-            Sign in with Twitch or YouTube, connect the other platform when you need it, and let the
-            app manage provider tokens, EventSub sessions, and YouTube Live Chat polling.
-          </p>
-          <p>
-            On the other side, you get a single relay WebSocket. Drop a token into an overlay, a
-            local agent, or a hobby script. Notifications stream through with the raw{" "}
-            <code className="rounded bg-violet-50 px-1 py-0.5 font-mono text-sm text-violet-800">event</code>{" "}
-            payload each provider sent. No vendor JSON shapes, no alert templates.
-          </p>
-          <p>
-            It is self-hostable, runs in Docker, and stores credentials encrypted in MySQL. There is
-            no UI generator and no overlay marketplace. You build the layer above.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Faq() {
-  const items = [
-    {
-      q: "Do I need both Twitch and YouTube?",
-      a: "No. You can use Twitch by itself, YouTube by itself, or connect both accounts to the same relay token.",
-    },
-    {
-      q: "Are provider tokens exposed to overlays?",
-      a: "No. Overlays connect with a relay token issued by the dashboard. Twitch and YouTube credentials never leave the server.",
-    },
-    {
-      q: "Which events are supported?",
-      a: "Every EventSub topic Twitch lets you subscribe to with the granted scopes, plus YouTube Live Chat messages and fan-funding chat events while a broadcast is active.",
-    },
-    {
-      q: "Can I self-host?",
-      a: "Yes. Docker image, docker-compose, .env, MySQL. The relay WebSocket and the Next.js app run in the same container.",
-    },
-  ];
-
-  return (
-    <section>
-      <div className="mx-auto w-full max-w-3xl px-6 pb-16 sm:pb-20">
-        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">FAQ</h2>
-        <dl className="mt-6 divide-y divide-neutral-200 border-t border-neutral-200">
-          {items.map((item) => (
-            <div key={item.q} className="py-4">
-              <dt className="text-base font-semibold tracking-tight">{item.q}</dt>
-              <dd className="mt-1.5 max-w-[68ch] text-pretty text-neutral-600">{item.a}</dd>
+          <section className="mt-20 flex flex-col gap-5 sm:mt-28 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-col gap-1.5">
+              <h2 className="sk-brand text-2xl leading-[30px] font-semibold tracking-[-0.02em] text-(--text)">Free. Sign in to start.</h2>
+              <p className="text-sm leading-5 text-(--text-3)">Use any account you stream on. Connect the others afterwards.</p>
             </div>
-          ))}
-        </dl>
+            <Link href="/sign-in" className={`${buttonClass("primary", "lg")} px-4.5`}>
+              Get an API key
+            </Link>
+          </section>
+        </main>
+
+        <footer className="mt-20 flex h-18 items-center justify-between border-t border-(--line) sm:mt-28">
+          <span className="flex items-center gap-2">
+            <span className="size-[7px] rounded-full bg-(--accent)" />
+            <span className="sk-brand text-[13px] leading-4 font-semibold text-(--text-2)">Signal Kit</span>
+          </span>
+          <nav className="flex items-center gap-6 text-[13px] leading-4 text-(--text-3)">
+            <Link href="/dashboard" className="transition-colors hover:text-(--text)">
+              Dashboard
+            </Link>
+            <Link href="/privacy" className="transition-colors hover:text-(--text)">
+              Privacy
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-(--text)">
+              Terms
+            </Link>
+          </nav>
+        </footer>
       </div>
+    </div>
+  );
+}
+
+function PlatformItem({ platform, name, children }: { platform: Platform; name: string; children?: ReactNode }) {
+  const size = { twitch: 15, youtube: 16, x: 15 }[platform];
+  return (
+    <li className="flex items-center gap-2">
+      <span className="flex size-4.5 items-center justify-center">
+        <PlatformLogo platform={platform} size={size} />
+      </span>
+      <span className="text-[13px] leading-4 font-medium text-(--text-2)">{name}</span>
+      {children}
+    </li>
+  );
+}
+
+function Block({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+  return (
+    <section className="mt-20 flex flex-col gap-5 sm:mt-28">
+      <div className="flex flex-col gap-1.5">
+        <h2 className="sk-brand text-2xl leading-[30px] font-semibold tracking-[-0.02em] text-(--text)">{title}</h2>
+        <p className="text-sm leading-5 text-pretty text-(--text-3)">{description}</p>
+      </div>
+      {children}
     </section>
   );
 }
 
-function Outro() {
+function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`overflow-hidden rounded-xl border border-(--line) bg-(--surface-inset) ${className}`}>{children}</div>;
+}
+
+function JsonLine({ children, indent = 0, highlight = false }: { children: ReactNode; indent?: number; highlight?: boolean }) {
   return (
-    <section>
-      <div className="mx-auto w-full max-w-3xl px-6 pb-24">
-        <h2 className="max-w-[28ch] text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-          Hook into the platforms you stream on.
-        </h2>
-        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-          <ConnectButton provider="twitch" mode="signin" className="inline-flex items-center justify-center rounded-md bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-violet-600 hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600">
-            Continue with Twitch
-          </ConnectButton>
-          <ConnectButton provider="google" mode="signin" className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950">
-            Continue with YouTube
-          </ConnectButton>
-          <Link
-            href="/docs"
-            className="text-sm font-semibold text-neutral-950 underline-offset-4 hover:underline"
-          >
-            Read the docs <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-      </div>
-    </section>
+    <div
+      className={`border-l-2 pr-5 ${highlight ? "border-(--accent) bg-(--selected)" : "border-transparent"}`}
+      style={{ paddingLeft: `calc(18px + ${indent * 2}ch)` }}
+    >
+      {children}
+    </div>
   );
 }
 
-function SiteFooter() {
-  return (
-    <footer className="border-t border-neutral-200">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-mono text-xs tracking-wide text-neutral-500 uppercase">
-          Signal Kit · An indie project
-        </p>
-        <nav className="flex items-center gap-6 text-sm text-neutral-600">
-          <Link href="/docs" className="font-normal hover:text-neutral-950">
-            Docs
-          </Link>
-          <Link href="/dashboard" className="font-normal hover:text-neutral-950">
-            Dashboard
-          </Link>
-        </nav>
-      </div>
-    </footer>
-  );
+function Key({ children, strong = false }: { children: ReactNode; strong?: boolean }) {
+  return <span className={strong ? "text-(--text)" : "text-(--text-3)"}>&quot;{children}&quot;: </span>;
+}
+
+function Str({ children }: { children: ReactNode }) {
+  return <span className="text-(--accent-text)">{children}</span>;
 }
