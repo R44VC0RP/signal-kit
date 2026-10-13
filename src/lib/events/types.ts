@@ -40,6 +40,8 @@ export type EventActor = {
   avatarUrl?: string;
   /** Platform roles or badges, e.g. "moderator", "subscriber", "member", "owner", "verified". */
   badges?: string[];
+  /** Official badge images where the platform provides them (Twitch: moderator, VIP, the channel's sub badges…). */
+  badgeImages?: { set: string; id: string; title: string; url: string }[];
 };
 
 export type EventAmount = {

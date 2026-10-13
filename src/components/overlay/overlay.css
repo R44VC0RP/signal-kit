@@ -342,6 +342,29 @@
   color: #fff;
   background: rgb(255 255 255 / 16%);
 }
+.sko-badge-img {
+  flex-shrink: 0;
+  width: 1.125em;
+  height: 1.125em;
+  border-radius: 0.2em;
+}
+.sko-badge-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.sko-badge-icon svg {
+  width: 1em;
+  height: 1em;
+}
+.sko-chat-name[data-role="owner"] {
+  padding: 0 0.35em;
+  border-radius: 0.25em;
+  color: #0a0a0a !important;
+  background: #ffd600;
+}
+.sko-chat-name[data-role="member"] {
+  color: #2ba640;
+}
 .sko-badge[data-badge="moderator"] {
   background: #00ad03;
 }
@@ -624,7 +647,7 @@
   background: #9146ff;
 }
 [data-style="bold"] .sko-chat-line[data-platform="youtube"] .sko-chat-meta {
-  background: #ff0000;
+  background: #ff0033;
 }
 [data-style="bold"] .sko-chat-name {
   font-weight: 800;

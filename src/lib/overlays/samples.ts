@@ -18,14 +18,22 @@ export const SAMPLE_BUTTONS: { kind: SampleKind; label: string }[] = [
   { kind: "chat.message", label: "Chat" },
 ];
 
-const PEOPLE: { name: string; platform: EventPlatform; badges: string[] }[] = [
+/** Twitch's global badge images (from Helix /chat/badges/global), so previews show real badges. */
+const TWITCH_BADGE = {
+  moderator: { set: "moderator", id: "1", title: "Moderator", url: "https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/3" },
+  subscriber: { set: "subscriber", id: "0", title: "Subscriber", url: "https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2ff4adfae661/3" },
+  vip: { set: "vip", id: "1", title: "VIP", url: "https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/3" },
+  partner: { set: "partner", id: "1", title: "Verified", url: "https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/3" },
+};
+
+const PEOPLE: { name: string; platform: EventPlatform; badges: string[]; badgeImages?: (typeof TWITCH_BADGE)[keyof typeof TWITCH_BADGE][] }[] = [
   { name: "mira.codes", platform: "youtube", badges: ["member"] },
-  { name: "PixelPilot", platform: "twitch", badges: ["subscriber"] },
+  { name: "PixelPilot", platform: "twitch", badges: ["subscriber"], badgeImages: [TWITCH_BADGE.subscriber] },
   { name: "devon_k", platform: "x", badges: ["verified"] },
-  { name: "lowlatency", platform: "twitch", badges: ["moderator", "subscriber"] },
-  { name: "Ana Ruiz", platform: "youtube", badges: [] },
-  { name: "nightowl", platform: "x", badges: [] },
-  { name: "StreamerGuild", platform: "twitch", badges: ["verified"] },
+  { name: "lowlatency", platform: "twitch", badges: ["moderator", "subscriber"], badgeImages: [TWITCH_BADGE.moderator, TWITCH_BADGE.subscriber] },
+  { name: "Ana Ruiz", platform: "youtube", badges: ["moderator", "verified"] },
+  { name: "nightowl", platform: "x", badges: ["verified-business"] },
+  { name: "StreamerGuild", platform: "twitch", badges: ["partner", "vip"], badgeImages: [TWITCH_BADGE.vip, TWITCH_BADGE.partner] },
 ];
 
 const CHAT = [
@@ -60,6 +68,7 @@ export function sampleEvent(kind: SampleKind, seed = Math.floor(Math.random() * 
       name: person.name,
       login: person.name.toLowerCase().replace(/[^a-z0-9_]/g, ""),
       badges: person.badges,
+      badgeImages: platform === "twitch" ? person.badgeImages : undefined,
     },
     message: null as string | null,
     amount: null as SignalKitEvent["amount"],

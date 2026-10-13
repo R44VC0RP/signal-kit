@@ -7,6 +7,7 @@ import { connectionEvents } from "@/lib/connections/events";
 import { markNeedsReauth } from "@/lib/connections/tokens";
 import { type EventSource, ingestEvent } from "@/lib/events/ingest";
 import { normalizeTwitch } from "@/lib/events/normalize";
+import { resolveTwitchBadges } from "./badges";
 import {
   assignShard,
   createConduitSubscription,
@@ -200,11 +201,18 @@ class ConduitManager {
     if (!source) {
       return;
     }
+    const normalized = normalizeTwitch(subscription.type, event);
+    // Chat events carry badge ids; attach Twitch's own badge images (never block delivery on it).
+    if (normalized.actor && Array.isArray(event.badges) && event.badges.length > 0) {
+      normalized.actor.badgeImages = await resolveTwitchBadges(String(event.broadcaster_user_id ?? source.platformUserId), event.badges as { set_id?: string; id?: string }[]).catch(
+        () => undefined,
+      );
+    }
     await ingestEvent(source, {
       rawType: subscription.type,
       raw: event,
       sourceId: `twitch:${message.metadata?.message_id ?? `${subscription.id}:${Date.now()}`}`,
-      normalized: normalizeTwitch(subscription.type, event),
+      normalized,
     });
   }
 

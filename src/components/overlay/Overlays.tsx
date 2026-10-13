@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { YouTubeModeratorIcon, YouTubeVerifiedIcon } from "@/components/brand/platforms";
 import { XVerifiedBadge } from "@/components/brand/x";
 import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
 import type { SignalKitEvent } from "@/lib/events/types";
@@ -257,8 +258,8 @@ function ChatOverlay({ settings, events }: { settings: ChatSettings; events: Sig
                       <PlatformLogo platform={event.platform} size={13} />
                     </span>
                   ) : null}
-                  {settings.showBadges ? <Badges badges={event.actor?.badges ?? []} /> : null}
-                  <span className="sko-chat-name" style={color ? { color } : undefined}>
+                  {settings.showBadges ? <Badges event={event} /> : null}
+                  <span className="sko-chat-name" data-role={youtubeRole(event)} style={color && !youtubeRole(event) ? { color } : undefined}>
                     {name}
                   </span>
                   {settings.showBadges ? <Verified event={event} /> : null}
@@ -284,6 +285,61 @@ const BADGE_LABEL: Record<string, string> = {
 };
 
 /**
+ * Badges before the name, the way each platform shows them: Twitch's own badge images (the
+ * channel's custom sub badges included), YouTube's moderator wrench and member tag, and
+ * text tags for X's subscriber/moderator flags.
+ */
+function Badges({ event }: { event: SignalKitEvent }) {
+  const images = event.platform === "twitch" ? (event.actor?.badgeImages ?? []) : [];
+  if (images.length > 0) {
+    return (
+      <>
+        {images.slice(0, 4).map((badge) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={`${badge.set}/${badge.id}`} className="sko-badge-img" src={badge.url} alt={badge.title} title={badge.title} referrerPolicy="no-referrer" />
+        ))}
+      </>
+    );
+  }
+  const badges = event.actor?.badges ?? [];
+  if (event.platform === "youtube") {
+    return (
+      <>
+        {badges.includes("moderator") ? (
+          <span className="sko-badge-icon">
+            <YouTubeModeratorIcon size={16} />
+          </span>
+        ) : null}
+        {badges.includes("member") ? (
+          <span className="sko-badge" data-badge="member">
+            Member
+          </span>
+        ) : null}
+      </>
+    );
+  }
+  const shown = badges.filter((badge) => BADGE_LABEL[badge]).slice(0, 3);
+  return (
+    <>
+      {shown.map((badge) => (
+        <span key={badge} className="sko-badge" data-badge={badge}>
+          {BADGE_LABEL[badge]}
+        </span>
+      ))}
+    </>
+  );
+}
+
+/** YouTube highlights the channel owner's name (yellow) and members' names (green). */
+function youtubeRole(event: SignalKitEvent) {
+  if (event.platform !== "youtube") {
+    return undefined;
+  }
+  const badges = event.actor?.badges ?? [];
+  return badges.includes("owner") ? "owner" : badges.includes("member") ? "member" : undefined;
+}
+
+/**
  * Verification shown after the name: X's own badges (Premium blue, Business gold, Government
  * gray, from the X Partner Icon Kit); a plain check for other platforms' verified channels.
  */
@@ -297,23 +353,14 @@ function Verified({ event }: { event: SignalKitEvent }) {
       </span>
     ) : null;
   }
-  return badges.includes("verified") ? <span className="sko-verified sko-verified-check">✓</span> : null;
-}
-
-function Badges({ badges }: { badges: string[] }) {
-  const shown = badges.filter((badge) => BADGE_LABEL[badge]).slice(0, 3);
-  if (shown.length === 0) {
-    return null;
+  if (event.platform === "youtube" && badges.includes("verified")) {
+    return (
+      <span className="sko-verified">
+        <YouTubeVerifiedIcon size={16} />
+      </span>
+    );
   }
-  return (
-    <>
-      {shown.map((badge) => (
-        <span key={badge} className="sko-badge" data-badge={badge}>
-          {BADGE_LABEL[badge]}
-        </span>
-      ))}
-    </>
-  );
+  return null;
 }
 
 // ---- Event list -----------------------------------------------------------------------------

@@ -240,6 +240,10 @@ export function EventLog({
                 <span className={`w-32.5 shrink-0 truncate text-xs ${fresh ? "text-(--accent-text)" : "text-(--text-2)"}`}>{row.kind}</span>
                 <span className="flex w-40 shrink-0 items-center gap-2">
                   {row.from ? <Avatar name={row.from} url={row.avatarUrl} /> : null}
+                  {row.badgeImages.map((badge) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={badge.url} src={badge.url} alt={badge.title} title={badge.title} width={14} height={14} className="size-3.5 shrink-0 rounded-[2px]" referrerPolicy="no-referrer" />
+                  ))}
                   <span className="truncate text-[13px] font-medium text-(--text)">{row.from || "—"}</span>
                   {row.xVerified ? <XVerifiedBadge type={row.xVerified} size={14} /> : null}
                 </span>

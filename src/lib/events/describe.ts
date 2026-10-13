@@ -8,6 +8,8 @@ export type DescribedEvent = {
   from: string;
   /** Sender's profile picture when the platform provides one (YouTube, X). */
   avatarUrl: string | null;
+  /** Twitch's own badge images for the sender (moderator, VIP, the channel's sub badges…). */
+  badgeImages: { url: string; title: string }[];
   /** X verification type for the sender, shown with X's own badge. */
   xVerified: "blue" | "business" | "government" | null;
   details: string;
@@ -56,6 +58,7 @@ export function describeEvent(event: Partial<SignalKitEvent> & { type?: string }
     from: event.actor?.name ?? "",
     avatarUrl: event.actor?.avatarUrl ?? null,
     xVerified: event.platform === "x" ? xVerifiedType(event.actor?.badges ?? []) : null,
+    badgeImages: (event.actor?.badgeImages ?? []).slice(0, 3).map(({ url, title }) => ({ url, title })),
     details: event.message ?? detailsFor(event.kind, data),
     value: event.amount?.display ?? valueFor(event.kind, data),
     category: categoryFor(event.kind),

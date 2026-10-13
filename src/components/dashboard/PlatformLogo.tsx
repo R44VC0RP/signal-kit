@@ -1,34 +1,22 @@
+import { TwitchGlitch, YouTubeIcon } from "@/components/brand/platforms";
 import { X_LOGO_PATH } from "@/components/brand/x";
 import type { Platform } from "@/db/schema";
 
-// Twitch and YouTube: official marks via Simple Icons (CC0), in brand colours.
-// X: the current mark from the X Partner Icon Kit (one solid colour, with built-in clear space).
-const TWITCH =
-  "M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z";
-const YOUTUBE =
-  "M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z";
+// Official marks from each platform's brand kit: Twitch Glitch (#9146FF), YouTube icon
+// (#FF0033), and X's current mark (white, from the X Partner Icon Kit).
 
 export const PLATFORM_NAME: Record<Platform, string> = { twitch: "Twitch", youtube: "YouTube", x: "X" };
 
+/** `size` is the visual height budget; each mark keeps its own official proportions. */
 export function PlatformLogo({ platform, size = 16 }: { platform: Platform; size?: number }) {
   if (platform === "twitch") {
-    return (
-      <svg width={size} height={size} viewBox="0 0 24 24" aria-label="Twitch" role="img">
-        <path d="M6.857 1.714h13.714v9.429l-3.428 3.428h-3.429l-3 3v-3H6.857z" fill="#FFFFFF" />
-        <path d={TWITCH} fill="#9146FF" />
-      </svg>
-    );
+    return <TwitchGlitch height={size} />;
   }
   if (platform === "youtube") {
-    return (
-      <svg width={size + 2} height={size + 2} viewBox="0 0 24 24" aria-label="YouTube" role="img">
-        <path d="M9.545 15.568V8.432L15.818 12z" fill="#FFFFFF" />
-        <path d={YOUTUBE} fill="#FF0000" />
-      </svg>
-    );
+    return <YouTubeIcon width={size + 2} />;
   }
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-label="X" role="img">
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-label="X" role="img" style={{ flexShrink: 0 }}>
       <path d={X_LOGO_PATH} fill="#FFFFFF" />
     </svg>
   );
