@@ -6,6 +6,7 @@ import { connectionEvents } from "@/lib/connections/events";
 import { ConnectionUnavailableError, forceRefresh, getConnection, getConnectionAccessToken } from "@/lib/connections/tokens";
 import { type EventSource, ingestEvent } from "@/lib/events/ingest";
 import { normalizeYouTube } from "@/lib/events/normalize";
+import { streamTracker } from "@/lib/streams/tracker";
 import { relayHub } from "@/lib/ws/relay";
 import { listActiveLiveBroadcasts, type YouTubeLiveChatMessage } from "./api";
 import { GrpcStatus, openLiveChatStream, type StreamListResponse } from "./stream-list";
@@ -106,10 +107,18 @@ class YouTubeLiveManager {
     try {
       const { accessToken } = await getConnectionAccessToken(m.connectionId);
       const broadcasts = await listActiveLiveBroadcasts(accessToken);
-      const liveChatId = broadcasts.find((broadcast) => broadcast.snippet?.liveChatId)?.snippet?.liveChatId;
-      if (!liveChatId) {
+      const broadcast = broadcasts.find((item) => item.snippet?.liveChatId);
+      const liveChatId = broadcast?.snippet?.liveChatId;
+      if (!broadcast || !liveChatId) {
         return;
       }
+      // Stream history: the broadcast id lets the tracker sample viewers and see the end.
+      void streamTracker.platformLive(m.source.userId, "youtube", {
+        connectionId: m.connectionId,
+        broadcastId: broadcast.id,
+        title: broadcast.snippet?.title ?? null,
+        startedAt: broadcast.snippet?.actualStartTime ?? null,
+      });
       if (liveChatId !== m.liveChatId) {
         m.liveChatId = liveChatId;
         m.pageToken = undefined;
@@ -160,6 +169,7 @@ class YouTubeLiveManager {
     }
     if (response.offlineAt) {
       this.closeChat(m);
+      void streamTracker.platformOffline(m.source.userId, "youtube");
     }
   }
 

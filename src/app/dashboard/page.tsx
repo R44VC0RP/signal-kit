@@ -7,6 +7,8 @@ import { buttonClass, Muted, PageHeader, Row, Section, Status } from "@/componen
 import type { Platform } from "@/db/schema";
 import { enabledProviders, loadApiKeys, loadConnections, requireDashboardUser } from "@/lib/dashboard";
 import { listOverlays } from "@/lib/overlays/store";
+import { listStreams } from "@/lib/streams/store";
+import { totals } from "@/lib/streams/summary";
 import { timeAgo } from "@/lib/format";
 
 const PROVIDER: Record<Platform, ProviderId> = { twitch: "twitch", youtube: "google", x: "twitter" };
@@ -18,7 +20,8 @@ const PLATFORM_BLURB: Record<Platform, string> = {
 
 export default async function OverviewPage() {
   const user = await requireDashboardUser();
-  const [connections, keys, overlays] = await Promise.all([loadConnections(user.id), loadApiKeys(), listOverlays(user.id)]);
+  const [connections, keys, overlays, [lastStream]] = await Promise.all([loadConnections(user.id), loadApiKeys(), listOverlays(user.id), listStreams(user.id, 1)]);
+  const last = lastStream ? totals(lastStream.summary) : null;
   const providers = enabledProviders();
   const missing = (["twitch", "youtube", "x"] as const).filter((platform) => !connections.some((c) => c.platform === platform));
   const listened = keys.some((key) => key.lastUsedAt);
@@ -102,6 +105,35 @@ export default async function OverviewPage() {
               );
             })}
           </div>
+        </Section>
+      ) : null}
+
+      {lastStream && last ? (
+        <Section
+          title={lastStream.endedAt ? "Last stream" : "Live now"}
+          aside={
+            <Link href={`/dashboard/streams/${lastStream.id}`} className={buttonClass("control")}>
+              {lastStream.endedAt ? "View stream" : "Watch stats"}
+            </Link>
+          }
+        >
+          <Row>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="truncate text-[13px] font-medium text-(--text)">{lastStream.title ?? "Untitled stream"}</span>
+              <Muted>{lastStream.endedAt ? timeAgo(lastStream.startedAt) : "Live"}</Muted>
+            </div>
+            {[
+              ["Peak viewers", last.peakViewers],
+              ["Chatters", last.chatters],
+              ["New followers", last.follows],
+              ["Subs", last.subs],
+            ].map(([label, value]) => (
+              <div key={label} className="flex w-24 shrink-0 flex-col items-end gap-0.5">
+                <span className="sk-mono text-[13px] text-(--text)">{Number(value).toLocaleString("en")}</span>
+                <Muted>{label}</Muted>
+              </div>
+            ))}
+          </Row>
         </Section>
       ) : null}
 

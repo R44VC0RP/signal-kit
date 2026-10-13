@@ -4,6 +4,7 @@ import { CLIENT_IP_HEADER, clientIpOf } from "@/lib/client-ip";
 import { startConnectionHealthChecks } from "@/lib/connections/health";
 import { startEventRetention } from "@/lib/events/ingest";
 import { eventSubManager } from "@/lib/twitch/eventsub-manager";
+import { streamTracker } from "@/lib/streams/tracker";
 import { handleRelayUpgrade, startRelayHeartbeat } from "@/lib/ws/server";
 import { xActivityManager } from "@/lib/x/activity-manager";
 import { youtubeLiveManager } from "@/lib/youtube/live-manager";
@@ -45,6 +46,7 @@ async function main() {
       startConnectionHealthChecks();
       startEventRetention();
       startRelayHeartbeat();
+      streamTracker.start();
     } else {
       console.warn("Signal Kit started without DATABASE_URL; EventSub manager is paused.");
     }

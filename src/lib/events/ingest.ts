@@ -2,6 +2,7 @@ import { and, asc, desc, eq, gt, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { connections, events, type Platform } from "@/db/schema";
 import { recordStats } from "@/lib/overlays/stats";
+import { streamTracker } from "@/lib/streams/tracker";
 import { relayHub } from "@/lib/ws/relay";
 import { newEventId } from "./ids";
 import type { NormalizedFields } from "./normalize";
@@ -67,6 +68,7 @@ export async function ingestEvent(
 
   relayHub.publish(source.userId, event);
   void recordStats(source.userId, event);
+  void streamTracker.record(source.userId, source.connectionId, event);
   touchConnection(source.connectionId);
   return event;
 }

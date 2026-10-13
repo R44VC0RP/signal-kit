@@ -4,12 +4,14 @@ import {
   int,
   json,
   mysqlTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
 import type { OverlayType } from "@/lib/overlays/settings";
+import type { StreamSummary } from "@/lib/streams/summary";
 
 // Better Auth core tables (generated with `auth generate`, then adjusted):
 // - no foreign keys, because PlanetScale rejects them; ownership is enforced in code
@@ -269,3 +271,57 @@ export const streamStats = mysqlTable("stream_stats", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+/**
+ * One stream: from the first platform going live to the last one ending (simulcasts across
+ * Twitch, YouTube and X are one stream). Totals live in `summary`, kept up to date while live,
+ * because raw events are only kept for 24 hours.
+ */
+export const streams = mysqlTable(
+  "streams",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    startedAt: timestamp("started_at", { fsp: 3 }).notNull(),
+    /** Null while live. */
+    endedAt: timestamp("ended_at", { fsp: 3 }),
+    title: varchar("title", { length: 300 }),
+    summary: json("summary").$type<StreamSummary>().notNull(),
+    updatedAt: timestamp("updated_at", { fsp: 3 })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("streams_user_started_idx").on(table.userId, table.startedAt)],
+);
+
+/** Who chatted in a stream, per platform, and how much. */
+export const streamChatters = mysqlTable(
+  "stream_chatters",
+  {
+    streamId: varchar("stream_id", { length: 36 }).notNull(),
+    platform: varchar("platform", { length: 16 }).$type<Platform>().notNull(),
+    chatterId: varchar("chatter_id", { length: 128 }).notNull(),
+    name: varchar("name", { length: 128 }).notNull(),
+    messages: int("messages").notNull().default(0),
+    firstAt: timestamp("first_at", { fsp: 3 }).notNull(),
+    lastAt: timestamp("last_at", { fsp: 3 }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.streamId, table.platform, table.chatterId] }), index("stream_chatters_messages_idx").on(table.streamId, table.messages)],
+);
+
+/** Everyone who has ever chatted on a creator's streams (new vs returning, regulars). */
+export const chatters = mysqlTable(
+  "chatters",
+  {
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    platform: varchar("platform", { length: 16 }).$type<Platform>().notNull(),
+    chatterId: varchar("chatter_id", { length: 128 }).notNull(),
+    name: varchar("name", { length: 128 }).notNull(),
+    messages: int("messages").notNull().default(0),
+    streams: int("streams").notNull().default(0),
+    firstSeenAt: timestamp("first_seen_at", { fsp: 3 }).notNull(),
+    lastSeenAt: timestamp("last_seen_at", { fsp: 3 }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.platform, table.chatterId] }), index("chatters_user_messages_idx").on(table.userId, table.messages)],
+);

@@ -92,6 +92,15 @@ export async function listOwnedLiveBroadcasts(accessToken: string) {
   return response.items ?? [];
 }
 
+/** A live video's concurrent viewers and start/end times (1 quota unit). */
+export async function getLiveStreamingDetails(accessToken: string, videoId: string) {
+  const url = new URL(`${YOUTUBE_API_BASE}/videos`);
+  url.searchParams.set("part", "liveStreamingDetails");
+  url.searchParams.set("id", videoId);
+  const response = await youtubeFetch<{ items?: { liveStreamingDetails?: { concurrentViewers?: string; actualStartTime?: string; actualEndTime?: string } }[] }>(accessToken, url);
+  return response.items?.[0]?.liveStreamingDetails ?? null;
+}
+
 export async function getVideo(accessToken: string, videoId: string) {
   const url = new URL(`${YOUTUBE_API_BASE}/videos`);
   url.searchParams.set("part", "snippet,status");
