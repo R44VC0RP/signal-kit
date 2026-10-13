@@ -360,8 +360,10 @@ class ConduitManager {
   }
 }
 
+/** Twitch echoes conditions with unused fields as "" (e.g. reward_id), so ignore empty values when matching. */
 function subscriptionKey(type: string, version: string, condition: Record<string, string>) {
-  return `${type}|${version}|${stableJsonHash(condition)}`;
+  const meaningful = Object.fromEntries(Object.entries(condition).filter(([, value]) => value !== "" && value != null));
+  return `${type}|${version}|${stableJsonHash(meaningful)}`;
 }
 
 async function setRow(id: string, values: Partial<typeof platformSubscriptions.$inferInsert>) {

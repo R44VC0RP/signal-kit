@@ -151,8 +151,9 @@ export async function createConduitSubscription(
   } catch (error) {
     // Since 2026-04 a duplicate returns 409 with the existing subscription's id.
     if (error instanceof HelixError && error.status === 409) {
-      const existing = safeJson(error.body) as { data?: { id: string; status: string }[]; id?: string } | null;
-      const id = existing?.data?.[0]?.id ?? existing?.id;
+      const existing = safeJson(error.body) as { data?: { id: string; status: string }[]; id?: string; message?: string } | null;
+      // The id comes back in `data`, or only inside the message: "subscription already exists; id=…".
+      const id = existing?.data?.[0]?.id ?? existing?.id ?? existing?.message?.match(/id=([0-9a-f-]{36})/i)?.[1];
       if (id) {
         return { id, status: existing?.data?.[0]?.status ?? "enabled" };
       }
