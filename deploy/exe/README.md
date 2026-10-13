@@ -26,11 +26,19 @@ ssh exe.dev "ssh-key generate-api-key --label=signal-deploy --cmds='ssh signal' 
 `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
 optional `X_CLIENT_ID`, `X_CLIENT_SECRET`, `X_LIVESTREAM_ENABLED`.
 
-## Database
+## Database and backups
 
-MySQL lives in the `signalkit_mysql-data` Docker volume on the VM. Back it up with:
+MySQL lives in the `signalkit_mysql-data` Docker volume on the VM.
+
+- **Nightly on the VM** (cron, 03:15 UTC): `deploy/exe/backup.sh` writes
+  `~/backups/signalkit-<UTC>.sql.gz` (mode 600) and keeps the newest 14. Incomplete dumps are discarded.
+- **Off the box**: Ryan's Mac runs `deploy/exe/pull-backups.sh` daily via cronctl
+  (job `signalkit-backup-pull`, catches up after sleep) and keeps the newest 30 in `~/Backups/signalkit`.
+
+Restore into the running database (overwrites it):
 
 ```sh
-ssh signal.exe.xyz 'cd signal-kit && docker compose -f deploy/exe/compose.yml exec -T mysql \
-  sh -c "mysqldump -uroot -p\"\$MYSQL_ROOT_PASSWORD\" --single-transaction \"\$MYSQL_DATABASE\""' > signalkit-backup.sql
+gunzip -c signalkit-YYYYMMDD-HHMMSS.sql.gz | ssh signal.exe.xyz 'cd signal-kit && \
+  SIGNAL_KIT_ENV_FILE=~/signalkit.env docker compose -f deploy/exe/compose.yml exec -T mysql \
+  sh -c "mysql -uroot -p\"\$MYSQL_ROOT_PASSWORD\" \"\$MYSQL_DATABASE\""'
 ```
