@@ -1,0 +1,49 @@
+name: CI and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('ci-{0}', github.ref) || 'deploy-production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      # The CLI imports the SDK's built types, so build the SDK before type checking.
+      - run: bun run --filter '@signal-kit/client' build
+      - run: bunx tsc --noEmit -p .
+      - run: bun run lint
+      - run: bun run build
+
+  deploy:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy to the exe.dev VM
+        env:
+          # exe.dev API token restricted to `ssh signal` (see deploy/exe/README.md).
+          EXE_DEPLOY_TOKEN: ${{ secrets.EXE_DEPLOY_TOKEN }}
+        run: |
+          set -o pipefail
+          curl --silent --show-error --no-buffer --max-time 1500 \
+            --dump-header headers.txt \
+            -X POST https://exe.dev/exec \
+            -H "Authorization: Bearer ${EXE_DEPLOY_TOKEN}" \
+            --data-raw "ssh signal ./signal-kit/deploy/exe/deploy.sh ${GITHUB_SHA}" | tee deploy.log
+          # The command's exit code arrives in the X-Exe-Exit trailer.
+          if ! grep -qiE '^x-exe-exit: *0' headers.txt; then
+            echo "Deploy failed:" && grep -i 'x-exe-exit' headers.txt || echo "(no exit code returned)"
+            exit 1
+          fi
+      - name: Check the public site
+        run: curl --fail --silent --show-error --retry 5 --retry-delay 5 https://signal.ryan.ceo/api/health

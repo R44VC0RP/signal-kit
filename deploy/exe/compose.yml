@@ -1,0 +1,52 @@
+# Production on the exe.dev VM "signal" (https://signal.ryan.ceo).
+# Run through deploy/exe/deploy.sh; secrets live in $SIGNAL_KIT_ENV_FILE on the VM, never in git.
+name: signalkit
+
+services:
+  mysql:
+    image: mysql:8.4
+    env_file:
+      - ${SIGNAL_KIT_ENV_FILE:?set SIGNAL_KIT_ENV_FILE}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    # No published ports: only the app container can reach the database.
+
+  app:
+    build:
+      context: ../..
+      target: runner
+    env_file:
+      - ${SIGNAL_KIT_ENV_FILE:?set SIGNAL_KIT_ENV_FILE}
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      BIND_HOST: 0.0.0.0
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # exe.dev's HTTPS proxy forwards to this port.
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: ../..
+      target: builder
+    env_file:
+      - ${SIGNAL_KIT_ENV_FILE:?set SIGNAL_KIT_ENV_FILE}
+    command: npm run db:migrate
+    depends_on:
+      mysql:
+        condition: service_healthy
+    profiles:
+      - tools
+
+volumes:
+  mysql-data:
