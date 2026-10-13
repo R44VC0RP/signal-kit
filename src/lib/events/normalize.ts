@@ -215,3 +215,42 @@ function formatMoney(value: number, currency: string) {
     return `${value} ${currency}`;
   }
 }
+
+/** An X user object as delivered in Activity API payloads ({ data: { id, username, name, … } }). */
+function xActor(user: Any | undefined, extraBadges: string[] = []): EventActor | null {
+  const u = (user?.data ?? user) as Any | undefined;
+  if (!u?.id && !u?.username) {
+    return null;
+  }
+  return {
+    id: u.id ?? null,
+    name: u.name || u.username || "",
+    login: u.username ?? undefined,
+    avatarUrl: u.profile_image_url ?? undefined,
+    badges: [...extraBadges, u.verified || u.verified_type ? "verified" : null].filter(Boolean) as string[],
+  };
+}
+
+/** X Activity API events (broadcast chat, broadcast lifecycle, follows, subscriptions). */
+export function normalizeX(type: string, p: Any): NormalizedFields {
+  switch (type) {
+    case "broadcast.chat":
+      return fields("chat.message", {
+        actor: xActor(p.author, [p.is_moderator && "moderator", p.is_subscriber && "subscriber"].filter(Boolean) as string[]),
+        message: p.message ?? "",
+        data: { messageId: p.message_id, broadcastId: p.broadcast_id, replyTo: p.reply_to ?? null },
+      });
+    case "broadcast.chat.remove":
+      return fields("chat.message.deleted", { data: { messageId: p.message_id, broadcastId: p.broadcast_id } });
+    case "broadcast.start":
+      return fields("stream.online", { data: { broadcastId: p.broadcast_id, title: p.title ?? null, language: p.language ?? null } });
+    case "broadcast.end":
+      return fields("stream.offline", { data: { broadcastId: p.broadcast_id, durationMs: p.duration_ms ?? null } });
+    case "follow.follow":
+      return fields("follow", { actor: xActor(p.source) });
+    case "subscriptions.subscribe":
+      return fields("subscription", { actor: xActor(p.source), data: { tier: null } });
+    default:
+      return fields("other", { data: { type } });
+  }
+}

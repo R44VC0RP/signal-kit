@@ -13,7 +13,7 @@ const OPTIONS: { platform: Platform; role?: "bot"; title: string; description: s
   { platform: "twitch", title: "Twitch channel", description: "Follows, subs, cheers, raids, chat and stream info" },
   { platform: "twitch", role: "bot", title: "Twitch bot account", description: "A separate account that reads and sends chat under its own name" },
   { platform: "youtube", title: "YouTube channel", description: "Live chat, Super Chats, memberships and broadcast details" },
-  { platform: "x", title: "X account", description: "Live chat, follows and broadcasts once X enables livestream access" },
+  { platform: "x", title: "X account", description: "Live chat, follows, subscriptions and stream start/end" },
 ];
 
 const ERRORS: Record<string, string> = {

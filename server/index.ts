@@ -5,6 +5,7 @@ import { startConnectionHealthChecks } from "@/lib/connections/health";
 import { startEventRetention } from "@/lib/events/ingest";
 import { eventSubManager } from "@/lib/twitch/eventsub-manager";
 import { handleRelayUpgrade, startRelayHeartbeat } from "@/lib/ws/server";
+import { xActivityManager } from "@/lib/x/activity-manager";
 import { youtubeLiveManager } from "@/lib/youtube/live-manager";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -40,6 +41,7 @@ async function main() {
     if (process.env.DATABASE_URL) {
       eventSubManager.start();
       youtubeLiveManager.start();
+      xActivityManager.start();
       startConnectionHealthChecks();
       startEventRetention();
       startRelayHeartbeat();

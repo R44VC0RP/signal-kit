@@ -53,8 +53,12 @@ export const YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.readonly
  */
 export const YOUTUBE_WRITE_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
 
-/** Livestream scopes need X allow-listing; request them only once access is granted. */
-export const X_LIVESTREAM_SCOPES = ["broadcast.read", "broadcast.write", "follows.read"];
+/**
+ * Read-only X live events: broadcast chat (broadcast.read) and new subscribers (follows.read).
+ * Better Auth already requests users.read, tweet.read, offline.access and users.email.
+ * broadcast.read needs Livestream API allow-listing, so it's only requested once enabled.
+ */
+export const X_LIVESTREAM_SCOPES = ["broadcast.read", "follows.read"];
 
 export function xLivestreamEnabled() {
   return process.env.X_LIVESTREAM_ENABLED === "true";
