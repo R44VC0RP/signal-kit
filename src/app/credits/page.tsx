@@ -1,41 +1,26 @@
 import type { Metadata } from "next";
 import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
-import scenesJson from "@/lib/home/scenes.json";
 
 export const metadata: Metadata = { title: "Credits · Signal Kit" };
 
-type Scene = { id: string; game: string; title?: string; author: string; license: string; licenseUrl: string; sourceUrl: string; modified?: string };
-
-/** Attribution for the media Signal Kit ships: gameplay on the homepage, alert art and sounds. */
+/** Attribution for the media Signal Kit ships: homepage gameplay, alert art and sounds. */
 export default function CreditsPage() {
-  const scenes = scenesJson as Scene[];
   return (
     <div className="sk-app flex flex-1 justify-center px-5 sm:px-8">
       <div className="flex w-full max-w-3xl flex-col">
         <SiteHeader />
         <main className="flex flex-col gap-10 pt-12 text-sm leading-[22px] text-(--text-2)">
           <h1 className="sk-brand text-[36px] leading-10 font-semibold tracking-[-0.03em] text-(--text)">Credits</h1>
-          {scenes.length ? (
-            <section className="flex flex-col gap-3">
-              <h2 className="text-[15px] font-semibold text-(--text)">Gameplay on the homepage</h2>
-              <p>Screenshots of open-source games, used under their Creative Commons licenses. Signal Kit overlays are drawn on top.</p>
-              <ul className="flex flex-col">
-                {scenes.map((scene) => (
-                  <li key={scene.id} className="border-t border-(--line) py-3">
-                    <a href={scene.sourceUrl} className="text-(--text) underline-offset-2 hover:underline">
-                      {scene.game}
-                      {scene.title ? `: ${scene.title}` : ""}
-                    </a>{" "}
-                    by {scene.author},{" "}
-                    <a href={scene.licenseUrl} className="underline-offset-2 hover:underline">
-                      {scene.license}
-                    </a>
-                    {scene.modified ? `. ${scene.modified}.` : "."}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
+          <section className="flex flex-col gap-3">
+            <h2 className="text-[15px] font-semibold text-(--text)">Gameplay on the homepage</h2>
+            <p>
+              Parkour game footage by{" "}
+              <a href="https://elements.envato.com/gameplay-in-first-person-parkour-videogame-in-indu-P3843DA" className="text-(--text) underline-offset-2 hover:underline">
+                Pressmaster
+              </a>
+              , licensed through Envato Elements. Signal Kit overlays, chat and alerts on top are samples.
+            </p>
+          </section>
           <section className="flex flex-col gap-3">
             <h2 className="text-[15px] font-semibold text-(--text)">Alert art</h2>
             <ul className="flex flex-col">

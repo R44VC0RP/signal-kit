@@ -24,8 +24,8 @@ export function SiteHeader({ children }: { children?: ReactNode }) {
 
 export function SiteFooter() {
   return (
-    <footer className="mt-20 flex h-18 items-center justify-between border-t border-(--line) sm:mt-28">
-      <span className="flex items-center gap-2">
+    <footer className="mt-20 flex min-h-18 flex-col gap-4 border-t border-(--line) py-6 sm:mt-28 sm:flex-row sm:items-center sm:justify-between sm:py-0">
+      <span className="flex shrink-0 items-center gap-2">
         <span className="size-[7px] rounded-full bg-(--accent)" />
         <span className="sk-brand text-[13px] leading-4 font-semibold text-(--text-2)">Signal Kit</span>
       </span>
