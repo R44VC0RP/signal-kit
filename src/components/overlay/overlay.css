@@ -786,6 +786,10 @@
 [data-style="classic"] .sko-hl {
   color: var(--sko-accent);
 }
+/* Each letter is its own span (for text animations); keep a highlighted word from breaking mid-word. */
+.sko-hl {
+  white-space: nowrap;
+}
 [data-style="classic"] .sko-amount {
   font-family: inherit;
   font-weight: inherit;
