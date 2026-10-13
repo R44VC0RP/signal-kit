@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
 import { buttonClass } from "@/components/dashboard/ui";
 import { CopyIconButton } from "@/components/home/CopyIconButton";
+import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
 import type { Platform } from "@/db/schema";
 
 export const metadata: Metadata = {
@@ -69,17 +70,11 @@ export default function HomePage() {
   return (
     <div className="sk-app flex flex-1 justify-center px-5 sm:px-8">
       <div className="flex w-full max-w-4xl flex-col">
-        <header className="flex h-15 items-center justify-between sm:h-18">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="sk-grain flex size-7 items-center justify-center rounded-(--r) bg-(--accent-fill)">
-              <span className="size-2 rounded-full bg-white" />
-            </span>
-            <span className="sk-brand text-[15px] leading-5 font-semibold text-(--text)">Signal Kit</span>
+        <SiteHeader>
+          <Link href="/docs" className="text-[13px] text-(--text-2) transition-colors hover:text-(--text)">
+            Docs
           </Link>
-          <Link href="/sign-in" className={`${buttonClass("control")} h-8 px-3.5`}>
-            Sign in
-          </Link>
-        </header>
+        </SiteHeader>
 
         <main className="flex flex-col">
           <section className="flex flex-col pt-12 sm:pt-30">
@@ -237,23 +232,7 @@ export default function HomePage() {
           </section>
         </main>
 
-        <footer className="mt-20 flex h-18 items-center justify-between border-t border-(--line) sm:mt-28">
-          <span className="flex items-center gap-2">
-            <span className="size-[7px] rounded-full bg-(--accent)" />
-            <span className="sk-brand text-[13px] leading-4 font-semibold text-(--text-2)">Signal Kit</span>
-          </span>
-          <nav className="flex items-center gap-6 text-[13px] leading-4 text-(--text-3)">
-            <Link href="/dashboard" className="transition-colors hover:text-(--text)">
-              Dashboard
-            </Link>
-            <Link href="/privacy" className="transition-colors hover:text-(--text)">
-              Privacy
-            </Link>
-            <Link href="/terms" className="transition-colors hover:text-(--text)">
-              Terms
-            </Link>
-          </nav>
-        </footer>
+        <SiteFooter />
       </div>
     </div>
   );
