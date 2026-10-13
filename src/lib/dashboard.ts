@@ -19,7 +19,10 @@ export function enabledProviders() {
 
 /** The signed-in user, or a redirect to sign-in. Cached per request. */
 export const requireDashboardUser = cache(async () => {
-  const user = await getCurrentUser().catch(() => null);
+  const user = await getCurrentUser().catch((error) => {
+    console.error("[dashboard] session check failed", error);
+    return null;
+  });
   if (!user) {
     redirect("/sign-in");
   }

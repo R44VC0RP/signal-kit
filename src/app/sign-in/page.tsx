@@ -22,7 +22,11 @@ const OPTIONS: { platform: Platform; provider: ProviderId; label: string }[] = [
 ];
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  if (await getCurrentUser().catch(() => null)) {
+  const user = await getCurrentUser().catch((error) => {
+    console.error("[sign-in] session check failed", error);
+    return null;
+  });
+  if (user) {
     redirect("/dashboard");
   }
   const { error } = await searchParams;
