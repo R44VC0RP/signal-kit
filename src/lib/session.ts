@@ -11,7 +11,10 @@ export type CurrentUser = {
 };
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const session = await getAuth().api.getSession({ headers: await headers() });
+  // Read the request first: it marks the page as per-request even when building without
+  // secrets, where getAuth() throws before the headers would otherwise be read.
+  const requestHeaders = await headers();
+  const session = await getAuth().api.getSession({ headers: requestHeaders });
   if (!session) {
     return null;
   }
