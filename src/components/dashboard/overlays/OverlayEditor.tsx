@@ -20,6 +20,7 @@ import {
   type PlatformFilter,
 } from "@/lib/overlays/settings";
 import type { PublicStats } from "@/lib/overlays/stats-core";
+import { applyTheme, findTheme, THEMES } from "@/lib/overlays/themes";
 import { SAMPLE_BUTTONS, sampleEvent, type SampleKind } from "@/lib/overlays/samples";
 import type { OverlayView } from "@/lib/overlays/store";
 import { ColorField, Field, Group, Segmented, SelectField, Slider, Toggle } from "./controls";
@@ -292,6 +293,18 @@ const WEIGHTS = [400, 500, 600, 700, 800, 900];
 function LookSettings({ type, settings, update }: { type: OverlayType; settings: AnySettings; update: (next: AnySettings) => void }) {
   return (
     <Group title="Look">
+      <Field label="Theme pack" hint="Restyles this overlay; text and media stay">
+        <SelectField
+          value=""
+          options={[{ value: "", label: "Choose a theme…" }, ...THEMES.map((theme) => ({ value: theme.id, label: theme.name }))]}
+          onChange={(id) => {
+            const theme = findTheme(id);
+            if (theme) {
+              update(applyTheme(type, settings, theme));
+            }
+          }}
+        />
+      </Field>
       <Field label="Style" hint="Sets colours and type you can change below">
         <Segmented value={settings.style} options={STYLE_OPTIONS} onChange={(style: OverlayStyle) => update({ ...settings, style, ...presetFor(style, type) })} />
       </Field>

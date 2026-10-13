@@ -8,6 +8,7 @@ import { timeAgo } from "@/lib/format";
 import { OVERLAY_TYPES, overlayTypeInfo, type OverlayType } from "@/lib/overlays/settings";
 import type { OverlayView } from "@/lib/overlays/store";
 import { LiveBadge } from "./OverlayEditor";
+import { ThemePacks } from "./ThemePacks";
 import { TypeIcon } from "./TypeIcon";
 
 type Overlay = OverlayView & { live: boolean };
@@ -89,6 +90,8 @@ export function OverlaysList({ initial }: { initial: Overlay[] }) {
           })}
         </Section>
       ) : null}
+
+      {initial.length > 0 ? <ThemePacks overlayCount={initial.length} /> : null}
 
       {initial.length === 0 ? (
         <div className="flex flex-col gap-3 border-t border-(--line) pt-12">

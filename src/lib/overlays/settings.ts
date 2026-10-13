@@ -190,6 +190,7 @@ export const TEXT_SHADOWS = [
   ["outline", "Outline"],
   ["soft", "Soft"],
   ["heavy", "Heavy"],
+  ["glow", "Glow"],
   ["none", "None"],
 ] as const;
 

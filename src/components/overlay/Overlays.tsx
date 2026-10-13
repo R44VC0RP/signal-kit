@@ -33,6 +33,7 @@ const SHADOWS: Record<Appearance["textShadow"], string> = {
   outline: "0 0 1px #000, 0 0 2px #000, 0 0 3px #000, 0 0 4px #000",
   soft: "0 2px 3px rgb(0 0 0 / 60%), 0 8px 32px rgb(0 0 0 / 55%)",
   heavy: "0 0 2px #000, 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 4px 10px rgb(0 0 0 / 60%)",
+  glow: "0 0 1px #000, 0 0 0.3em var(--sko-accent), 0 0 0.8em color-mix(in srgb, var(--sko-accent) 60%, transparent)",
   none: "none",
 };
 
