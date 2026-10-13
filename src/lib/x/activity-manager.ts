@@ -221,8 +221,9 @@ class XActivityManager {
       const response = await fetch(url, { headers: { Authorization: `Bearer ${process.env.X_BEARER_TOKEN}` }, signal: controller.signal });
       if (!response.ok || !response.body) {
         const text = await response.text().catch(() => "");
-        // 409: no subscriptions yet; 429: too many connections or requests.
-        const delay = response.status === 409 || response.status === 429 ? 60_000 : this.backoff();
+        // 409: no subscriptions yet; 429: too many connections or requests; 503: X is still
+        // provisioning a subscription change ("try again in a minute").
+        const delay = [409, 429, 503].includes(response.status) ? 60_000 : this.backoff();
         console.warn(`[x] stream rejected (${response.status}): ${text.slice(0, 200)}; retrying in ${Math.round(delay / 1000)}s`);
         this.scheduleReconnect(controller, delay);
         return;
