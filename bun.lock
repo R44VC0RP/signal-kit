@@ -34,13 +34,13 @@
     },
     "packages/cli": {
       "name": "@signal-kit/cli",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "bin": {
         "signal-kit": "dist/index.js",
         "signalkit": "dist/index.js",
       },
       "dependencies": {
-        "@signal-kit/client": "^0.1.2",
+        "@signal-kit/client": "^1.0.0",
         "ws": "^8.20.1",
       },
       "devDependencies": {
@@ -52,7 +52,7 @@
     },
     "packages/client": {
       "name": "@signal-kit/client",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "devDependencies": {
         "tsup": "^8.3.6",
         "typescript": "^5",

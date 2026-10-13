@@ -1,6 +1,6 @@
 {
   "name": "@signal-kit/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Stream Signal Kit events (Twitch, YouTube, X) in your terminal.",
   "license": "MIT",
   "type": "module",
@@ -41,7 +41,7 @@
     "url": "git+https://github.com/R44VC0RP/signal-kit.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://signal.ryan.ceo",
+  "homepage": "https://signal.ryan.ceo/docs",
   "dependencies": {
     "@signal-kit/client": "^1.0.0",
     "ws": "^8.20.1"

@@ -1,6 +1,6 @@
 {
   "name": "@signal-kit/client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "WebSocket client for Signal Kit: Twitch, YouTube and X live events in one normalized, typed stream, with replay after reconnects.",
   "license": "MIT",
   "type": "module",
@@ -44,7 +44,7 @@
     "url": "git+https://github.com/R44VC0RP/signal-kit.git",
     "directory": "packages/client"
   },
-  "homepage": "https://signal.ryan.ceo",
+  "homepage": "https://signal.ryan.ceo/docs",
   "devDependencies": {
     "tsup": "^8.3.6",
     "typescript": "^5"
