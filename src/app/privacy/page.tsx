@@ -43,12 +43,8 @@ export default function PrivacyPage() {
       </p>
       <ul>
         <li>
-          With read access, we read your channel&apos;s identity, your active live broadcasts, and your live chat (messages, Super Chats,
-          Super Stickers and memberships) so we can deliver them to your own tools.
-        </li>
-        <li>
-          Only if you turn on features that need it, write access lets you send chat messages, moderate your chat, or update your own
-          broadcast&apos;s title and description from Signal Kit. We only do this when you ask.
+          We request read-only access. We read your channel&apos;s identity, your active live broadcasts, and your live chat (messages, Super Chats,
+          Super Stickers and memberships) so we can deliver them to your own tools. We never post, edit or delete anything on your YouTube channel.
         </li>
         <li>
           You can revoke Signal Kit&apos;s access to your Google account at any time at{" "}
