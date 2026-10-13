@@ -2,6 +2,7 @@ import type { IncomingMessage } from "http";
 import type { Duplex } from "stream";
 import WebSocket, { WebSocketServer } from "ws";
 import { getAppUrl } from "@/lib/app-url";
+import { clientIpOf } from "@/lib/client-ip";
 import { randomToken } from "@/lib/crypto";
 import { isEventId } from "@/lib/events/ids";
 import { eventsSince, MAX_REPLAY } from "@/lib/events/ingest";
@@ -47,7 +48,7 @@ export function handleRelayUpgrade(req: IncomingMessage, socket: Duplex, head: B
   const url = new URL(req.url ?? "/", "http://relay.local");
   const token = url.searchParams.get("token");
   const since = url.searchParams.get("since");
-  const ip = clientIp(req);
+  const ip = clientIpOf(req);
 
   wss.handleUpgrade(req, socket, head, (ws) => {
     alive.add(ws);
@@ -169,10 +170,4 @@ async function start(ws: WebSocket, auth: Auth, since: string | null, failure: s
     ws.send(JSON.stringify({ type: "signal_kit.replayed", count, truncated, lastId, receivedAt: new Date().toISOString() }));
   }
   relayHub.flush(auth.userId, clientId, lastId);
-}
-
-function clientIp(req: IncomingMessage) {
-  const forwarded = req.headers["x-forwarded-for"];
-  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",")[0]?.trim();
-  return first || req.socket.remoteAddress || "unknown";
 }

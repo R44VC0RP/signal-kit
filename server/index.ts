@@ -1,5 +1,6 @@
 import { createServer } from "http";
 import next from "next";
+import { CLIENT_IP_HEADER, clientIpOf } from "@/lib/client-ip";
 import { startConnectionHealthChecks } from "@/lib/connections/health";
 import { startEventRetention } from "@/lib/events/ingest";
 import { eventSubManager } from "@/lib/twitch/eventsub-manager";
@@ -17,6 +18,8 @@ async function main() {
   const handleUpgrade = app.getUpgradeHandler();
 
   const server = createServer((req, res) => {
+    // One trusted client IP for rate limiting; a client-sent value is always overwritten.
+    req.headers[CLIENT_IP_HEADER] = clientIpOf(req);
     void handle(req, res);
   });
 

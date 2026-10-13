@@ -7,6 +7,7 @@ import { getDb } from "@/db";
 import * as schema from "@/db/schema";
 import type { ConnectionRole } from "@/db/schema";
 import { getAppUrl } from "@/lib/app-url";
+import { CLIENT_IP_HEADER } from "@/lib/client-ip";
 import { syncConnectionsForUser } from "@/lib/connections/sync";
 import { BOT_CAPABLE_PROVIDERS, isAuthProviderId, scopesFor } from "./scopes";
 
@@ -104,7 +105,7 @@ function createAuth() {
     advanced: {
       cookiePrefix: "signalkit",
       useSecureCookies: appUrl.startsWith("https://"),
-      ipAddress: { ipAddressHeaders: ["x-forwarded-for"] },
+      ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
