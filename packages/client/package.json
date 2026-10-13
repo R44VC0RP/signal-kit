@@ -1,7 +1,7 @@
 {
   "name": "@signal-kit/client",
-  "version": "0.1.2",
-  "description": "Tiny WebSocket client for Signal Kit. Subscribe to Twitch, YouTube Live, or combined stream events from any JavaScript runtime.",
+  "version": "1.0.0",
+  "description": "WebSocket client for Signal Kit: Twitch, YouTube and X live events in one normalized, typed stream, with replay after reconnects.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",

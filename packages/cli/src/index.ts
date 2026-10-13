@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import process from "node:process";
-import { SignalKit, type SignalKitMessage } from "@signal-kit/client";
+import { SignalKit, type SignalKitEvent } from "@signal-kit/client";
 import { WebSocket } from "ws";
 
 type Options = {
@@ -44,7 +44,11 @@ async function main() {
     url: options.url,
     token: options.token,
     WebSocket: WebSocket as unknown as typeof globalThis.WebSocket,
-    reconnectMs: 2_000,
+    onReady: (info) => {
+      if (!options.json && !options.raw) {
+        console.log(`${ok(options, "ready")} ${dim(options, `client=${info.clientId} label=${info.label}`)}`);
+      }
+    },
     onOpen: () => {
       if (!options.json && !options.raw) {
         console.log(`${ok(options, "connected")} ${dim(options, new Date().toISOString())}`);
@@ -68,7 +72,8 @@ async function main() {
   });
 
   client.on("*", (message) => {
-    if (options.types && !options.types.has(message.type)) {
+    // --types matches either the normalized kind ("tip") or the raw platform type ("channel.cheer").
+    if (options.types && !options.types.has(message.kind) && !options.types.has(message.type)) {
       return;
     }
 
@@ -225,49 +230,16 @@ function loadDotenv(path: string) {
   }
 }
 
-function formatMessage(options: Options, message: SignalKitMessage) {
-  const time = new Date(message.receivedAt).toLocaleTimeString();
-  const left = `${dim(options, time)} ${accent(options, message.type)}`;
-  const event = message.event;
-
-  if (message.type === "signal_kit.ready" && isObject(event)) {
-    return `${left} ${ok(options, "ready")} client=${stringField(event, "clientId") ?? "?"} label=${stringField(event, "label") ?? "?"}`;
-  }
-
-  if (!isObject(event)) {
-    return left;
-  }
-
-  const provider = "provider" in message && typeof message.provider === "string" ? message.provider : undefined;
-  if (provider === "youtube" || message.type.startsWith("youtube.")) {
-    return formatYouTubeMessage(options, left, event);
-  }
-
-  const user = stringField(event, "user_name") ?? stringField(event, "user_login") ?? stringField(event, "chatter_user_name");
-  const channel = stringField(event, "broadcaster_user_name") ?? stringField(event, "broadcaster_user_login");
+function formatMessage(options: Options, event: SignalKitEvent) {
+  const time = new Date(event.occurredAt).toLocaleTimeString();
+  const left = `${dim(options, time)} ${dim(options, event.platform.padEnd(7))} ${accent(options, event.kind)}`;
   const pieces = [
-    user ? `user=${strong(options, user)}` : null,
-    channel ? `channel=${channel}` : null,
-    numericField(event, "bits") != null ? `bits=${numericField(event, "bits")}` : null,
-    stringField(event, "tier") ? `tier=${stringField(event, "tier")}` : null,
-    stringField(event, "title") ? `title=${quote(stringField(event, "title")!)}` : null,
-    event.message && isObject(event.message) && stringField(event.message, "text") ? `msg=${quote(stringField(event.message, "text")!)}` : null,
-    stringField(event, "from_broadcaster_user_name") ? `from=${stringField(event, "from_broadcaster_user_name")}` : null,
-    stringField(event, "reward_title") ? `reward=${quote(stringField(event, "reward_title")!)}` : null,
+    event.actor ? strong(options, event.actor.name) : null,
+    event.amount ? event.amount.display : null,
+    event.message ? quote(event.message) : null,
+    typeof event.data.viewers === "number" ? `viewers=${event.data.viewers}` : null,
+    event.data.tier != null ? `tier=${String(event.data.tier)}` : null,
   ].filter(Boolean);
-
-  return pieces.length > 0 ? `${left} ${pieces.join(" ")}` : left;
-}
-
-function formatYouTubeMessage(options: Options, left: string, event: Record<string, unknown>) {
-  const snippet = objectField(event, "snippet");
-  const author = objectField(event, "authorDetails");
-  const pieces = [
-    author ? `user=${strong(options, stringField(author, "displayName") ?? "?")}` : null,
-    snippet && stringField(snippet, "displayMessage") ? `msg=${quote(stringField(snippet, "displayMessage")!)}` : null,
-    snippet && stringField(snippet, "type") ? `kind=${stringField(snippet, "type")}` : null,
-  ].filter(Boolean);
-
   return pieces.length > 0 ? `${left} ${pieces.join(" ")}` : left;
 }
 
@@ -302,24 +274,9 @@ Examples:
 `);
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
-function stringField(value: Record<string, unknown>, key: string) {
-  const field = value[key];
-  return typeof field === "string" ? field : null;
-}
 
-function numericField(value: Record<string, unknown>, key: string) {
-  const field = value[key];
-  return typeof field === "number" ? field : null;
-}
 
-function objectField(value: Record<string, unknown>, key: string) {
-  const field = value[key];
-  return isObject(field) ? field : null;
-}
 
 function quote(value: string) {
   const compact = value.replace(/\s+/g, " ").trim();

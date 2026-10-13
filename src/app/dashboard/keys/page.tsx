@@ -48,8 +48,10 @@ export default async function ApiKeysPage() {
       </Section>
 
       <p className="text-xs leading-[18px] text-(--text-3)">
-        Revoking a key disconnects anything using it right away. Connect with{" "}
-        <code className="sk-mono text-(--text-2)">{wsUrl}?token=…</code> or the <code className="sk-mono text-(--text-2)">@signal-kit/client</code> SDK.
+        Revoking a key disconnects anything using it right away. Use the{" "}
+        <code className="sk-mono text-(--text-2)">@signal-kit/client</code> SDK, or connect to{" "}
+        <code className="sk-mono text-(--text-2)">{wsUrl}</code> and send{" "}
+        <code className="sk-mono text-(--text-2)">{`{"type":"auth","token":"…"}`}</code> as the first message.
       </p>
     </>
   );

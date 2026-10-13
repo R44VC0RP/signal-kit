@@ -12,7 +12,11 @@ type RelayClient = {
   userId: string;
   ws: WebSocket;
   connectedAt: Date;
+  /** While a `since` replay is being sent, live events queue here so order is preserved. */
+  pending?: RelayPayload[] | null;
 };
+
+const MAX_PENDING = 5000;
 
 class RelayHub {
   private clients = new Map<string, Map<string, RelayClient>>();
@@ -39,6 +43,12 @@ class RelayHub {
 
     let delivered = 0;
     for (const client of userClients.values()) {
+      if (client.pending) {
+        if (client.pending.length < MAX_PENDING) {
+          client.pending.push(payload);
+        }
+        continue;
+      }
       if (client.ws.readyState !== WebSocket.OPEN) {
         continue;
       }
@@ -51,6 +61,25 @@ class RelayHub {
       delivered += 1;
     }
     return delivered;
+  }
+
+  /** Ends a replay: sends queued live events the replay didn't already include, then goes live. */
+  flush(userId: string, clientId: string, lastReplayedId: string | null) {
+    const client = this.clients.get(userId)?.get(clientId);
+    if (!client?.pending) {
+      return;
+    }
+    const queued = client.pending;
+    client.pending = null;
+    for (const payload of queued) {
+      const id = typeof payload.id === "string" ? payload.id : null;
+      if (lastReplayedId && id && id <= lastReplayedId) {
+        continue;
+      }
+      if (client.ws.readyState === WebSocket.OPEN) {
+        client.ws.send(JSON.stringify(payload));
+      }
+    }
   }
 
   /** Closes every socket opened with this API key, e.g. right after it is revoked. */

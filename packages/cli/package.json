@@ -1,7 +1,7 @@
 {
   "name": "@signal-kit/cli",
   "version": "0.1.0",
-  "description": "CLI event stream for Signal Kit Twitch EventSub relay tokens.",
+  "description": "Stream Signal Kit events (Twitch, YouTube, X) in your terminal.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -43,7 +43,7 @@
   },
   "homepage": "https://signal.ryan.ceo",
   "dependencies": {
-    "@signal-kit/client": "^0.1.2",
+    "@signal-kit/client": "^1.0.0",
     "ws": "^8.20.1"
   },
   "devDependencies": {

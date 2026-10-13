@@ -24,26 +24,29 @@ var __SignalKitBundle = (() => {
     SignalKit: () => SignalKit,
     default: () => index_default
   });
-  var DEFAULT_RECONNECT_MS = 2e3;
+  var DEFAULT_URL = "wss://signal.ryan.ceo/ws";
+  var SEEN_LIMIT = 1e3;
   var SignalKit = class {
     constructor(options) {
       this.options = options;
-      if (!options.url) {
-        throw new Error("SignalKit: `url` is required.");
-      }
       if (!options.token) {
         throw new Error("SignalKit: `token` is required.");
       }
+      this.lastId = options.since;
     }
     options;
     socket;
     handlers = /* @__PURE__ */ new Map();
     reconnectTimer;
+    attempt = 0;
     closed = false;
-    /**
-     * Open the relay connection. Calling `connect()` multiple times is a no-op
-     * if the socket is already open or connecting.
-     */
+    lastId;
+    seen = /* @__PURE__ */ new Set();
+    /** Id of the newest event received, for resuming later with `since`. */
+    get lastEventId() {
+      return this.lastId;
+    }
+    /** Open the connection. No-op if already open or connecting. */
     connect() {
       if (this.socket && (this.socket.readyState === 0 || this.socket.readyState === 1)) {
         return this;
@@ -52,19 +55,16 @@ var __SignalKitBundle = (() => {
       this.closed = false;
       const WebSocketImpl = this.options.WebSocket ?? globalThis.WebSocket;
       if (!WebSocketImpl) {
-        throw new Error(
-          "SignalKit: no WebSocket constructor found. Pass `WebSocket` in options or run on a platform with a global WebSocket."
-        );
+        throw new Error("SignalKit: no WebSocket constructor found. Pass `WebSocket` in options.");
       }
-      const url = new URL(this.options.url);
-      url.searchParams.set("token", this.options.token);
-      const socket = new WebSocketImpl(url.toString());
+      const socket = new WebSocketImpl(this.options.url ?? DEFAULT_URL);
       this.socket = socket;
-      socket.addEventListener?.("open", () => {
+      socket.addEventListener("open", () => {
+        socket.send(JSON.stringify({ type: "auth", token: this.options.token, since: this.lastId }));
         this.options.onOpen?.();
       });
-      socket.addEventListener?.("message", (event) => {
-        const data = "data" in event ? event.data : void 0;
+      socket.addEventListener("message", (event) => {
+        const data = event.data;
         if (typeof data !== "string") {
           return;
         }
@@ -74,62 +74,85 @@ var __SignalKitBundle = (() => {
         } catch {
           return;
         }
-        this.dispatch(message);
+        this.receive(message);
       });
-      socket.addEventListener?.("close", (event) => {
-        const closeEvent = event;
-        this.options.onClose?.({ code: closeEvent.code, reason: closeEvent.reason });
-        if (!this.closed && this.options.reconnectMs !== false && this.shouldReconnect(closeEvent.code)) {
-          const delay = typeof this.options.reconnectMs === "number" ? this.options.reconnectMs : DEFAULT_RECONNECT_MS;
-          this.reconnectTimer = setTimeout(() => this.connect(), delay);
+      socket.addEventListener("close", (event) => {
+        const { code, reason } = event;
+        this.options.onClose?.({ code, reason });
+        if (!this.closed && this.shouldReconnect(code)) {
+          this.reconnectTimer = setTimeout(() => this.connect(), this.nextDelay());
         }
       });
-      socket.addEventListener?.("error", (event) => {
-        this.options.onError?.(event);
-      });
+      socket.addEventListener("error", (event) => this.options.onError?.(event));
       return this;
     }
-    /** Close the relay connection and stop auto-reconnect. */
+    /** Close the connection and stop reconnecting. */
     close() {
       this.closed = true;
       clearTimeout(this.reconnectTimer);
       this.socket?.close();
     }
-    /**
-     * Subscribe to a specific event type. Pass `"*"` to receive every message.
-     * Returns an unsubscribe function.
-     */
     on(type, handler) {
-      const handlers = this.handlers.get(type) ?? /* @__PURE__ */ new Set();
-      handlers.add(handler);
-      this.handlers.set(type, handlers);
-      return () => {
-        handlers.delete(handler);
-      };
+      const set = this.handlers.get(type) ?? /* @__PURE__ */ new Set();
+      set.add(handler);
+      this.handlers.set(type, set);
+      return () => set.delete(handler);
     }
-    /** Subscribe once. Handler is removed after the first matching message. */
     once(type, handler) {
-      const unsubscribe = this.on(type, async (message) => {
+      const unsubscribe = this.on(type, async (event) => {
         unsubscribe();
-        await handler(message);
+        await handler(event);
       });
       return unsubscribe;
     }
-    /** Remove a previously registered handler. */
     off(type, handler) {
       this.handlers.get(type)?.delete(handler);
     }
-    dispatch(message) {
-      this.handlers.get(message.type)?.forEach((handler) => {
-        void handler(message);
-      });
-      this.handlers.get("*")?.forEach((handler) => {
-        void handler(message);
-      });
+    receive(message) {
+      if (message.type === "signal_kit.ready") {
+        this.attempt = 0;
+        this.options.onReady?.(message);
+        return;
+      }
+      if (message.type === "signal_kit.replayed") {
+        this.options.onReplayed?.(message);
+        return;
+      }
+      const event = message;
+      if (event.v !== 2 || !event.id) {
+        return;
+      }
+      if (this.seen.has(event.id)) {
+        return;
+      }
+      this.seen.add(event.id);
+      if (this.seen.size > SEEN_LIMIT) {
+        this.seen.delete(this.seen.values().next().value);
+      }
+      if (!this.lastId || event.id > this.lastId) {
+        this.lastId = event.id;
+      }
+      const targets = /* @__PURE__ */ new Set([...this.handlers.get(event.kind) ?? [], ...this.handlers.get(event.type) ?? [], ...this.handlers.get("*") ?? []]);
+      for (const handler of targets) {
+        void handler(event);
+      }
+    }
+    nextDelay() {
+      if (typeof this.options.reconnectMs === "number") {
+        return this.options.reconnectMs;
+      }
+      const config = this.options.reconnect || {};
+      const min = config.minMs ?? 1e3;
+      const max = config.maxMs ?? 3e4;
+      const delay = Math.min(max, min * 2 ** this.attempt);
+      this.attempt += 1;
+      return delay / 2 + Math.random() * (delay / 2);
     }
     shouldReconnect(code) {
-      const terminalCodes = this.options.terminalCloseCodes ?? [1002, 1003, 1007, 1008];
-      return !terminalCodes.includes(code);
+      if (this.options.reconnect === false || this.options.reconnectMs === false) {
+        return false;
+      }
+      return !(this.options.terminalCloseCodes ?? [1002, 1003, 1007, 1008]).includes(code);
     }
   };
   var index_default = SignalKit;
