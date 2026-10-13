@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Platform } from "@/db/schema";
 import { describeEvent, type DescribedEvent, type EventCategory } from "@/lib/events/describe";
+import type { LogEvent } from "@/lib/events/log";
 import type { SignalKitEvent } from "@/lib/events/types";
 import { PlatformLogo, PLATFORM_NAME } from "./PlatformLogo";
 import { buttonClass, PageHeader } from "./ui";
@@ -16,11 +17,35 @@ const FILTERS: { value: "all" | EventCategory; label: string }[] = [
   { value: "alerts", label: "Alerts" },
   { value: "money", label: "Money" },
 ];
-const MAX_ROWS = 300;
+const MAX_ROWS = 2000;
 
-/** Live view of the user's relay stream, over the same socket apps use (authenticated by session). */
-export function EventLog({ platforms }: { platforms: Platform[] }) {
-  const [rows, setRows] = useState<Row[]>([]);
+function toRow(event: Partial<SignalKitEvent>): Row | null {
+  const described = describeEvent(event);
+  if (!described) {
+    return null;
+  }
+  return { ...described, id: event.id ?? crypto.randomUUID(), time: event.occurredAt ?? event.receivedAt ?? new Date().toISOString() };
+}
+
+/**
+ * The user's stored events (kept 24 hours) followed live, over the same socket apps use
+ * (authenticated by session). The socket resumes from the newest event shown, so nothing
+ * arriving between page load and connect, or during a reconnect, is missed or doubled.
+ */
+export function EventLog({
+  platforms,
+  initialEvents,
+  initialHasMore,
+}: {
+  platforms: Platform[];
+  initialEvents: LogEvent[];
+  initialHasMore: boolean;
+}) {
+  const [rows, setRows] = useState<Row[]>(() => initialEvents.map((event) => toRow(event)).filter((row): row is Row => row !== null));
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const seen = useRef(new Set(initialEvents.map((event) => event.id)));
+  const lastId = useRef<string | undefined>(initialEvents[0]?.id);
   const [status, setStatus] = useState<Status>("connecting");
   const [paused, setPaused] = useState(false);
   const [filter, setFilter] = useState<"all" | EventCategory>("all");
@@ -44,7 +69,8 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
 
     const connect = () => {
       setStatus("connecting");
-      ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
+      const since = lastId.current ? `?since=${encodeURIComponent(lastId.current)}` : "";
+      ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws${since}`);
       ws.onmessage = (message) => {
         let parsed: Partial<SignalKitEvent> & { type?: string };
         try {
@@ -56,11 +82,19 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
           setStatus("listening");
           return;
         }
-        const described = describeEvent(parsed);
-        if (!described) {
+        if (parsed.id) {
+          if (seen.current.has(parsed.id)) {
+            return;
+          }
+          seen.current.add(parsed.id);
+          if (!lastId.current || parsed.id > lastId.current) {
+            lastId.current = parsed.id;
+          }
+        }
+        const row = toRow(parsed);
+        if (!row) {
           return;
         }
-        const row: Row = { ...described, id: parsed.id ?? crypto.randomUUID(), time: parsed.occurredAt ?? parsed.receivedAt ?? new Date().toISOString() };
         if (pausedRef.current) {
           buffer.current = [row, ...buffer.current].slice(0, MAX_ROWS);
         } else {
@@ -83,6 +117,27 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
     };
   }, []);
 
+  const loadOlder = async () => {
+    const oldest = rows.at(-1)?.id;
+    if (!oldest || loadingOlder) {
+      return;
+    }
+    setLoadingOlder(true);
+    try {
+      const response = await fetch(`/api/events?before=${encodeURIComponent(oldest)}&limit=100`);
+      if (!response.ok) {
+        return;
+      }
+      const page = (await response.json()) as { events: LogEvent[]; hasMore: boolean };
+      const older = page.events.filter((event) => !seen.current.has(event.id));
+      older.forEach((event) => seen.current.add(event.id));
+      setRows((current) => [...current, ...older.map((event) => toRow(event)).filter((row): row is Row => row !== null)]);
+      setHasMore(page.hasMore);
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+
   const visible = rows.filter((row) => (filter === "all" || row.category === filter) && !hidden.has(row.platform));
   const newest = rows[0]?.id;
 
@@ -90,7 +145,7 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
     <>
       <PageHeader
         title="Events"
-        description="Everything arriving on your socket, as your apps receive it."
+        description="Everything from the last 24 hours, then live as your apps receive it."
         actions={
           <>
             <StatusPill status={status} />
@@ -159,8 +214,10 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
         </div>
         {visible.length === 0 ? (
           <p className="border-t border-(--line) px-2.5 py-10 text-center text-[13px] text-(--text-3)">
-            {status === "listening"
-              ? "Listening. Events show up here the moment they happen on stream."
+            {rows.length > 0
+              ? "No events match these filters."
+              : status === "listening"
+              ? "No events in the last 24 hours. New ones show up here the moment they happen on stream."
               : status === "connecting"
                 ? "Connecting…"
                 : "Disconnected. Retrying…"}
@@ -190,6 +247,15 @@ export function EventLog({ platforms }: { platforms: Platform[] }) {
             );
           })
         )}
+        {hasMore ? (
+          <div className="flex justify-center border-t border-(--line) py-4">
+            <button type="button" className={buttonClass("control")} disabled={loadingOlder} onClick={() => void loadOlder()}>
+              {loadingOlder ? "Loading…" : "Load older"}
+            </button>
+          </div>
+        ) : rows.length > 0 ? (
+          <p className="border-t border-(--line) px-2.5 py-4 text-center text-xs text-(--text-3)">Events are kept for 24 hours.</p>
+        ) : null}
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { connections, events, type Platform } from "@/db/schema";
 import { relayHub } from "@/lib/ws/relay";
@@ -77,6 +77,24 @@ export async function eventsSince(userId: string, since: string, limit = MAX_REP
     .orderBy(asc(events.id))
     .limit(limit);
   return rows.map((row) => row.envelope as SignalKitEvent);
+}
+
+/**
+ * A user's stored events, newest first, optionally only those older than `before` (an event id).
+ * Returns one extra row's worth of information as `hasMore` so callers can offer "load older".
+ */
+export async function recentEvents(userId: string, options: { before?: string | null; limit?: number } = {}) {
+  const limit = Math.min(Math.max(options.limit ?? 100, 1), 500);
+  const rows = await getDb()
+    .select({ envelope: events.envelope })
+    .from(events)
+    .where(options.before ? and(eq(events.userId, userId), lt(events.id, options.before)) : eq(events.userId, userId))
+    .orderBy(desc(events.id))
+    .limit(limit + 1);
+  return {
+    events: rows.slice(0, limit).map((row) => row.envelope as SignalKitEvent),
+    hasMore: rows.length > limit,
+  };
 }
 
 /** `lastEventAt` is display-only; write it at most every 30s per connection. */
