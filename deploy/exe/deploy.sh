@@ -23,7 +23,10 @@ compose() {
   docker compose -f deploy/exe/compose.yml "$@"
 }
 
-compose build app migrate
+# One at a time: building both targets concurrently intermittently fails with
+# "failed to prepare extraction snapshot ... parent snapshot does not exist".
+compose build app
+compose build migrate
 compose up -d mysql
 compose run --rm migrate
 compose up -d app
