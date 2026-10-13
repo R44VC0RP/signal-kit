@@ -6,15 +6,19 @@ import { connectionEvents } from "@/lib/connections/events";
 import { ConnectionUnavailableError, forceRefresh, getConnection, getConnectionAccessToken } from "@/lib/connections/tokens";
 import { type EventSource, ingestEvent } from "@/lib/events/ingest";
 import { normalizeYouTube } from "@/lib/events/normalize";
+import { relayHub } from "@/lib/ws/relay";
 import { listActiveLiveBroadcasts, type YouTubeLiveChatMessage } from "./api";
 import { GrpcStatus, openLiveChatStream, type StreamListResponse } from "./stream-list";
 
 /**
  * YouTube live chat for every connected channel.
  *
- * While a channel is offline we look for an active broadcast every couple of minutes
- * (liveBroadcasts.list, 1 quota unit). Once live, chat arrives over a streamList gRPC stream
- * that we resume with the last page token, so reconnects neither miss nor repeat messages.
+ * We look for an active broadcast (liveBroadcasts.list, 1 quota unit) every couple of minutes,
+ * but only while the creator has something connected to receive events: an app, an overlay or
+ * the dashboard. Nobody listening means nothing to deliver, so no quota is spent; the first
+ * client to connect triggers an immediate check. Once live, chat arrives over a streamList gRPC
+ * stream (5 units per call) that we resume with the last page token, so reconnects neither miss
+ * nor repeat messages, and it stays open until the broadcast ends.
  */
 
 const DISCOVERY_EVERY_MS = 2 * 60 * 1000;
@@ -43,6 +47,13 @@ class YouTubeLiveManager {
     this.started = true;
     connectionEvents.on("changed", () => void this.syncAll());
     connectionEvents.on("removed", (connectionId) => this.remove(connectionId));
+    relayHub.presence.on("online", (userId: string) => {
+      for (const m of this.managed.values()) {
+        if (m.source.userId === userId) {
+          void this.discover(m);
+        }
+      }
+    });
     setInterval(() => void this.syncAll(), DISCOVERY_EVERY_MS);
     void this.syncAll();
   }
@@ -86,9 +97,9 @@ class YouTubeLiveManager {
     }
   }
 
-  /** Find the channel's active broadcast and open its chat stream. Skipped while already streaming. */
+  /** Find the channel's active broadcast and open its chat stream. Skipped while streaming or while nobody is listening. */
   private async discover(m: Managed) {
-    if (m.stream || m.discovering || m.retryTimer) {
+    if (m.stream || m.discovering || m.retryTimer || !relayHub.isOnline(m.source.userId)) {
       return;
     }
     m.discovering = true;

@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import WebSocket from "ws";
 
 /** Anything sent to clients: a SignalKitEvent, or a `signal_kit.*` control message. */
@@ -21,10 +22,22 @@ const MAX_PENDING = 5000;
 class RelayHub {
   private clients = new Map<string, Map<string, RelayClient>>();
 
+  /** Emits "online" (userId) when a user's first client connects. */
+  readonly presence = new EventEmitter();
+
+  /** Whether anything (an app, overlay or the dashboard) is listening for this user's events. */
+  isOnline(userId: string) {
+    return (this.clients.get(userId)?.size ?? 0) > 0;
+  }
+
   add(client: RelayClient) {
     const userClients = this.clients.get(client.userId) ?? new Map<string, RelayClient>();
+    const wasOnline = userClients.size > 0;
     userClients.set(client.id, client);
     this.clients.set(client.userId, userClients);
+    if (!wasOnline) {
+      this.presence.emit("online", client.userId);
+    }
 
     client.ws.on("close", () => {
       userClients.delete(client.id);
