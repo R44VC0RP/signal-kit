@@ -227,8 +227,19 @@ function xActor(user: Any | undefined, extraBadges: string[] = []): EventActor |
     name: u.name || u.username || "",
     login: u.username ?? undefined,
     avatarUrl: xAvatar(u.profile_image_url),
-    badges: [...extraBadges, u.verified || u.verified_type ? "verified" : null].filter(Boolean) as string[],
+    // X verification: "verified" (Premium blue), "verified-business" (gold) or "verified-government" (gray).
+    badges: [...extraBadges, xVerifiedBadge(u)].filter(Boolean) as string[],
   };
+}
+
+function xVerifiedBadge(u: Any) {
+  if (u.verified_type === "business") {
+    return "verified-business";
+  }
+  if (u.verified_type === "government") {
+    return "verified-government";
+  }
+  return u.verified || (u.verified_type && u.verified_type !== "none") ? "verified" : null;
 }
 
 /** X sends the 48x48 "_normal" avatar; the "_400x400" variant of the same image is sharp on overlays. */

@@ -5,6 +5,7 @@ import type { Platform } from "@/db/schema";
 import { describeEvent, type DescribedEvent, type EventCategory } from "@/lib/events/describe";
 import type { LogEvent } from "@/lib/events/log";
 import type { SignalKitEvent } from "@/lib/events/types";
+import { XVerifiedBadge } from "@/components/brand/x";
 import { PlatformLogo, PLATFORM_NAME } from "./PlatformLogo";
 import { buttonClass, PageHeader } from "./ui";
 
@@ -240,6 +241,7 @@ export function EventLog({
                 <span className="flex w-40 shrink-0 items-center gap-2">
                   {row.from ? <Avatar name={row.from} url={row.avatarUrl} /> : null}
                   <span className="truncate text-[13px] font-medium text-(--text)">{row.from || "—"}</span>
+                  {row.xVerified ? <XVerifiedBadge type={row.xVerified} size={14} /> : null}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[13px] text-(--text-2)">{row.details}</span>
                 <span className="sk-mono w-20 shrink-0 text-right text-xs text-(--text)">{row.value}</span>

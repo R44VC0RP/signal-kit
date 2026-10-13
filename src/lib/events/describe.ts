@@ -8,6 +8,8 @@ export type DescribedEvent = {
   from: string;
   /** Sender's profile picture when the platform provides one (YouTube, X). */
   avatarUrl: string | null;
+  /** X verification type for the sender, shown with X's own badge. */
+  xVerified: "blue" | "business" | "government" | null;
   details: string;
   value: string;
   category: EventCategory;
@@ -53,6 +55,7 @@ export function describeEvent(event: Partial<SignalKitEvent> & { type?: string }
     kind,
     from: event.actor?.name ?? "",
     avatarUrl: event.actor?.avatarUrl ?? null,
+    xVerified: event.platform === "x" ? xVerifiedType(event.actor?.badges ?? []) : null,
     details: event.message ?? detailsFor(event.kind, data),
     value: event.amount?.display ?? valueFor(event.kind, data),
     category: categoryFor(event.kind),
@@ -106,4 +109,8 @@ function valueFor(kind: EventKind, data: Record<string, unknown>) {
     return `Level ${data.level}`;
   }
   return "";
+}
+
+function xVerifiedType(badges: string[]) {
+  return badges.includes("verified-business") ? "business" : badges.includes("verified-government") ? "government" : badges.includes("verified") ? "blue" : null;
 }
