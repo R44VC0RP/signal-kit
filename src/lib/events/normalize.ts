@@ -37,7 +37,7 @@ const phase = (type: string) => type.split(".").pop() ?? "";
 export function normalizeTwitch(type: string, e: Any): NormalizedFields {
   switch (type) {
     case "channel.chat.message": {
-      const actor = twitchActor(e, "chatter");
+      const actor = twitchActor(e, "chatter_user");
       if (actor) {
         actor.badges = Array.isArray(e.badges) ? e.badges.map((badge: Any) => String(badge.set_id)) : [];
       }
@@ -49,7 +49,7 @@ export function normalizeTwitch(type: string, e: Any): NormalizedFields {
     }
     case "channel.chat.notification":
       return fields("chat.notification", {
-        actor: e.chatter_is_anonymous ? anonymous : twitchActor(e, "chatter"),
+        actor: e.chatter_is_anonymous ? anonymous : twitchActor(e, "chatter_user"),
         message: e.message?.text || null,
         data: { noticeType: e.notice_type, systemMessage: e.system_message },
       });
