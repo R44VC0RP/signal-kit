@@ -31,6 +31,7 @@ export default async function StreamsPage() {
             <p>Go live with a connected account and your stream shows up here on its own: viewers, chatters, messages, follows, subs, bits and tips, per platform.</p>
             <p className="text-(--text-3)">
               YouTube streams are tracked while an overlay or app is connected, because that&apos;s when Signal Kit reads your YouTube chat.
+              YouTube statistics and viewer names are kept for 30 days, then deleted (YouTube API policy).
             </p>
           </div>
         </Section>
