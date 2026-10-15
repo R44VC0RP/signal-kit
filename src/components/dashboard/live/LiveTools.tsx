@@ -98,7 +98,7 @@ function PollPanel({ tools, act }: { tools: PublicLiveTools; act: Act }) {
                 </div>
               );
             })}
-            <span className="text-xs text-(--text-3)">{`${poll.totalVotes} votes`}</span>
+            <span className="text-xs text-(--text-3)">{`${poll.totalVotes} votes · Counted by Signal Kit from chat, not by YouTube.`}</span>
             <div className="flex gap-2">
               {poll.status === "open" ? (
                 <button type="button" className={buttonClass("primary")} onClick={() => void act("poll.end")}>
@@ -154,7 +154,7 @@ function GiveawayPanel({ tools, act }: { tools: PublicLiveTools; act: Act }) {
   const [keyword, setKeyword] = useState("!enter");
   const giveaway = tools.giveaway;
   return (
-    <Section title="Giveaway" aside={<Muted>{giveaway ? `${giveaway.entries} entries` : "Viewers type a keyword to enter"}</Muted>}>
+    <Section title="Giveaway" aside={<Muted>{giveaway ? `${giveaway.entries} entries · Counted by Signal Kit, not by YouTube` : "Viewers type a keyword to enter"}</Muted>}>
       <div className="flex flex-col gap-3 border-t border-(--line) pt-4">
         {giveaway ? (
           <>

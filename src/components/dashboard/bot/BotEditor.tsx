@@ -335,7 +335,7 @@ function Loyalty({ config, update }: Props) {
           </button>
         </div>
       </Section>
-      <Section title="Leaderboard">
+      <Section title="Leaderboard" aside={<Muted>Points are calculated by Signal Kit, not by YouTube.</Muted>}>
         {board === null ? <Muted>Loading…</Muted> : null}
         {board?.length === 0 ? (
           <div className="border-t border-(--line) py-4">

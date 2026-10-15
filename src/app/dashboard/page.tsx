@@ -134,6 +134,7 @@ export default async function OverviewPage() {
               </div>
             ))}
           </Row>
+          <p className="border-t border-(--line) pt-3 text-xs text-(--text-3)">Calculated by Signal Kit from your stream events. Not provided by YouTube.</p>
         </Section>
       ) : null}
 

@@ -102,6 +102,7 @@ export async function notifyRecap(userId: string, stream: { id: string; title: s
         url: `${getAppUrl()}/dashboard/streams/${stream.id}`,
         description: `Live for ${hours ? `${hours}h ` : ""}${minutes}m${emotes.length ? `\nTop emotes: ${emotes.join(", ")}` : ""}`,
         fields,
+        ...(stream.summary.platforms.youtube ? { footer: { text: "Stats calculated by Signal Kit from stream events, not provided by YouTube." } } : {}),
         timestamp: stream.endedAt,
       },
     ],

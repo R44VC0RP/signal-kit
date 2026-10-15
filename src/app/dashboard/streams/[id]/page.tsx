@@ -64,17 +64,18 @@ export default async function StreamPage({ params }: { params: Promise<{ id: str
           <Stat label="Bits" value={compact(t.bits)} delta={<Delta now={t.bits} before={p?.bits} />} />
           <Stat label="Tips" value={formatTips(t.tips) || "–"} sub={t.raids ? `${t.raids} raid${t.raids > 1 ? "s" : ""}` : undefined} />
         </StatGrid>
+        <p className="border-t border-(--line) pt-3 text-xs text-(--text-3)">Calculated by Signal Kit from your stream events. Not provided by YouTube.</p>
       </Section>
 
       <Section title="Viewers and chat">
         <TimelineChart summary={stream.summary} startedAt={stream.startedAt} />
       </Section>
 
-      <Section title="By platform">
+      <Section title="By platform" aside={<Muted>{"Calculated by Signal Kit. Not provided by YouTube."}</Muted>}>
         <div className="sk-mono grid grid-cols-[1fr_repeat(7,64px)] gap-2 pb-2 text-right text-[11px] tracking-[0.04em] text-(--text-3) uppercase">
           <span className="text-left">Platform</span>
-          <span>Peak</span>
-          <span>Avg</span>
+          <span>{platforms.includes("youtube") ? "Peak*" : "Peak"}</span>
+          <span>{platforms.includes("youtube") ? "Avg*" : "Avg"}</span>
           <span>Chatters</span>
           <span>New</span>
           <span>Msgs</span>
@@ -105,6 +106,12 @@ export default async function StreamPage({ params }: { params: Promise<{ id: str
             </div>
           );
         })}
+        {platforms.includes("youtube") ? (
+          <p className="border-t border-(--line) pt-3 text-xs text-(--text-3)">
+            * YouTube peak and average viewers are calculated by Signal Kit from samples of YouTube&apos;s concurrent viewer count, taken every minute. Not
+            provided by YouTube.
+          </p>
+        ) : null}
         {platforms.includes("x") ? <p className="border-t border-(--line) pt-3 text-xs text-(--text-3)">X doesn&apos;t share viewer counts with apps, so X shows chat and follows only.</p> : null}
       </Section>
 

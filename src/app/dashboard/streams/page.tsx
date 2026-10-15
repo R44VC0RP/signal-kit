@@ -37,7 +37,7 @@ export default async function StreamsPage() {
         </Section>
       ) : (
         <>
-          <Section title="Last 30 days">
+          <Section title="Last 30 days" aside={<Muted>{"Calculated by Signal Kit from your stream events. Not provided by YouTube."}</Muted>}>
             <StatGrid>
               <Stat label="Streams" value={String(current.streams)} />
               <Stat label="Hours live" value={current.hours.toFixed(1)} />
@@ -62,7 +62,7 @@ export default async function StreamsPage() {
             </Section>
           ) : null}
 
-          <Section title="All streams" aside={<Muted>{`${streams.length} streams`}</Muted>}>
+          <Section title="All streams" aside={<Muted>{`${streams.length} streams · Calculated by Signal Kit from your stream events. Not provided by YouTube.`}</Muted>}>
             <div className="sk-mono grid grid-cols-[1fr_repeat(5,72px)] gap-3 pb-2 text-right text-[11px] tracking-[0.04em] text-(--text-3) uppercase">
               <span className="text-left">Stream</span>
               <span>Peak</span>

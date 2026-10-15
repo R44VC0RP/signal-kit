@@ -65,6 +65,10 @@ export default function PrivacyPage() {
           chatters are judged over the last 30 days, and YouTube viewers&apos; loyalty points are deleted after 30 days without activity.
         </li>
         <li>
+          Statistics shown in Signal Kit (stream totals, viewer averages and peaks, chatter counts, goals and loyalty points) are calculated by
+          Signal Kit from stream events and are not provided by YouTube.
+        </li>
+        <li>
           You can revoke Signal Kit&apos;s access to your Google account at any time at{" "}
           <a href="https://security.google.com/settings/security/permissions">https://security.google.com/settings/security/permissions</a>, or
           by disconnecting YouTube in the Signal Kit dashboard. Either way, <strong>we delete all YouTube data Signal Kit stored within 7

@@ -43,6 +43,9 @@ const options = <T extends string>(list: readonly (readonly [T, string, ...strin
 const seconds = (v: number) => (v === 0 ? "Off" : `${v}s`);
 const px = (v: number) => `${v}px`;
 
+/** Shown with overlays whose numbers Signal Kit works out itself (YouTube derived-metrics labelling). */
+const CALCULATED = "Numbers are calculated by Signal Kit from your stream events, not provided by YouTube.";
+
 /** Settings specific to each overlay type, below the shared Look section. */
 export function TypeSettings({ type, settings, update, overlayId }: { type: OverlayType; settings: AnySettings; update: Update; overlayId: string }) {
   switch (type) {
@@ -527,6 +530,7 @@ function GoalTypeSettings({ settings: s, update, overlayId }: { settings: GoalSe
           <span className="text-xs leading-[18px] text-(--text-3)">Counts from now, plus “Start from”.</span>
         </div>
         <p className="text-xs leading-[18px] text-(--text-3)">YouTube support counts toward the goal for 30 days, then drops out (YouTube API policy).</p>
+        <p className="text-xs leading-[18px] text-(--text-3)">{CALCULATED}</p>
       </Group>
       <Group title="Bar">
         <Field label="Layout">
@@ -604,6 +608,7 @@ function LabelTypeSettings({ settings: s, update }: { settings: LabelSettings; u
         Counts start when Signal Kit starts tracking; “today” restarts each time you go live. YouTube support and names count for 30 days
         (YouTube API policy).
       </p>
+      <p className="text-xs leading-[18px] text-(--text-3)">{CALCULATED}</p>
     </Group>
   );
 }
@@ -787,6 +792,9 @@ function ViewersTypeSettings({ settings: s, update }: { settings: ViewersSetting
       <Toggle label="Live dot" checked={s.showLiveDot} onChange={(showLiveDot) => update({ ...s, showLiveDot })} />
       <Toggle label="Uptime" checked={s.showUptime} onChange={(showUptime) => update({ ...s, showUptime })} />
       <p className="text-xs leading-[18px] text-(--text-3)">Twitch and YouTube viewers update every minute. X doesn&apos;t share viewer counts.</p>
+      <p className="text-xs leading-[18px] text-(--text-3)">
+        Combined adds the platforms together. That total is calculated by Signal Kit, not provided by YouTube. Per platform shows each platform&apos;s own count.
+      </p>
     </Group>
   );
 }
@@ -814,6 +822,7 @@ function CreditsTypeSettings({ settings: s, update }: { settings: CreditsSetting
         </Field>
         <Toggle label="Loop" checked={s.loop} onChange={(loop) => update({ ...s, loop })} />
         <p className="text-xs leading-[18px] text-(--text-3)">Shows the current stream, or the one that just ended. Put it on your ending scene.</p>
+        <p className="text-xs leading-[18px] text-(--text-3)">{CALCULATED}</p>
       </Group>
       <Group title="Sections">
         {CREDIT_SECTIONS.map(({ key, label }) => (
@@ -882,6 +891,7 @@ function BossTypeSettings({ settings: s, update }: { settings: BossSettings; upd
       <p className="text-xs leading-[18px] text-(--text-3)">
         Damage: follow 10, sub 100 (tier 2 ×2, tier 3 ×5), gifted sub 100 each, 1 per bit, 100 per $1 tip, raid 2 per viewer. The final hit makes that viewer the boss, with 250 more HP.
       </p>
+      <p className="text-xs leading-[18px] text-(--text-3)">{CALCULATED}</p>
       <button
         type="button"
         className={`${buttonClass("control")} self-start`}
