@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { accounts, connections, type ConnectionRole, type Platform } from "@/db/schema";
 import { getAuth } from "@/lib/auth";
+import { purgeUserYouTubeData } from "@/lib/retention/youtube";
 import { removeConnectionRecords } from "./sync";
 import { decryptToken } from "./tokens";
 
@@ -58,7 +59,9 @@ export async function setConnectionRole(userId: string, connectionId: string, ro
 
 /**
  * Disconnects a platform account: revokes the platform grant, deletes the Better Auth
- * account (credentials), and removes the connection and its subscriptions.
+ * account (credentials), and removes the connection and its subscriptions. Disconnecting
+ * YouTube also deletes everything Signal Kit stored from YouTube for the user right away
+ * (YouTube Developer Policies: delete stored data when authorization is revoked).
  */
 export async function disconnectConnection(userId: string, connectionId: string) {
   const connection = await getOwnedConnection(userId, connectionId);
@@ -79,6 +82,10 @@ export async function disconnectConnection(userId: string, connectionId: string)
   if (account) {
     const context = await getAuth().$context;
     await context.internalAdapter.deleteAccount(account.id);
+  }
+  if (connection.platform === "youtube") {
+    // If this fails, the hourly retention run retries it (the user has YouTube data but no active YouTube connection).
+    await purgeUserYouTubeData(userId).catch((error) => console.error(`[connections] YouTube data purge failed for ${userId}`, error));
   }
 }
 

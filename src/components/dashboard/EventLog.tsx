@@ -192,12 +192,15 @@ export function EventLog({
                     return next;
                   })
                 }
-                className={`inline-flex h-6.5 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium text-(--text-2) ${
-                  off ? "border-(--line) opacity-45" : "border-[#444]"
+                // Hidden platforms are shown by a dashed border and a struck-out name, never by fading
+                // the chip: YouTube's icon must always show at full colour (and at least 20px tall,
+                // with its clear space, hence the taller chip).
+                className={`inline-flex h-10 items-center gap-1.5 rounded-(--r) border pr-3 text-xs font-medium ${platform === "youtube" ? "pl-1" : "pl-3"} ${
+                  off ? "border-dashed border-(--line-strong) text-(--text-3)" : "border-[#444] text-(--text-2)"
                 }`}
               >
-                <PlatformLogo platform={platform} size={13} />
-                {PLATFORM_NAME[platform]}
+                <PlatformLogo platform={platform} size={16} />
+                <span className={off ? "line-through" : undefined}>{PLATFORM_NAME[platform]}</span>
               </button>
             );
           })}
@@ -207,7 +210,7 @@ export function EventLog({
       <div className="-mt-4 flex flex-col">
         <div className="flex h-8 items-center gap-3.5 px-2.5 text-xs text-(--text-3)">
           <span className="w-17.5 shrink-0">Time</span>
-          <span className="w-4 shrink-0" />
+          <span className="w-11 shrink-0" />
           <span className="w-32.5 shrink-0">Type</span>
           <span className="w-40 shrink-0">From</span>
           <span className="flex-1">Details</span>
@@ -234,7 +237,7 @@ export function EventLog({
                 <span className="sk-mono w-17.5 shrink-0 text-[11px] text-(--text-3)">
                   {new Date(row.time).toLocaleTimeString("en", { hour12: false })}
                 </span>
-                <span className="flex w-4 shrink-0 justify-center">
+                <span className="flex w-11 shrink-0 justify-center">
                   <PlatformLogo platform={row.platform} size={13} />
                 </span>
                 <span className={`w-32.5 shrink-0 truncate text-xs ${fresh ? "text-(--accent-text)" : "text-(--text-2)"}`}>{row.kind}</span>

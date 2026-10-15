@@ -56,7 +56,7 @@ export function RevokeKeyButton({ id, name }: { id: string; name: string }) {
   );
 }
 
-export function DisconnectButton({ id, name }: { id: string; name: string }) {
+export function DisconnectButton({ id, name, platform }: { id: string; name: string; platform?: string }) {
   const { pending, error, run } = useAction();
   return (
     <span className="inline-flex flex-col items-end gap-1">
@@ -65,7 +65,11 @@ export function DisconnectButton({ id, name }: { id: string; name: string }) {
         disabled={pending}
         className={buttonClass("quiet")}
         onClick={() => {
-          if (window.confirm(`Disconnect ${name}? Signal Kit stops listening to it and revokes its access.`)) {
+          const message =
+            platform === "youtube"
+              ? `Disconnect ${name}? Disconnecting deletes everything Signal Kit stored from YouTube for this channel. It doesn't change anything on YouTube.`
+              : `Disconnect ${name}? Signal Kit stops listening to it and revokes its access.`;
+          if (window.confirm(message)) {
             run(() => send(`/api/connections/${id}`, { method: "DELETE" }));
           }
         }}

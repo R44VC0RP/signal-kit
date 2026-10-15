@@ -8,14 +8,33 @@ import { formatDuration } from "@/components/dashboard/streams/stats";
 import { getDb } from "@/db";
 import { chatters, connections, users } from "@/db/schema";
 import { userIdForSlug } from "@/lib/notify/settings";
-import { durationMs, listStreams, periodTotals } from "@/lib/streams/store";
+import { stripYouTubeFromSummary } from "@/lib/retention/youtube-core";
+import { durationMs, listStreams, periodTotals, type StreamRow } from "@/lib/streams/store";
 import { totals } from "@/lib/streams/summary";
 
 /**
  * A streamer's opt-in public stats page: recent streams, the chat leaderboard and top emotes.
- * Only public, aggregate information; no tip amounts by name. YouTube viewer names are left out
- * (YouTube API data may not be republished like this).
+ * Only public, aggregate information; no tip amounts by name. Nothing from YouTube is shown
+ * (YouTube API data may not be republished like this): no YouTube channel, and every stream's
+ * totals, title and duration are computed without its YouTube part.
  */
+
+/** A stream without its YouTube part, timed by its other platforms; null if it was only on YouTube. */
+function withoutYouTube(stream: StreamRow): StreamRow | null {
+  if (!stream.summary.platforms.youtube) {
+    return stream;
+  }
+  const stripped = stripYouTubeFromSummary(stream.summary, stream.title);
+  if (stripped.empty) {
+    return null;
+  }
+  const others = Object.values(stripped.summary.platforms).filter((p) => p?.startedAt);
+  const starts = others.map((p) => Date.parse(p!.startedAt)).filter(Number.isFinite);
+  const ends = others.map((p) => (p!.endedAt ? Date.parse(p!.endedAt) : NaN)).filter(Number.isFinite);
+  const startedAt = starts.length ? new Date(Math.max(Date.parse(stream.startedAt), Math.min(...starts))).toISOString() : stream.startedAt;
+  const endedAt = stream.endedAt && ends.length ? new Date(Math.max(Date.parse(startedAt), Math.min(Date.parse(stream.endedAt), Math.max(...ends)))).toISOString() : stream.endedAt;
+  return { ...stream, title: stripped.title, summary: stripped.summary, startedAt, endedAt };
+}
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -39,7 +58,13 @@ async function load(slug: string) {
       .orderBy(desc(chatters.messages))
       .limit(20),
   ]);
-  return { name: channels.find((c) => c.platform === "twitch")?.displayName ?? user?.name ?? slug, channels, streams: streamRows.filter((s) => s.endedAt), leaders };
+  return {
+    name: channels.find((c) => c.platform === "twitch")?.displayName ?? user?.name ?? slug,
+    channels: channels.filter((c) => c.platform !== "youtube"),
+    hasYouTube: channels.some((c) => c.platform === "youtube"),
+    streams: streamRows.flatMap((s) => (s.endedAt ? (withoutYouTube(s) ?? []) : [])),
+    leaders,
+  };
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -160,7 +185,7 @@ export default async function PublicStatsPage({ params }: Params) {
           <Link href="/" className="underline hover:text-(--text)">
             Signal Kit
           </Link>
-          .
+          .{data.hasYouTube ? " YouTube statistics aren't shown on public pages." : null}
         </footer>
       </main>
     </div>

@@ -1,7 +1,7 @@
 import { ConnectButton, type ProviderId } from "@/components/AuthButtons";
 import { DisconnectButton, RoleToggle } from "@/components/dashboard/actions";
 import { ConnectionStatus } from "@/components/dashboard/ConnectionStatus";
-import { PLATFORM_NAME, PlatformTile } from "@/components/dashboard/PlatformLogo";
+import { channelUrl, PLATFORM_NAME, PlatformTile } from "@/components/dashboard/PlatformLogo";
 import { buttonClass, Muted, PageHeader, Row, Section } from "@/components/dashboard/ui";
 import type { Platform } from "@/db/schema";
 import { enabledProviders, loadConnections, requireDashboardUser } from "@/lib/dashboard";
@@ -45,7 +45,11 @@ export default async function ConnectionsPage({ searchParams }: { searchParams: 
         ) : null}
         {connections.map((connection) => (
           <Row key={connection.id} className="py-3">
-            <PlatformTile platform={connection.platform} />
+            <PlatformTile
+              platform={connection.platform}
+              href={channelUrl(connection.platform, connection.platformUserId)}
+              label={connection.platform === "youtube" ? `Open ${connection.displayName} on YouTube` : undefined}
+            />
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-[13px] font-medium text-(--text)">{connection.displayName}</span>
               <Muted>
@@ -69,7 +73,7 @@ export default async function ConnectionsPage({ searchParams }: { searchParams: 
               <ConnectionStatus connection={connection} />
             </div>
             <div className="flex w-52 shrink-0 items-center justify-end gap-1.5">
-              <DisconnectButton id={connection.id} name={connection.displayName} />
+              <DisconnectButton id={connection.id} name={connection.displayName} platform={connection.platform} />
               {connection.status !== "active" ? (
                 <ConnectButton provider={PROVIDER[connection.platform]} mode="link" role={connection.role} className={buttonClass("primary")}>
                   Reconnect
@@ -85,7 +89,11 @@ export default async function ConnectionsPage({ searchParams }: { searchParams: 
           const available = providers[PROVIDER[option.platform]];
           return (
             <Row key={option.title}>
-              <PlatformTile platform={option.platform} />
+              <PlatformTile
+                platform={option.platform}
+                href={option.platform === "youtube" ? "https://www.youtube.com" : undefined}
+                label={option.platform === "youtube" ? "YouTube" : undefined}
+              />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="text-[13px] font-medium text-(--text)">{option.title}</span>
                 <Muted>{option.description}</Muted>

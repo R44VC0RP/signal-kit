@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PLATFORM_NAME, PlatformLogo } from "@/components/dashboard/PlatformLogo";
+import { PLATFORM_NAME, PlatformSlot } from "@/components/dashboard/PlatformLogo";
 import { AutoRefresh } from "@/components/dashboard/streams/AutoRefresh";
 import { compact, TimelineChart } from "@/components/dashboard/streams/charts";
 import { Delta, formatDuration, formatTips, LiveDot, Stat, StatGrid } from "@/components/dashboard/streams/stats";
@@ -85,8 +85,8 @@ export default async function StreamPage({ params }: { params: Promise<{ id: str
           const s = stream.summary.platforms[platform] as PlatformStats;
           return (
             <div key={platform} className="grid min-h-14 grid-cols-[1fr_repeat(7,64px)] items-center gap-2 border-t border-(--line) py-2.5">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <PlatformLogo platform={platform} size={14} />
+              <div className="flex min-w-0 items-center gap-2">
+                <PlatformSlot platform={platform} size={14} />
                 <div className="flex min-w-0 flex-col">
                   <span className="text-[13px] font-medium text-(--text)">{PLATFORM_NAME[platform]}</span>
                   <span className="truncate text-[11px] text-(--text-3)">
@@ -119,7 +119,7 @@ export default async function StreamPage({ params }: { params: Promise<{ id: str
               const firstTime = chatter.firstSeenAt && chatter.firstSeenAt.getTime() >= start.getTime();
               return (
                 <Row key={`${chatter.platform}:${chatter.chatterId}`} className="min-h-11">
-                  <PlatformLogo platform={chatter.platform} size={13} />
+                  <PlatformSlot platform={chatter.platform} size={13} />
                   <span className="min-w-0 flex-1 truncate text-[13px] text-(--text)">{chatter.name}</span>
                   {firstTime ? <span className="rounded-[4px] bg-(--accent-soft) px-1.5 py-0.5 text-[11px] text-(--accent-text)">First stream</span> : null}
                   <span className="sk-mono w-20 text-right text-xs text-(--text-2)">{chatter.messages.toLocaleString("en")}</span>
@@ -136,7 +136,7 @@ export default async function StreamPage({ params }: { params: Promise<{ id: str
           ) : (
             supporters.map((s) => (
               <Row key={`${s.platform}:${s.name}`} className="min-h-11">
-                <PlatformLogo platform={s.platform} size={13} />
+                <PlatformSlot platform={s.platform} size={13} />
                 <span className="min-w-0 flex-1 truncate text-[13px] text-(--text)">{s.name}</span>
                 <span className="sk-mono text-right text-xs text-(--text-2)">
                   {[s.gifts ? `${s.gifts} gifted` : null, s.subs ? "sub" : null, s.bits ? `${s.bits.toLocaleString("en")} bits` : null, formatTips(s.tips) || null].filter(Boolean).join(" · ")}
@@ -170,7 +170,7 @@ export default async function StreamPage({ params }: { params: Promise<{ id: str
           moments.slice(0, 100).map((moment, index) => (
             <Row key={index} className="min-h-10">
               <span className="sk-mono w-16 shrink-0 text-xs text-(--text-3)">{at(moment.at)}</span>
-              <PlatformLogo platform={moment.platform} size={12} />
+              <PlatformSlot platform={moment.platform} size={12} />
               <span className="min-w-0 flex-1 truncate text-[13px] text-(--text-2)">
                 <span className="font-medium text-(--text)">{moment.name}</span>{" "}
                 {moment.kind === "tip" && moment.detail?.endsWith("bits") ? "cheered" : (KIND_LABEL[moment.kind] ?? moment.kind)}

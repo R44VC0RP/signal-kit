@@ -3,23 +3,29 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { MessagePart } from "@/lib/events/types";
 import type { EmoteWallSettings, GoalSettings, LabelSettings, TickerSettings } from "@/lib/overlays/settings";
-import { applyEvent, emptyStats, goalProgress, metricValue, publicStats, type PublicStats, type StatAmount, type StatPerson, type StreamStats } from "@/lib/overlays/stats-core";
+import { applyEvent, emptyStats, mergeYouTubeDays, metricValue, publicStats, type PublicStats, type StatAmount, type StatPerson, type StreamStats } from "@/lib/overlays/stats-core";
 import { alertKindOf, matchesAlert, shortAction } from "./describe";
 import type { OverlayEvent } from "./Overlays";
 
 /**
  * Stats-driven widgets (goal bar, label) and the motion widgets (ticker, emote wall).
  * Test events (from the customizer or "Send test") count on top of the real stats in this
- * browser only, so streamers can see a goal move without a real follow.
+ * browser only, so streamers can see a goal move without a real follow. Served stats already
+ * include YouTube support from the last 30 days in `total`; YouTube test events land in day
+ * buckets, which are merged into `total` here.
  */
 function useDisplayStats(stats: PublicStats | null, events: OverlayEvent[]) {
   return useMemo(() => {
     const display = structuredClone(stats ?? publicStats(emptyStats()));
+    const working = display as unknown as StreamStats;
+    working.youtubeDays = {};
     for (const event of events) {
       if (event.test) {
-        applyEvent(display as unknown as StreamStats, event);
+        applyEvent(working, event);
       }
     }
+    mergeYouTubeDays(working);
+    delete (working as Partial<StreamStats>).youtubeDays;
     return display;
   }, [stats, events]);
 }
@@ -47,11 +53,9 @@ export function GoalWidget({ settings: s, stats, events, overlayId }: { settings
   const display = useDisplayStats(stats, events);
   const now = useNow(60_000);
   const baseline = stats?.goals?.[overlayId];
-  // Without a stored start (the preview, or a goal that hasn't started yet) only test events count.
-  const counted =
-    baseline && baseline.metric === s.metric
-      ? goalProgress(display, overlayId)
-      : metricValue(display.total, s.metric, s.currency) - (stats ? metricValue(stats.total, s.metric, s.currency) : 0);
+  // Test events count on top; without a stored start (the preview, or a goal that hasn't started yet) only they count.
+  const tested = metricValue(display.total, s.metric, s.currency) - (stats ? metricValue(stats.total, s.metric, s.currency) : 0);
+  const counted = baseline && baseline.metric === s.metric ? (baseline.progress ?? 0) + tested : tested;
   const current = s.startValue + Math.max(0, counted);
   const percent = Math.min(100, Math.floor((current / Math.max(1, s.target)) * 100));
   const format = (value: number) => (s.metric === "tips" ? money(value, s.currency) : Math.floor(value).toLocaleString("en"));

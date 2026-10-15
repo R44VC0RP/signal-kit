@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
+import { PlatformSlot } from "@/components/dashboard/PlatformLogo";
 import { buttonClass } from "@/components/dashboard/ui";
 import type { SignalKitEvent } from "@/lib/events/types";
 import {
@@ -444,9 +444,7 @@ function PlatformToggles({ value, onChange }: { value: PlatformFilter; onChange:
     <div className="flex flex-col gap-2.5">
       {(["twitch", "youtube", "x"] as const).map((platform) => (
         <Toggle key={platform} label={platform === "x" ? "X" : platform === "youtube" ? "YouTube" : "Twitch"} checked={value[platform]} onChange={(checked) => onChange({ ...value, [platform]: checked })}>
-          <span className="flex w-4 justify-center">
-            <PlatformLogo platform={platform} size={14} />
-          </span>
+          <PlatformSlot platform={platform} size={14} />
         </Toggle>
       ))}
     </div>

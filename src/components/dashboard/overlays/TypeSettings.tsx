@@ -526,6 +526,7 @@ function GoalTypeSettings({ settings: s, update, overlayId }: { settings: GoalSe
           </button>
           <span className="text-xs leading-[18px] text-(--text-3)">Counts from now, plus “Start from”.</span>
         </div>
+        <p className="text-xs leading-[18px] text-(--text-3)">YouTube support counts toward the goal for 30 days, then drops out (YouTube API policy).</p>
       </Group>
       <Group title="Bar">
         <Field label="Layout">
@@ -599,7 +600,10 @@ function LabelTypeSettings({ settings: s, update }: { settings: LabelSettings; u
           <Slider value={s.scrollSpeed} min={10} max={300} step={10} format={(v) => `${v}px/s`} onChange={(scrollSpeed) => update({ ...s, scrollSpeed })} />
         </Field>
       ) : null}
-      <p className="text-xs leading-[18px] text-(--text-3)">Counts start when Signal Kit starts tracking; “today” restarts each time you go live.</p>
+      <p className="text-xs leading-[18px] text-(--text-3)">
+        Counts start when Signal Kit starts tracking; “today” restarts each time you go live. YouTube support and names count for 30 days
+        (YouTube API policy).
+      </p>
     </Group>
   );
 }

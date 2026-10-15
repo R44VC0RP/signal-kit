@@ -563,6 +563,13 @@
   color: #0a0a0a;
   background: #fff;
 }
+/* YouTube's icon is never rotated and needs a solid, contrasting background: no tilt and no
+   accent fill on a YouTube alert's tag. */
+[data-style="bold"] .sko-alert[data-platform="youtube"] .sko-alert-eyebrow {
+  color: #fff;
+  background: #0a0a0a;
+  rotate: none;
+}
 [data-style="bold"] .sko-avatar-alert {
   width: 6em;
   height: 6em;
@@ -626,8 +633,11 @@
 [data-style="bold"] .sko-chat-line[data-platform="twitch"] .sko-chat-meta {
   background: #9146ff;
 }
+/* Not YouTube red (the red icon would vanish on it) and not tilted (YouTube's icon is never rotated). */
 [data-style="bold"] .sko-chat-line[data-platform="youtube"] .sko-chat-meta {
-  background: #ff0033;
+  padding-left: 0.2em;
+  background: #0a0a0a;
+  rotate: none;
 }
 [data-style="bold"] .sko-chat-name {
   font-weight: 800;
@@ -849,6 +859,13 @@
 [data-style="classic"] .sko-chat-platform svg {
   width: 0.85em;
   height: 0.85em;
+}
+/* YouTube's icon keeps its own proportions and clear space (the whole official artboard, 1.167:1)
+   and its red shape never drops below 20px (the artboard is 1.857 × the red shape's height). */
+[data-style="classic"] .sko-chat-platform svg[aria-label="YouTube"] {
+  width: auto;
+  height: max(37.14px, calc(0.85em * 1.8571));
+  aspect-ratio: 602.187 / 515.868;
 }
 [data-style="classic"] .sko-badge-img {
   width: 1em;
@@ -1720,4 +1737,11 @@
   font-size: 0.7em;
   color: var(--sko-bar);
   animation-duration: 0.4s;
+}
+
+/* Overlays shown scaled down inside a page (the homepage showcase) would draw YouTube's icon below
+   its 20px minimum, so they leave it out (wrapper included) rather than shrink it. */
+.sko-scaled-preview svg[aria-label="YouTube"],
+.sko-scaled-preview :is(.sko-chat-platform, .sko-list-platform):has(> svg[aria-label="YouTube"]) {
+  display: none;
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 export const CONTACT_EMAIL = "signal@ryan.ceo";
-export const LEGAL_UPDATED = "October 13, 2026";
+export const LEGAL_UPDATED = "October 16, 2026";
 
 export function LegalPage({ title, children }: { title: string; children: ReactNode }) {
   return (

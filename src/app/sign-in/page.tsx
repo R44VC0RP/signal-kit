@@ -21,6 +21,12 @@ const OPTIONS: { platform: Platform; provider: ProviderId; label: string }[] = [
   { platform: "x", provider: "twitter", label: "Continue with X" },
 ];
 
+/**
+ * No grain texture on these: YouTube's icon must sit on a single solid colour. The logo slot is
+ * as wide as YouTube's icon with its clear space (43px), so the labels line up.
+ */
+const SIGN_IN_BUTTON = buttonClass("control", "lg").replace("sk-grain ", "");
+
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await getCurrentUser().catch((error) => {
     // Let Next's own signals through. Swallowing the "needs request cookies" signal made
@@ -56,9 +62,9 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
 
         <div className="flex flex-col gap-2">
           {OPTIONS.filter((option) => providers[option.provider]).map((option) => (
-            <ConnectButton key={option.provider} provider={option.provider} mode="signin" wrapperClassName="flex flex-col gap-1" className={`${buttonClass("control", "lg")} w-full`}>
-              <span className="flex w-4.5 justify-center">
-                <PlatformLogo platform={option.platform} />
+            <ConnectButton key={option.provider} provider={option.provider} mode="signin" wrapperClassName="flex flex-col gap-1" className={`${SIGN_IN_BUTTON} w-full`}>
+              <span className="flex w-11 justify-center">
+                <PlatformLogo platform={option.platform} size={option.platform === "x" ? 18 : 20} />
               </span>
               {option.label}
             </ConnectButton>

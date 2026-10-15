@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
+import { PlatformSlot } from "@/components/dashboard/PlatformLogo";
 import { buttonClass } from "@/components/dashboard/ui";
 import { CopyIconButton } from "@/components/home/CopyIconButton";
 import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
@@ -137,10 +137,8 @@ export default function DevelopersPage() {
                   </span>
                 </div>
                 {OUTPUT.map((row) => (
-                  <div key={row.name} className="sk-mono flex h-6 items-center gap-5 text-[11px] sm:text-xs">
-                    <span className="flex w-4 shrink-0 justify-center">
-                      <PlatformLogo platform={row.platform} size={12} />
-                    </span>
+                  <div key={row.name} className="sk-mono flex h-10 items-center gap-3 text-[11px] sm:text-xs">
+                    <PlatformSlot platform={row.platform} size={16} />
                     <span className="truncate">
                       <span className="text-(--text)">{row.name}</span> <span className="text-(--text-2)">{row.rest}</span>
                     </span>
@@ -157,10 +155,8 @@ export default function DevelopersPage() {
             <Panel className="grid sm:grid-cols-2">
               {EXAMPLES.map((example, index) => (
                 <div key={example.platform} className={index > 0 ? "border-t border-(--line) sm:border-t-0 sm:border-l" : ""}>
-                  <div className="flex h-10 items-center gap-2.5 border-b border-(--line) px-5">
-                    <span className="flex w-4 justify-center">
-                      <PlatformLogo platform={example.platform} size={13} />
-                    </span>
+                  <div className="flex h-10 items-center gap-1.5 border-b border-(--line) px-3.5">
+                    <PlatformSlot platform={example.platform} size={16} />
                     <span className="text-[13px] font-medium text-(--text)">{example.label}</span>
                   </div>
                   <pre className="sk-mono overflow-x-auto pt-4 pb-4.5 text-[11px] leading-[22px] text-(--text-2) sm:text-xs">
@@ -235,12 +231,10 @@ export default function DevelopersPage() {
 }
 
 function PlatformItem({ platform, name, children }: { platform: Platform; name: string; children?: ReactNode }) {
-  const size = { twitch: 15, youtube: 16, x: 15 }[platform];
+  const size = { twitch: 20, youtube: 20, x: 18 }[platform];
   return (
-    <li className="flex items-center gap-2">
-      <span className="flex size-4.5 items-center justify-center">
-        <PlatformLogo platform={platform} size={size} />
-      </span>
+    <li className="flex items-center gap-1">
+      <PlatformSlot platform={platform} size={size} />
       <span className="text-[13px] leading-4 font-medium text-(--text-2)">{name}</span>
       {children}
     </li>

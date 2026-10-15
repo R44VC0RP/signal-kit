@@ -8,7 +8,8 @@ import { notifyLive, notifyRecap } from "@/lib/notify/discord";
 import { helixApp } from "@/lib/twitch/helix-app";
 import { relayHub } from "@/lib/ws/relay";
 import { getLiveStreamingDetails } from "@/lib/youtube/api";
-import { pruneYouTubeData } from "./retention";
+import { startYouTubeRetention } from "@/lib/retention/youtube";
+import { stripYouTubeFromSummary } from "@/lib/retention/youtube-core";
 import { countEmotes, countEvent, emptyPlatform, emptySummary, minute, sampleViewers, trimSupporters, type LiveSnapshot, type StreamSummary } from "./summary";
 
 /**
@@ -64,10 +65,8 @@ class StreamTracker {
     setInterval(() => void this.flushAll(), FLUSH_EVERY_MS);
     setInterval(() => void this.poll(), POLL_EVERY_MS);
     setTimeout(() => void this.poll(), 5000);
-    // YouTube data retention (30 days), daily.
-    const prune = () => void pruneYouTubeData().catch((error) => console.error("[streams] YouTube retention failed", error));
-    setTimeout(prune, 60_000);
-    setInterval(prune, 24 * 60 * 60 * 1000);
+    // YouTube data retention: delete YouTube data older than 30 days, hourly.
+    startYouTubeRetention();
   }
 
   /** The user's live stream, if any (for the dashboard). */
@@ -140,7 +139,10 @@ class StreamTracker {
           point.m[platform] = (point.m[platform] ?? 0) + 1;
         }
         this.countChatter(stream, platform, event);
-        countEmotes(stream.summary, event.messageParts);
+        // Emote counts are kept with the stream for good, so they only come from non-YouTube chat.
+        if (platform !== "youtube") {
+          countEmotes(stream.summary, event.messageParts);
+        }
         stream.dirty = true;
         return;
       }
@@ -157,6 +159,77 @@ class StreamTracker {
 
   platformOffline(userId: string, platform: Platform) {
     return this.serial(userId, () => this.platformEnded(userId, platform, new Date())).catch((error) => console.error("[streams] offline failed", error));
+  }
+
+  /**
+   * YouTube was disconnected or its access revoked: removes every YouTube part from the user's
+   * live stream in memory (stats, timeline, supporters, highlights, unsaved chatters), so the
+   * next save can't write it back. A stream that was only on YouTube is forgotten; the
+   * retention purge deletes its row. Returns the live stream's id if it was forgotten.
+   */
+  dropYouTube(userId: string) {
+    return this.serial(userId, async () => {
+      const stream = this.active.get(userId);
+      if (!stream) {
+        return null;
+      }
+      const stripped = stripYouTubeFromSummary(stream.summary, stream.title);
+      stream.seen.delete("youtube");
+      delete stream.misses.youtube;
+      delete stream.activity.youtube;
+      for (const [key, entry] of stream.pending) {
+        if (entry.platform === "youtube") {
+          stream.pending.delete(key);
+        }
+      }
+      if (stripped.empty) {
+        this.active.delete(userId);
+        this.publishSnapshot(userId);
+        return stream.id;
+      }
+      if (stripped.changed) {
+        stream.summary = stripped.summary;
+        stream.title = stripped.title;
+        await this.save(stream);
+        if (!Object.values(stream.summary.platforms).some((p) => p?.live)) {
+          await this.finish(stream, new Date());
+        } else {
+          this.publishSnapshot(userId);
+        }
+      }
+      return null;
+    });
+  }
+
+  /**
+   * Retention: the user's live stream `streamId` started more than 30 days ago, so its YouTube
+   * part (stream-wide totals that reach back past 30 days) must go. Strips it in memory and saves,
+   * so the next save can't write it back. YouTube stays live in the stream with fresh, empty
+   * stats; each hourly run strips again until the stream ends and the purge marks it.
+   * Returns whether `streamId` is the live stream (then the caller leaves the row alone).
+   */
+  stripOldYouTube(userId: string, streamId: string) {
+    return this.serial(userId, async () => {
+      const stream = this.active.get(userId);
+      if (stream?.id !== streamId) {
+        return false;
+      }
+      const youtube = stream.summary.platforms.youtube;
+      const stripped = stripYouTubeFromSummary(stream.summary, stream.title);
+      stream.seen.delete("youtube");
+      for (const [key, entry] of stream.pending) {
+        if (entry.platform === "youtube") {
+          stream.pending.delete(key);
+        }
+      }
+      if (youtube?.live) {
+        (stripped.summary.platforms as StreamSummary["platforms"]).youtube = { ...emptyPlatform(youtube.connectionId, new Date().toISOString()), broadcastId: youtube.broadcastId };
+      }
+      stream.summary = stripped.summary;
+      stream.title = stripped.title;
+      await this.save(stream);
+      return true;
+    });
   }
 
   // ---- Lifecycle ----------------------------------------------------------------------------
@@ -249,7 +322,10 @@ class StreamTracker {
       return null;
     }
     await getDb().update(streams).set({ endedAt: null }).where(eq(streams.id, row.id));
-    return this.hydrate(row);
+    const stream = await this.hydrate(row);
+    // YouTube retention marks streams it purged; a resumed one may gather YouTube data again, so it must be purged again.
+    delete stream.summary.youtubePurgedAt;
+    return stream;
   }
 
   /** After a restart: pick up streams that were live, or close ones that went quiet meanwhile. */
@@ -439,8 +515,9 @@ class StreamTracker {
         const { accessToken } = await getConnectionAccessToken(stats.connectionId);
         const details = await getLiveStreamingDetails(accessToken, stats.broadcastId);
         await this.serial(stream.userId, async () => {
+          // End it when Signal Kit noticed, not at YouTube's actualEndTime: no YouTube timestamp is stored with the stream.
           if (details?.actualEndTime) {
-            await this.platformEnded(stream.userId, "youtube", new Date(details.actualEndTime));
+            await this.platformEnded(stream.userId, "youtube", new Date());
             return;
           }
           const viewers = Number(details?.concurrentViewers);

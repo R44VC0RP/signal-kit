@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { liveTools } from "@/db/schema";
 import type { SignalKitEvent } from "@/lib/events/types";
+import { isExpired } from "@/lib/retention/youtube-core";
 import { relayHub } from "@/lib/ws/relay";
 import { emptyLiveTools, parseVote, type Highlight, type Participant, type PublicLiveTools } from "./types";
 
@@ -11,6 +12,10 @@ import { emptyLiveTools, parseVote, type Highlight, type Participant, type Publi
  * connected platform at once (viewers type "1", "!enter" or "!join" on Twitch, YouTube or X).
  * Only reads chat, so it needs no extra permissions. State is stored per user and pushed to
  * overlays; bursts of votes are batched into one push per 300 ms.
+ *
+ * YouTube retention (30 days, see lib/retention/youtube-core.ts): a poll or giveaway that started
+ * more than 30 days ago is cleared (its votes and entrants are at most that old otherwise), and
+ * YouTube queue entries and a pinned YouTube message go 30 days after they were added.
  */
 
 type State = {
@@ -27,6 +32,57 @@ const MAX_QUEUE = 200;
 function emptyState(): State {
   const empty = emptyLiveTools();
   return { poll: null, giveaway: null, queue: empty.queue, highlight: null };
+}
+
+/**
+ * Deletes YouTube data older than 30 days, in place. With `all` (YouTube disconnected or access
+ * revoked) it deletes every YouTube vote, entrant, winner, queue entry and pin instead, whatever
+ * its age. Returns whether anything changed.
+ */
+export function pruneLiveTools(state: State, now = Date.now(), all = false) {
+  let changed = false;
+  if (all) {
+    const isYouTube = (entry: { platform: string }) => entry.platform === "youtube";
+    if (state.poll) {
+      const votes = Object.fromEntries(Object.entries(state.poll.votes).filter(([key]) => !key.startsWith("youtube:")));
+      if (Object.keys(votes).length !== Object.keys(state.poll.votes).length) {
+        state.poll = { ...state.poll, votes };
+        changed = true;
+      }
+    }
+    if (state.giveaway) {
+      const entrants = state.giveaway.entrants.filter((entry) => !isYouTube(entry));
+      const winners = state.giveaway.winners.filter((entry) => !isYouTube(entry));
+      if (entrants.length !== state.giveaway.entrants.length || winners.length !== state.giveaway.winners.length) {
+        state.giveaway = { ...state.giveaway, entrants, winners };
+        changed = true;
+      }
+    }
+  } else {
+    if (state.poll && isExpired(state.poll.startedAt, now)) {
+      state.poll = null;
+      changed = true;
+    }
+    if (state.giveaway && isExpired(state.giveaway.startedAt, now)) {
+      state.giveaway = null;
+      changed = true;
+    }
+  }
+  const old = (entry: { platform: string; at?: string } | null | undefined) => Boolean(entry && entry.platform === "youtube" && (all || isExpired(entry.at, now)));
+  const entries = state.queue.entries.filter((entry) => !old(entry));
+  if (entries.length !== state.queue.entries.length) {
+    state.queue = { ...state.queue, entries };
+    changed = true;
+  }
+  if (old(state.queue.current)) {
+    state.queue = { ...state.queue, current: null };
+    changed = true;
+  }
+  if (old(state.highlight)) {
+    state.highlight = null;
+    changed = true;
+  }
+  return changed;
 }
 
 export function publicTools(state: State): PublicLiveTools {
@@ -63,13 +119,39 @@ class LiveTools {
     }
     const [row] = await getDb().select({ state: liveTools.state }).from(liveTools).where(eq(liveTools.userId, userId)).limit(1);
     const state = { ...emptyState(), ...((row?.state ?? {}) as Partial<State>) };
+    pruneLiveTools(state);
     this.cache.set(userId, state);
     this.schedulePollEnd(userId, state);
     return state;
   }
 
+  /**
+   * Retention job: deletes YouTube data older than 30 days from the stored state (with `all`,
+   * every YouTube part). Returns whether it changed.
+   */
+  purgeYouTube(userId: string, all = false) {
+    return this.serial(userId, async () => {
+      const [row] = await getDb().select({ state: liveTools.state }).from(liveTools).where(eq(liveTools.userId, userId)).limit(1);
+      const stored = { ...emptyState(), ...((row?.state ?? {}) as Partial<State>) };
+      const cached = this.cache.get(userId);
+      const now = Date.now();
+      const storedChanged = pruneLiveTools(stored, now, all);
+      const cachedChanged = cached ? pruneLiveTools(cached, now, all) : false;
+      if (!storedChanged && !cachedChanged) {
+        return false;
+      }
+      if (!cached) {
+        this.cache.set(userId, stored);
+      }
+      this.changed(userId, true);
+      return true;
+    });
+  }
+
   async snapshot(userId: string) {
-    return publicTools(await this.get(userId));
+    const state = await this.get(userId);
+    pruneLiveTools(state);
+    return publicTools(state);
   }
 
   /** Chat on any platform: votes, giveaway entries and queue joins. */

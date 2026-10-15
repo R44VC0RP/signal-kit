@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
+import { PlatformLogo, PlatformSlot } from "@/components/dashboard/PlatformLogo";
 import { AutoRefresh } from "@/components/dashboard/streams/AutoRefresh";
 import { compact, StreamsTrend } from "@/components/dashboard/streams/charts";
-import { Delta, Stat, StatGrid, formatDuration, formatTips, LiveDot } from "@/components/dashboard/streams/stats";
+import { Stat, StatGrid, formatDuration, formatTips, LiveDot } from "@/components/dashboard/streams/stats";
 import { Muted, PageHeader, Row, Section } from "@/components/dashboard/ui";
 import type { Platform } from "@/db/schema";
 import { requireDashboardUser } from "@/lib/dashboard";
@@ -16,12 +16,7 @@ export default async function StreamsPage() {
   const [streams, regularChatters] = await Promise.all([listStreams(user.id, 120), regulars(user.id, 10)]);
   const now = new Date().getTime();
   const last30 = streams.filter((stream) => now - Date.parse(stream.startedAt) < 30 * DAY);
-  const prev30 = streams.filter((stream) => {
-    const age = now - Date.parse(stream.startedAt);
-    return age >= 30 * DAY && age < 60 * DAY;
-  });
   const current = periodTotals(last30, now);
-  const previous = periodTotals(prev30, now);
   const live = streams.find((stream) => !stream.endedAt);
   const perStream = (value: number, count: number) => (count ? Math.round(value / count) : 0);
 
@@ -41,26 +36,23 @@ export default async function StreamsPage() {
         </Section>
       ) : (
         <>
-          <Section title="Last 30 days" aside={<Muted>Compared with the 30 days before</Muted>}>
+          <Section title="Last 30 days">
             <StatGrid>
-              <Stat label="Streams" value={String(current.streams)} delta={<Delta now={current.streams} before={previous.streams} />} />
-              <Stat label="Hours live" value={current.hours.toFixed(1)} delta={<Delta now={current.hours} before={previous.hours} />} />
-              <Stat label="Average viewers" value={compact(current.avgViewers)} delta={<Delta now={current.avgViewers} before={previous.avgViewers} />} />
-              <Stat label="Peak viewers" value={compact(current.peakViewers)} delta={<Delta now={current.peakViewers} before={previous.peakViewers} />} />
-              <Stat
-                label="Chatters per stream"
-                value={compact(perStream(current.chatters, current.streams))}
-                delta={<Delta now={perStream(current.chatters, current.streams)} before={perStream(previous.chatters, previous.streams)} />}
-              />
-              <Stat label="New chatters" value={compact(current.newChatters)} delta={<Delta now={current.newChatters} before={previous.newChatters} />} />
-              <Stat label="New followers" value={compact(current.follows)} delta={<Delta now={current.follows} before={previous.follows} />} />
-              <Stat label="Subs" value={compact(current.subs)} delta={<Delta now={current.subs} before={previous.subs} />} />
+              <Stat label="Streams" value={String(current.streams)} />
+              <Stat label="Hours live" value={current.hours.toFixed(1)} />
+              <Stat label="Average viewers" value={compact(current.avgViewers)} />
+              <Stat label="Peak viewers" value={compact(current.peakViewers)} />
+              <Stat label="Chatters per stream" value={compact(perStream(current.chatters, current.streams))} />
+              <Stat label="New chatters" value={compact(current.newChatters)} />
+              <Stat label="New followers" value={compact(current.follows)} />
+              <Stat label="Subs" value={compact(current.subs)} />
             </StatGrid>
             {current.bits > 0 || Object.keys(current.tips).length > 0 ? (
               <p className="border-t border-(--line) pt-3 text-xs text-(--text-3)">
                 Support: {[current.bits ? `${current.bits.toLocaleString("en")} bits` : null, formatTips(current.tips)].filter(Boolean).join(" · ")}
               </p>
             ) : null}
+            <p className="border-t border-(--line) pt-3 text-xs text-(--text-3)">YouTube statistics and viewer names are kept for 30 days, then deleted (YouTube API policy).</p>
           </Section>
 
           {streams.length > 1 ? (
@@ -94,7 +86,8 @@ export default async function StreamsPage() {
                       </div>
                       <div className="flex min-w-0 flex-col gap-1">
                         <span className="truncate text-[13px] text-(--text-2)">{stream.title ?? "Untitled stream"}</span>
-                        <span className="flex items-center gap-1.5">
+                        {/* Left-aligned with the title; YouTube's clear space is inside its own box. */}
+                        <span className="flex items-center gap-2">
                           {platforms.map((p) => (
                             <PlatformLogo key={p} platform={p} size={12} />
                           ))}
@@ -116,7 +109,7 @@ export default async function StreamsPage() {
             <Section title="Your regulars" aside={<Muted>Chatted in the most streams</Muted>}>
               {regularChatters.map((chatter) => (
                 <Row key={`${chatter.platform}:${chatter.name}`} className="min-h-11">
-                  <PlatformLogo platform={chatter.platform} size={13} />
+                  <PlatformSlot platform={chatter.platform} size={13} />
                   <span className="flex-1 truncate text-[13px] text-(--text)">{chatter.name}</span>
                   <span className="sk-mono w-28 text-right text-xs text-(--text-2)">{chatter.streams === 1 ? "1 stream" : `${chatter.streams} streams`}</span>
                   <span className="sk-mono w-28 text-right text-xs text-(--text-3)">{chatter.messages.toLocaleString("en")} messages</span>

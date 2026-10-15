@@ -1,6 +1,7 @@
-import { and, desc, eq, gte, lt } from "drizzle-orm";
+import { and, desc, eq, gte, lt, ne, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { chatters, streamChatters, streams } from "@/db/schema";
+import { isExpired, stripYouTubeFromSummary, youtubeCutoff } from "@/lib/retention/youtube-core";
 import { totals, type CreditsData, type StreamSummary } from "./summary";
 
 /** Reads for the Streams dashboard (and, later, recap emails). */
@@ -13,13 +14,17 @@ export type StreamRow = {
   summary: StreamSummary;
 };
 
-const toRow = (row: typeof streams.$inferSelect): StreamRow => ({
-  id: row.id,
-  startedAt: row.startedAt.toISOString(),
-  endedAt: row.endedAt?.toISOString() ?? null,
-  title: row.title,
-  summary: row.summary,
-});
+/**
+ * YouTube parts of streams older than 30 days are deleted hourly (lib/retention/youtube.ts);
+ * this strips them on read as well, so they can never be shown even if that job lags.
+ */
+const toRow = (row: typeof streams.$inferSelect): StreamRow => {
+  let { title, summary } = row;
+  if (isExpired(row.startedAt) && !summary.youtubePurgedAt) {
+    ({ title, summary } = stripYouTubeFromSummary(summary, title));
+  }
+  return { id: row.id, startedAt: row.startedAt.toISOString(), endedAt: row.endedAt?.toISOString() ?? null, title, summary };
+};
 
 export async function listStreams(userId: string, limit = 60) {
   const rows = await getDb().select().from(streams).where(eq(streams.userId, userId)).orderBy(desc(streams.startedAt)).limit(limit);
@@ -48,6 +53,9 @@ export async function previousStream(userId: string, before: string) {
 
 /** Most active chatters in a stream, with whether it was their first stream with you. */
 export async function topChatters(userId: string, streamId: string, limit = 20) {
+  const [stream] = await getDb().select({ startedAt: streams.startedAt }).from(streams).where(eq(streams.id, streamId)).limit(1);
+  // YouTube chatters of streams older than 30 days are deleted; never show them meanwhile.
+  const youtubeExpired = !stream || isExpired(stream.startedAt);
   const rows = await getDb()
     .select({
       platform: streamChatters.platform,
@@ -59,18 +67,18 @@ export async function topChatters(userId: string, streamId: string, limit = 20) 
     })
     .from(streamChatters)
     .leftJoin(chatters, and(eq(chatters.userId, userId), eq(chatters.platform, streamChatters.platform), eq(chatters.chatterId, streamChatters.chatterId)))
-    .where(eq(streamChatters.streamId, streamId))
+    .where(and(eq(streamChatters.streamId, streamId), youtubeExpired ? ne(streamChatters.platform, "youtube") : undefined))
     .orderBy(desc(streamChatters.messages))
     .limit(limit);
   return rows;
 }
 
-/** Your regulars: who has chatted in the most streams. */
+/** Your regulars: who has chatted in the most streams (YouTube: in the last 30 days only). */
 export async function regulars(userId: string, limit = 10) {
   return getDb()
     .select({ platform: chatters.platform, name: chatters.name, messages: chatters.messages, streams: chatters.streams, lastSeenAt: chatters.lastSeenAt })
     .from(chatters)
-    .where(eq(chatters.userId, userId))
+    .where(and(eq(chatters.userId, userId), or(ne(chatters.platform, "youtube"), gte(chatters.firstSeenAt, new Date(youtubeCutoff())))))
     .orderBy(desc(chatters.streams), desc(chatters.messages))
     .limit(limit);
 }

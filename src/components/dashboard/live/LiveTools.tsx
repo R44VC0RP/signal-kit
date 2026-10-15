@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
+import { PlatformSlot } from "@/components/dashboard/PlatformLogo";
 import { buttonClass, Muted, Section } from "@/components/dashboard/ui";
 import type { EventPlatform } from "@/lib/events/types";
 import { emptyLiveTools, wheelResult, wheelSegments, type PublicLiveTools } from "@/lib/live/types";
@@ -167,7 +167,7 @@ function GiveawayPanel({ tools, act }: { tools: PublicLiveTools; act: Act }) {
                 {[...giveaway.winners].reverse().map((winner, index) => (
                   <div key={`${winner.key}${winner.at}`} className="flex items-center gap-2 text-[13px]">
                     <span className="text-xs text-(--text-3)">{index === 0 ? "Winner" : "Earlier"}</span>
-                    <PlatformLogo platform={winner.platform} size={13} />
+                    <PlatformSlot platform={winner.platform} size={13} />
                     <span className={index === 0 ? "font-semibold text-(--text)" : "text-(--text-2)"}>{winner.name}</span>
                   </div>
                 ))}
@@ -217,14 +217,14 @@ function QueuePanel({ tools, act }: { tools: PublicLiveTools; act: Act }) {
         {queue.current ? (
           <div className="flex items-center gap-2 rounded-(--r) bg-(--accent-soft) px-2.5 py-2 text-[13px]">
             <span className="text-xs text-(--accent-text)">Now</span>
-            <PlatformLogo platform={queue.current.platform} size={13} />
+            <PlatformSlot platform={queue.current.platform} size={13} />
             <span className="flex-1 font-medium text-(--text)">{queue.current.name}</span>
           </div>
         ) : null}
         {queue.entries.slice(0, 12).map((entry, index) => (
           <div key={entry.key} className="flex items-center gap-2 text-[13px]">
             <span className="sk-mono w-5 text-xs text-(--text-3)">{index + 1}</span>
-            <PlatformLogo platform={entry.platform} size={13} />
+            <PlatformSlot platform={entry.platform} size={13} />
             <span className="flex-1 truncate text-(--text-2)">{entry.name}</span>
             <button type="button" className={`${buttonClass("quiet")} h-6 px-2 text-xs`} onClick={() => void act("queue.remove", { key: entry.key })}>
               Remove
@@ -254,7 +254,7 @@ function ChatPanel({ tools, chat, act }: { tools: PublicLiveTools; chat: ChatLin
       <div className="flex flex-col gap-3 border-t border-(--line) pt-4">
         {tools.highlight ? (
           <div className="flex items-center gap-2 rounded-(--r) bg-(--accent-soft) px-2.5 py-2 text-[13px]">
-            <PlatformLogo platform={tools.highlight.platform} size={13} />
+            <PlatformSlot platform={tools.highlight.platform} size={13} />
             <span className="min-w-0 flex-1 truncate text-(--text)">
               <span className="font-semibold">{tools.highlight.name}</span> {tools.highlight.message}
             </span>
@@ -267,7 +267,7 @@ function ChatPanel({ tools, chat, act }: { tools: PublicLiveTools; chat: ChatLin
           {chat.length === 0 ? <Muted>Chat messages from the last 24 hours show up here.</Muted> : null}
           {[...chat].reverse().map((line) => (
             <div key={line.id} className="group flex min-h-9 items-center gap-2 border-t border-(--line) text-[13px] first:border-t-0">
-              <PlatformLogo platform={line.platform} size={12} />
+              <PlatformSlot platform={line.platform} size={12} />
               <span className="min-w-0 flex-1 truncate text-(--text-2)">
                 <span className="font-medium text-(--text)">{line.name}</span> {line.message}
               </span>

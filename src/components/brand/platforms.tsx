@@ -24,16 +24,39 @@ export function TwitchGlitch({ height = 16, mono = false }: { height?: number; m
   );
 }
 
-/** YouTube icon, official geometry cropped to the mark (about 1.43:1). Renders `width` wide. */
-export function YouTubeIcon({ width = 18, mono = false }: { width?: number; mono?: boolean }) {
+/** Official artboard of the YouTube icon (yt_icon_red_from_ai.svg) and the red shape inside it. */
+const YT_ARTBOARD_W = 602.187;
+const YT_ARTBOARD_H = 515.868;
+const YT_ICON_H = 277.78;
+/** YouTube's brand rules: the icon (the red shape) is never shown smaller than 20px tall. */
+export const YOUTUBE_MIN_ICON_HEIGHT = 20;
+/** Height of the whole artboard (icon plus its clear space) per pixel of icon height. */
+export const YOUTUBE_BOX_RATIO = YT_ARTBOARD_H / YT_ICON_H;
+const YT_PATH =
+  "M0 0 102.827 59.668 0 119.046ZM-115.28-70.965C-132.37-66.33-145.694-52.717-150.618-35.917-158.728-4.924-158.728 59.668-158.728 59.668-158.728 59.668-158.728 124.26-150.618 154.963-145.694 172.052-132.37 185.377-115.28 190.011-84.577 198.411 39.393 198.411 39.393 198.411 39.393 198.411 163.653 198.411 194.357 190.011 211.736 185.377 224.77 172.052 229.405 154.963 237.804 124.26 237.804 59.668 237.804 59.668 237.804 59.668 237.804-4.924 229.405-35.917 224.77-52.717 211.736-66.33 194.357-70.965 163.653-79.365 39.393-79.365 39.393-79.365 39.393-79.365-84.577-79.365-115.28-70.965";
+
+/**
+ * YouTube icon, unmodified: the official artboard (same paths and viewBox), so the brand's clear
+ * space (the play triangle's width left/right, its height top/bottom) is part of the element's
+ * box and nothing can sit inside it. `height` is the height of the red shape, clamped to YouTube's
+ * 20px minimum; the element is height × 2.17 wide and height × 1.86 tall (20 → 43.4 × 37.1 px).
+ * Only full colour: never recolour, fade, filter, rotate or stretch it. CSS that resizes it (the
+ * Classic chat overlay, in em) must keep its aspect ratio and the same 20px minimum.
+ */
+export function YouTubeIcon({ height = YOUTUBE_MIN_ICON_HEIGHT }: { height?: number }) {
+  const icon = Math.max(YOUTUBE_MIN_ICON_HEIGHT, height);
+  const scale = icon / YT_ICON_H;
   return (
-    <svg width={width} height={width / 1.4275} viewBox="102.83 119.05 396.53 277.78" role="img" aria-label="YouTube" style={{ flexShrink: 0 }}>
-      <path
-        transform="matrix(1,0,0,-1,261.5556,317.45698)"
-        fill={mono ? "currentColor" : YOUTUBE_RED}
-        d="M0 0 102.827 59.668 0 119.046ZM-115.28-70.965C-132.37-66.33-145.694-52.717-150.618-35.917-158.728-4.924-158.728 59.668-158.728 59.668-158.728 59.668-158.728 124.26-150.618 154.963-145.694 172.052-132.37 185.377-115.28 190.011-84.577 198.411 39.393 198.411 39.393 198.411 39.393 198.411 163.653 198.411 194.357 190.011 211.736 185.377 224.77 172.052 229.405 154.963 237.804 124.26 237.804 59.668 237.804 59.668 237.804 59.668 237.804-4.924 229.405-35.917 224.77-52.717 211.736-66.33 194.357-70.965 163.653-79.365 39.393-79.365 39.393-79.365 39.393-79.365-84.577-79.365-115.28-70.965"
-      />
-      {mono ? null : <path transform="matrix(1,0,0,-1,261.5556,317.45698)" fill="#FFFFFF" d="M0 0 102.827 59.668 0 119.046Z" />}
+    <svg
+      width={Math.round(YT_ARTBOARD_W * scale * 100) / 100}
+      height={Math.round(YT_ARTBOARD_H * scale * 100) / 100}
+      viewBox={`0 0 ${YT_ARTBOARD_W} ${YT_ARTBOARD_H}`}
+      role="img"
+      aria-label="YouTube"
+      style={{ flexShrink: 0, verticalAlign: "middle" }}
+    >
+      <path transform="matrix(1,0,0,-1,261.5556,317.45698)" fill={YOUTUBE_RED} d={YT_PATH} />
+      <path transform="matrix(1,0,0,-1,261.5556,317.45698)" fill="#FFFFFF" d="M0 0 102.827 59.668 0 119.046Z" />
     </svg>
   );
 }

@@ -14,14 +14,18 @@ function useCalmSettings() {
       alerts: { ...alerts, durationSec: 5, gapSec: 1, sound: false, titleSize: 56, imageSize: 240 },
       chat: { ...defaultSettings("chat"), maxMessages: 9, fontSize: 21, showTips: false, showSubs: false },
       goal: { ...defaultSettings("goal"), title: "Follower goal", target: 50, startValue: 37 },
-      viewers: { ...defaultSettings("viewers"), mode: "split" as const, label: "", fontSize: 26, align: "left" as const },
+      // One total, not a count per platform: the stage hides YouTube's icon (see Stage).
+      viewers: { ...defaultSettings("viewers"), mode: "total" as const, label: "watching", fontSize: 26, align: "left" as const },
       poll: { ...defaultSettings("poll"), fontSize: 22 },
       highlight: { ...defaultSettings("highlight"), fontSize: 26 },
     } satisfies Partial<Record<OverlayType, AnySettings>>;
   }, []);
 }
 
-/** A 1920×1080 stage scaled to its container's width. */
+/**
+ * A 1920×1080 stage scaled to its container's width. Scaled down, the overlays' YouTube icon would
+ * fall below YouTube's 20px minimum, so the stage hides it (sko-scaled-preview in overlay.css).
+ */
 function Stage({ children, label }: { children: ReactNode; label: string }) {
   const frame = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.5);
@@ -36,7 +40,7 @@ function Stage({ children, label }: { children: ReactNode; label: string }) {
   }, []);
   return (
     <div ref={frame} className="relative aspect-video w-full overflow-hidden rounded-xl border border-(--line) bg-black" aria-label={label}>
-      <div className="absolute top-0 left-0 h-[1080px] w-[1920px] origin-top-left" style={{ transform: `scale(${scale})` }}>
+      <div className="sko-scaled-preview absolute top-0 left-0 h-[1080px] w-[1920px] origin-top-left" style={{ transform: `scale(${scale})` }}>
         {children}
       </div>
     </div>

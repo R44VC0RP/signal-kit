@@ -24,7 +24,9 @@ export default function TermsPage() {
         Signal Kit uses the Twitch, YouTube and X APIs. Your use of those platforms remains subject to their terms, including the{" "}
         <a href="https://www.twitch.tv/p/legal/terms-of-service/">Twitch Terms of Service</a>, the{" "}
         <a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a> and the{" "}
-        <a href="https://x.com/en/tos">X Terms of Service</a>.
+        <a href="https://x.com/en/tos">X Terms of Service</a>. Signal Kit uses YouTube API Services: by connecting a YouTube channel
+        or using Signal Kit&apos;s YouTube features, you agree to be bound by the{" "}
+        <a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a>.
       </p>
 
       <h2>Acceptable use</h2>

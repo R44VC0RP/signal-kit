@@ -1,10 +1,17 @@
 import type { EventPlatform, SignalKitEvent } from "@/lib/events/types";
+import { isExpired } from "@/lib/retention/youtube-core";
 
 /**
  * Running tallies per streamer behind goal bars and labels (latest follower, session subs, top
  * tip…). Updated as events are ingested, pushed live to open overlays, and stored so a restart
  * or a new OBS scene shows the same numbers. "session" restarts when a stream goes live;
  * "total" counts since Signal Kit started tracking.
+ *
+ * YouTube retention (API policy: nothing from YouTube older than 30 days): YouTube support is
+ * counted into per-day buckets (`youtubeDays`) instead of `total`, and a bucket is deleted once
+ * its day starts more than 30 days ago, so YouTube counts toward totals and goals for 30 days.
+ * YouTube names (latest, recent, top, boss) disappear 30 days after the event, and a session
+ * older than 30 days is reset. `pruneStats` applies this; `publicStats` prunes before serving.
  *
  * This file is pure (no server imports) so overlays and the studio preview can apply events too.
  */
@@ -32,15 +39,26 @@ export type Counters = {
 };
 
 /** The stream boss: support deals damage; the viewer who lands the final hit becomes the boss. */
-export type Boss = { name: string; platform: EventPlatform | null; avatarUrl?: string | null; hp: number; maxHp: number; lastHit?: { name: string; damage: number; what: string; at: string } };
+export type Boss = {
+  name: string;
+  platform: EventPlatform | null;
+  avatarUrl?: string | null;
+  hp: number;
+  maxHp: number;
+  lastHit?: { name: string; damage: number; what: string; at: string; platform?: EventPlatform };
+  /** When this boss appeared. */
+  since?: string;
+  /** First YouTube involvement in this boss's life (a YouTube boss or YouTube damage); the boss resets 30 days after it. */
+  youtubeSince?: string;
+};
 
 export const BOSS_START_HP = 1000;
 /** Each new boss is tougher than the last, up to a cap. */
 const BOSS_HP_STEP = 250;
 const BOSS_MAX_HP = 20_000;
 
-export function newBoss(): Boss {
-  return { name: "Signal Kit", platform: null, hp: BOSS_START_HP, maxHp: BOSS_START_HP };
+export function newBoss(now = new Date()): Boss {
+  return { name: "Signal Kit", platform: null, hp: BOSS_START_HP, maxHp: BOSS_START_HP, since: now.toISOString() };
 }
 
 /** Damage per kind of support: follow 10, sub 100 (tier 2: 200, tier 3: 500), gift 100 each, 1 per bit, 100 per dollar-ish, raid 2 per viewer. */
@@ -74,7 +92,12 @@ export function bossDamage(event: SignalKitEvent): { damage: number; what: strin
   }
 }
 
-export type GoalBaseline = { metric: StatMetric; currency: string; value: number; at: string };
+/**
+ * `value` is the non-YouTube total when the goal started; YouTube support counts from the
+ * day buckets on or after the start day, minus `youtubeAtStart` (that day's bucket value at the
+ * start), which is dropped together with that day's bucket.
+ */
+export type GoalBaseline = { metric: StatMetric; currency: string; value: number; at: string; youtubeAtStart?: number };
 
 export type StreamStats = {
   latest: {
@@ -89,7 +112,10 @@ export type StreamStats = {
   /** Most recent first, up to 10 each. */
   recent: { followers: StatPerson[]; subscribers: StatPerson[]; tips: StatAmount[]; cheers: StatAmount[] };
   session: Counters & { startedAt: string; topTip?: StatAmount; topCheer?: StatAmount; topGifter?: StatPerson & { count: number } };
+  /** Lifetime counters without YouTube (YouTube support is in `youtubeDays`). */
   total: Counters & { topTip?: StatAmount; topCheer?: StatAmount };
+  /** YouTube support per UTC day ("YYYY-MM-DD"), deleted after 30 days. */
+  youtubeDays: Record<string, Counters>;
   boss?: Boss;
   /** Goal overlays count from here: the metric's total when the goal was (re)started. */
   goalBaselines: Record<string, GoalBaseline>;
@@ -109,6 +135,7 @@ export function emptyStats(now = new Date()): StreamStats {
     recent: { followers: [], subscribers: [], tips: [], cheers: [] },
     session: { ...emptyCounters(), startedAt: now.toISOString() },
     total: emptyCounters(),
+    youtubeDays: {},
     goalBaselines: {},
   };
 }
@@ -121,10 +148,215 @@ export function metricValue(counters: Counters, metric: StatMetric, currency = "
   return counters[metric];
 }
 
-/** What overlays get: everything but the goal bookkeeping. */
-export function publicStats(stats: StreamStats) {
+// ---- YouTube retention ------------------------------------------------------------------------
+
+function dayKey(at: string | number) {
+  const time = typeof at === "number" ? at : Date.parse(at);
+  return new Date(Number.isFinite(time) ? time : Date.now()).toISOString().slice(0, 10);
+}
+
+/** A day bucket is kept while its whole day is within the last 30 days. */
+function dayExpired(day: string, now: number) {
+  return isExpired(Date.parse(`${day}T00:00:00.000Z`), now);
+}
+
+function addCounters(into: Counters, add: Counters) {
+  into.followers += add.followers ?? 0;
+  into.subs += add.subs ?? 0;
+  into.gifts += add.gifts ?? 0;
+  into.bits += add.bits ?? 0;
+  into.members += add.members ?? 0;
+  into.raids += add.raids ?? 0;
+  into.tipCount += add.tipCount ?? 0;
+  for (const [currency, value] of Object.entries(add.tips ?? {})) {
+    into.tips[currency] = round2((into.tips[currency] ?? 0) + value);
+  }
+}
+
+/** YouTube support within the last 30 days, optionally only from `fromDay` on. */
+function youtubeCounters(stats: Pick<StreamStats, "youtubeDays">, now: number, fromDay?: string) {
+  const sum = emptyCounters();
+  for (const [day, counters] of Object.entries(stats.youtubeDays ?? {})) {
+    if (!dayExpired(day, now) && (!fromDay || day >= fromDay)) {
+      addCounters(sum, counters);
+    }
+  }
+  return sum;
+}
+
+/** Lifetime non-YouTube counters plus YouTube support from the last 30 days. */
+export function totalWithYouTube(stats: Pick<StreamStats, "total" | "youtubeDays">, now = Date.now()): StreamStats["total"] {
+  const merged = { ...stats.total, tips: { ...stats.total.tips } };
+  addCounters(merged, youtubeCounters(stats, now));
+  return merged;
+}
+
+/** Folds YouTube day buckets into `total` (overlays, after applying test events to served stats). */
+export function mergeYouTubeDays(stats: StreamStats, now = Date.now()) {
+  stats.total = totalWithYouTube(stats, now);
+  stats.youtubeDays = {};
+}
+
+/** A YouTube person or amount whose event is more than 30 days old (with `all`: any YouTube one). */
+function expiredYouTube(entry: { platform?: EventPlatform | null; at?: string } | undefined, now: number, all = false) {
+  return Boolean(entry && entry.platform === "youtube" && (all || isExpired(entry.at, now)));
+}
+
+/**
+ * Deletes YouTube data older than 30 days from stats, in place: day buckets, latest/recent/top
+ * entries, a stale session, a boss with old YouTube involvement, and goal start values for
+ * expired days. With `all` (YouTube disconnected or access revoked) it deletes every YouTube
+ * part, whatever its age, and restarts the session and boss if they hold YouTube counts.
+ * Returns whether anything changed.
+ */
+export function pruneStats(stats: StreamStats, now = Date.now(), all = false) {
+  let changed = false;
+  stats.youtubeDays ??= {};
+  // Every YouTube count goes into a day bucket as well as the session, so a bucket from the
+  // session's start day on means the session holds YouTube counts.
+  const sessionDay = dayKey(stats.session.startedAt);
+  const sessionHasYouTube = Object.keys(stats.youtubeDays).some((day) => day >= sessionDay) || Number(stats.session.members ?? 0) > 0;
+  for (const day of Object.keys(stats.youtubeDays)) {
+    if (all || dayExpired(day, now)) {
+      delete stats.youtubeDays[day];
+      changed = true;
+    }
+  }
+  const latest = stats.latest as Record<string, StatPerson | undefined>;
+  for (const key of Object.keys(latest)) {
+    if (expiredYouTube(latest[key], now, all)) {
+      delete latest[key];
+      changed = true;
+    }
+  }
+  for (const key of ["followers", "subscribers", "tips", "cheers"] as const) {
+    const list = (stats.recent[key] ?? []) as StatPerson[];
+    const kept = list.filter((entry) => !expiredYouTube(entry, now, all));
+    if (kept.length !== list.length) {
+      (stats.recent[key] as StatPerson[]) = kept;
+      changed = true;
+    }
+  }
+  // A session that started more than 30 days ago may hold old YouTube counts: start it over.
+  if (all ? sessionHasYouTube : isExpired(stats.session.startedAt, now)) {
+    stats.session = { ...emptyCounters(), startedAt: new Date(now).toISOString() };
+    changed = true;
+  }
+  for (const key of ["topTip", "topCheer", "topGifter"] as const) {
+    if (expiredYouTube(stats.session[key], now, all)) {
+      delete stats.session[key];
+      changed = true;
+    }
+  }
+  for (const key of ["topTip", "topCheer"] as const) {
+    if (expiredYouTube(stats.total[key], now, all)) {
+      delete stats.total[key];
+      changed = true;
+    }
+  }
+  const boss = stats.boss;
+  if (boss) {
+    // The boss's HP holds YouTube damage since `youtubeSince` (a YouTube boss: since it appeared).
+    const youtubeSince = boss.youtubeSince ?? (boss.platform === "youtube" ? (boss.since ?? "") : null);
+    if (youtubeSince !== null && (all || isExpired(youtubeSince, now))) {
+      stats.boss = newBoss(new Date(now));
+      changed = true;
+    } else if (boss.lastHit?.platform === "youtube" && (all || isExpired(boss.lastHit.at, now))) {
+      delete boss.lastHit;
+      changed = true;
+    }
+  }
+  for (const baseline of Object.values(stats.goalBaselines ?? {})) {
+    if (baseline.youtubeAtStart !== undefined && (all || dayExpired(dayKey(baseline.at), now))) {
+      delete baseline.youtubeAtStart;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+/**
+ * Stats stored before YouTube day buckets existed mix YouTube into `total`, goal start values and
+ * the boss. If the user has (had) YouTube, the parts YouTube can contribute to are reset: YouTube
+ * never sends follows, raids or bits (events/normalize.ts), so followers, bits and raids stay;
+ * memberships come out of subs; gifts and tips (Super Chats and Super Stickers are tips) start
+ * over, and so do goals on those metrics. Otherwise `total` is all non-YouTube.
+ */
+export function migrateLegacyStats(stats: StreamStats, hadYouTube: boolean, now = new Date()) {
+  stats.youtubeDays ??= {};
+  if (hadYouTube) {
+    const total = { ...emptyCounters(), ...stats.total };
+    stats.total = {
+      ...emptyCounters(),
+      followers: total.followers,
+      bits: total.bits,
+      raids: total.raids,
+      subs: Math.max(0, total.subs - total.members),
+      ...(total.topCheer ? { topCheer: total.topCheer } : {}),
+      ...(total.topTip ? { topTip: total.topTip } : {}),
+    };
+    for (const baseline of Object.values(stats.goalBaselines ?? {})) {
+      if (baseline.metric === "followers" || baseline.metric === "bits" || baseline.metric === "raids") {
+        baseline.youtubeAtStart ??= 0;
+      } else {
+        // Restart the goal from now: its start value may include YouTube support.
+        Object.assign(baseline, { value: metricValue(stats.total, baseline.metric, baseline.currency), at: now.toISOString(), youtubeAtStart: 0 });
+      }
+    }
+    if (stats.boss) {
+      stats.boss = newBoss(now);
+    }
+  } else if (stats.boss && !stats.boss.since) {
+    stats.boss.since = stats.boss.lastHit?.at ?? now.toISOString();
+  }
+}
+
+/** Whether stored (raw) stats show any sign of YouTube. */
+export function mentionsYouTube(state: unknown) {
+  const json = JSON.stringify(state ?? {});
+  return json.includes('"platform":"youtube"') || Number((state as { total?: { members?: number } })?.total?.members ?? 0) > 0;
+}
+
+/** The goal's start values for a metric right now (non-YouTube total and today's YouTube bucket). */
+export function goalStart(stats: StreamStats, metric: StatMetric, currency: string, now = Date.now()): GoalBaseline {
+  const today = stats.youtubeDays?.[dayKey(now)];
+  return {
+    metric,
+    currency: currency.toUpperCase(),
+    value: metricValue(stats.total, metric, currency),
+    at: new Date(now).toISOString(),
+    youtubeAtStart: today ? metricValue(today, metric, currency) : 0,
+  };
+}
+
+/** Progress of a goal: everything counted since it started (YouTube: within the last 30 days). */
+export function goalProgress(stats: StreamStats, overlayId: string, now = Date.now()) {
+  const baseline = stats.goalBaselines[overlayId];
+  if (!baseline) {
+    return 0;
+  }
+  const startDay = dayKey(baseline.at);
+  const youtube = metricValue(youtubeCounters(stats, now, startDay), baseline.metric, baseline.currency);
+  const startDayCounted = !dayExpired(startDay, now) && stats.youtubeDays?.[startDay];
+  const offset = startDayCounted ? (baseline.youtubeAtStart ?? 0) : 0;
+  return Math.max(0, metricValue(stats.total, baseline.metric, baseline.currency) - baseline.value + youtube - offset);
+}
+
+/**
+ * What overlays get: pruned stats with YouTube support (last 30 days) merged into `total`,
+ * and each goal's progress instead of the bookkeeping behind it.
+ */
+export function publicStats(input: StreamStats, now = Date.now()) {
+  const stats = structuredClone(input);
+  stats.youtubeDays ??= {};
+  stats.goalBaselines ??= {};
+  pruneStats(stats, now);
   const { goalBaselines, ...rest } = stats;
-  return { ...rest, goals: goalBaselines };
+  delete (rest as Partial<StreamStats>).youtubeDays;
+  const goals = Object.fromEntries(
+    Object.entries(goalBaselines).map(([id, baseline]) => [id, { metric: baseline.metric, currency: baseline.currency, at: baseline.at, progress: goalProgress(stats, id, now) }]),
+  );
+  return { ...(rest as Omit<typeof rest, "youtubeDays">), total: totalWithYouTube(stats, now), goals };
 }
 export type PublicStats = ReturnType<typeof publicStats>;
 
@@ -139,12 +371,25 @@ function applyBoss(stats: StreamStats, event: SignalKitEvent) {
   if (hit && hit.damage > 0) {
     const boss = (stats.boss ??= newBoss());
     const attacker = event.actor?.name || "Someone";
-    boss.lastHit = { name: attacker, damage: hit.damage, what: hit.what, at: event.occurredAt };
+    const youtube = event.platform === "youtube";
+    boss.lastHit = { name: attacker, damage: hit.damage, what: hit.what, at: event.occurredAt, platform: event.platform };
     boss.hp -= hit.damage;
+    if (youtube) {
+      boss.youtubeSince ??= event.occurredAt;
+    }
     if (boss.hp <= 0) {
       // Final hit: the attacker takes over as a tougher boss.
       const maxHp = Math.min(BOSS_MAX_HP, boss.maxHp + BOSS_HP_STEP);
-      stats.boss = { name: attacker, platform: event.platform, avatarUrl: event.actor?.avatarUrl ?? null, hp: maxHp, maxHp, lastHit: boss.lastHit };
+      stats.boss = {
+        name: attacker,
+        platform: event.platform,
+        avatarUrl: event.actor?.avatarUrl ?? null,
+        hp: maxHp,
+        maxHp,
+        lastHit: boss.lastHit,
+        since: event.occurredAt,
+        ...(youtube ? { youtubeSince: event.occurredAt } : {}),
+      };
     }
     return true;
   }
@@ -154,7 +399,8 @@ function applyBoss(stats: StreamStats, event: SignalKitEvent) {
 function applyCounters(stats: StreamStats, event: SignalKitEvent): boolean {
   const at = event.occurredAt;
   const person: StatPerson | null = event.actor ? { name: event.actor.name || "Someone", platform: event.platform, avatarUrl: event.actor.avatarUrl ?? null, at } : null;
-  const both = [stats.session, stats.total];
+  // YouTube support goes into today's bucket instead of the lifetime total (30-day retention).
+  const both = [stats.session, event.platform === "youtube" ? ((stats.youtubeDays ??= {})[dayKey(at)] ??= emptyCounters()) : stats.total];
   const data = event.data ?? {};
 
   switch (event.kind) {
@@ -257,10 +503,4 @@ function sessionIsEmpty(c: Counters) {
 
 function round2(value: number) {
   return Math.round(value * 100) / 100;
-}
-
-/** Progress of a goal: its start value plus everything counted since it started. */
-export function goalProgress(stats: Pick<StreamStats, "total"> & { goals: Record<string, GoalBaseline> }, overlayId: string) {
-  const baseline = stats.goals[overlayId];
-  return baseline ? Math.max(0, metricValue(stats.total, baseline.metric, baseline.currency) - baseline.value) : 0;
 }

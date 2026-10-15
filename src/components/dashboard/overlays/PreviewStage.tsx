@@ -12,7 +12,9 @@ export type StageBackground = "gameplay" | "chatting" | "transparent";
 
 /**
  * A fake stream with the overlay rendered on top at true 1080p size, scaled to fit. Uses the
- * same renderer as the browser source, so what you see here is what OBS shows.
+ * same renderer as the browser source, so what you see here is what OBS shows, except YouTube's
+ * icon: scaled down it would fall below YouTube's 20px minimum, so a scaled stage leaves it out
+ * (sko-scaled-preview in overlay.css). The browser source at 100% shows it.
  */
 export function PreviewStage({
   type,
@@ -52,7 +54,7 @@ export function PreviewStage({
 
   return (
     <div ref={frame} className="relative aspect-video w-full overflow-hidden rounded-[8px] border border-(--line) bg-black">
-      <div className="absolute top-0 left-0 h-[1080px] w-[1920px] origin-top-left" style={{ transform: `scale(${scale})` }}>
+      <div className={`absolute top-0 left-0 h-[1080px] w-[1920px] origin-top-left ${scale < 1 ? "sko-scaled-preview" : ""}`} style={{ transform: `scale(${scale})` }}>
         {background === "gameplay" ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -39,7 +39,7 @@ export default function PrivacyPage() {
       <p>
         If you connect a YouTube channel, Signal Kit uses YouTube API Services. By connecting YouTube you agree to the{" "}
         <a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a>, and Google&apos;s handling of your data is described in
-        the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.
+        the <a href="http://www.google.com/policies/privacy">Google Privacy Policy</a>.
       </p>
       <ul>
         <li>
@@ -47,9 +47,34 @@ export default function PrivacyPage() {
           Super Stickers and memberships) so we can deliver them to your own tools. We never post, edit or delete anything on your YouTube channel.
         </li>
         <li>
+          <strong>We delete all data obtained from YouTube API Services within 30 days.</strong> That covers live chat messages, viewers&apos;
+          names, channel IDs and profile pictures, Super Chat, Super Sticker and membership details and amounts, concurrent viewer
+          counts, broadcast titles, and every statistic we derive from them (per-stream YouTube totals and charts, chatter counts,
+          goal and label counts, loyalty points). A deletion job checks every hour, so nothing from YouTube is kept longer than 30
+          days and one hour, and YouTube data older than 30 days is never shown, even before that job runs. Stream history keeps only
+          non-YouTube data (for example Twitch) beyond 30 days; a stream that was only on YouTube is deleted entirely.
+        </li>
+        <li>
+          Your own connected channel&apos;s name, handle and picture are re-read from YouTube every week while it is connected, and
+          cleared if they can&apos;t be refreshed for 30 days. Its channel ID and tokens are kept while YouTube is connected. If access is
+          revoked, we delete the tokens and the channel&apos;s profile, and keep only its YouTube channel ID until you reconnect or remove
+          it, so the dashboard can offer to reconnect.
+        </li>
+        <li>
+          Because of this, YouTube support counts toward goals and labels for 30 days, &quot;new&quot; and &quot;returning&quot; YouTube
+          chatters are judged over the last 30 days, and YouTube viewers&apos; loyalty points are deleted after 30 days without activity.
+        </li>
+        <li>
           You can revoke Signal Kit&apos;s access to your Google account at any time at{" "}
-          <a href="https://security.google.com/settings/security/permissions">Google security settings</a>, or by disconnecting
-          YouTube in the Signal Kit dashboard.
+          <a href="https://security.google.com/settings/security/permissions">https://security.google.com/settings/security/permissions</a>, or
+          by disconnecting YouTube in the Signal Kit dashboard. Either way, <strong>we delete all YouTube data Signal Kit stored within 7
+          days</strong>: in practice immediately when you disconnect in the dashboard (which also revokes the access with Google and deletes
+          its tokens), and within an hour or two after you revoke access at Google (an hourly check renews each YouTube connection&apos;s
+          access with Google, which fails once access was revoked, and deletes that user&apos;s YouTube data in the same pass).
+        </li>
+        <li>
+          Deleting Signal Kit&apos;s data doesn&apos;t change or delete anything stored by YouTube; your channel, videos and chat on YouTube
+          are unaffected.
         </li>
       </ul>
 
@@ -88,28 +113,39 @@ export default function PrivacyPage() {
 
       <h2>How long we keep it</h2>
       <ul>
-        <li>Stream events are kept for 24 hours so your apps can catch up after a reconnect, then deleted automatically.</li>
+        <li>Raw stream events (all platforms) are kept for 24 hours so your apps can catch up after a reconnect, then deleted automatically.</li>
         <li>
-          Stream history (per-stream totals, and which chatters took part) is kept until you delete your account, except YouTube viewer
-          names and pictures, which are removed after 30 days; the totals stay. Public stats pages never show YouTube viewer names.
+          Everything obtained from YouTube API Services, and statistics derived from it, is deleted within 30 days (checked every hour;
+          see YouTube data above).
+        </li>
+        <li>
+          Stream history from other platforms (per-stream totals, and which chatters took part) is kept until you delete your account.
+          Public stats pages never show YouTube data.
         </li>
         <li>Your Discord webhook URL is stored encrypted and deleted when you remove it.</li>
-        <li>Access tokens are kept while an account is connected and deleted when you disconnect it.</li>
-        <li>Account details and API key records are kept until you delete your account.</li>
+        <li>
+          Access tokens are kept while an account is connected and deleted when you disconnect it, or for YouTube, once we find its access
+          was revoked. Disconnecting YouTube, or revoking Signal Kit&apos;s access at Google, also deletes all YouTube data we stored (see
+          YouTube data above).
+        </li>
+        <li>
+          Account details and API key records are kept until you delete your account (a connected YouTube channel&apos;s profile is
+          refreshed weekly, as described above).
+        </li>
       </ul>
 
       <h2>Your choices</h2>
       <ul>
         <li>
           <strong>Disconnect an account</strong> in the dashboard. We revoke the platform access and delete its stored tokens
-          immediately.
+          immediately; for YouTube we also delete all YouTube data Signal Kit stored.
         </li>
         <li>
           <strong>Revoke an API key</strong> in the dashboard. Anything using it is disconnected immediately.
         </li>
         <li>
           <strong>Delete your account and data</strong> by emailing <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. We delete
-          it within 30 days.
+          it within 7 days of your request.
         </li>
       </ul>
 

@@ -91,9 +91,9 @@ export default function HomePage() {
                 <h2 className="sk-brand text-[34px] leading-[38px] font-semibold tracking-[-0.03em] text-(--text) sm:text-[44px] sm:leading-[48px]">Let chat play along.</h2>
                 <p className="text-[15px] leading-6 text-(--text-2)">Viewers on Twitch, YouTube and X take part by typing in chat. No extension, no extra account.</p>
                 <span className="flex items-center gap-2.5">
-                  <PlatformLogo platform="twitch" size={15} />
-                  <PlatformLogo platform="youtube" size={16} />
-                  <PlatformLogo platform="x" size={14} />
+                  <PlatformLogo platform="twitch" size={20} />
+                  <PlatformLogo platform="youtube" size={20} />
+                  <PlatformLogo platform="x" size={18} />
                 </span>
               </div>
               <ul className="flex flex-col">

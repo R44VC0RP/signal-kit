@@ -47,6 +47,8 @@ export type StreamSummary = {
   highlights: Highlight[];
   /** Emote uses in chat (Twitch, BTTV, FFZ, 7TV), by name. */
   emotes?: Record<string, { url: string; count: number }>;
+  /** When the YouTube part was deleted (30-day retention, see lib/retention/youtube-core.ts). */
+  youtubePurgedAt?: string;
 };
 
 const MAX_HIGHLIGHTS = 500;

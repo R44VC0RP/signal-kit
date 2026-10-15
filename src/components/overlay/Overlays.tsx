@@ -249,11 +249,15 @@ function AlertsOverlay({ settings, events }: { settings: AlertSettings; events: 
         ) : (
           <>
             {text.customImage ? <AlertArt key={text.customImage} url={text.customImage} isDefault={false} /> : null}
-            <div className="sko-alert" data-kind={event.kind} data-money={event.kind === "tip" || undefined}>
-              {settings.showAvatar ? <Avatar name={event.actor?.name ?? "?"} url={event.actor?.avatarUrl} size="alert" platform={event.platform} /> : null}
+            <div className="sko-alert" data-kind={event.kind} data-money={event.kind === "tip" || undefined} data-platform={event.platform}>
+              {/* YouTube's icon can't be a badge over the avatar (it needs its clear space), so a
+                  YouTube alert shows it in the eyebrow instead. */}
+              {settings.showAvatar ? (
+                <Avatar name={event.actor?.name ?? "?"} url={event.actor?.avatarUrl} size="alert" platform={event.platform === "youtube" ? undefined : event.platform} />
+              ) : null}
               <div className="sko-alert-body">
                 <div className="sko-alert-eyebrow">
-                  {settings.showAvatar ? null : <PlatformLogo platform={event.platform} size={14} />}
+                  {settings.showAvatar && event.platform !== "youtube" ? null : <PlatformLogo platform={event.platform} size={14} />}
                   <span>{text.label}</span>
                 </div>
                 <div className="sko-alert-title">

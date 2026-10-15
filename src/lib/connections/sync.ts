@@ -73,6 +73,22 @@ export async function syncConnectionsForUser(userId: string, options: SyncOption
   }
 }
 
+/**
+ * Re-reads a connection's profile (name, handle, picture) from the platform. YouTube retention
+ * (lib/retention/youtube.ts) calls it weekly for YouTube channels so the stored channel profile
+ * is never older than 30 days; if it can't be refreshed by then, the profile is cleared.
+ */
+export async function refreshConnectionProfile(connectionId: string) {
+  const db = getDb();
+  const [connection] = await db.select().from(connections).where(eq(connections.id, connectionId)).limit(1);
+  const [account] = connection ? await db.select().from(accounts).where(eq(accounts.id, connection.accountId)).limit(1) : [];
+  if (!connection || !account) {
+    return false;
+  }
+  await upsertConnection(connection.userId, account, connection, undefined);
+  return true;
+}
+
 async function upsertConnection(
   userId: string,
   account: typeof accounts.$inferSelect,

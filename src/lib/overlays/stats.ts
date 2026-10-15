@@ -1,14 +1,23 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { streamStats } from "@/db/schema";
+import { connections, streamStats } from "@/db/schema";
 import type { SignalKitEvent } from "@/lib/events/types";
 import { relayHub } from "@/lib/ws/relay";
-import { applyEvent, emptyCounters, emptyStats, metricValue, newBoss, publicStats, type StatMetric, type StreamStats } from "./stats-core";
+import { applyEvent, emptyCounters, emptyStats, goalStart, mentionsYouTube, migrateLegacyStats, newBoss, pruneStats, publicStats, type StatMetric, type StreamStats } from "./stats-core";
 
-/** Stored, live-updated stream stats per user (see stats-core.ts for what is counted). */
+/**
+ * Stored, live-updated stream stats per user (see stats-core.ts for what is counted). YouTube
+ * data older than 30 days is pruned whenever stats are read, and deleted from the database by
+ * the hourly retention job (lib/retention/youtube.ts, via `purgeStatsYouTube`).
+ */
 
-const cache = new Map<string, StreamStats>();
-const queues = new Map<string, Promise<unknown>>();
+// On globalThis like the other singletons: the Next route bundle (e.g. disconnecting YouTube) and
+// the server bundle (event ingest) must share one cache and one queue per user, or one bundle's
+// cached copy would write data the other just purged back on its next save.
+const globalForStats = globalThis as typeof globalThis & {
+  __signalKitStats?: { cache: Map<string, StreamStats>; queues: Map<string, Promise<unknown>> };
+};
+const { cache, queues } = (globalForStats.__signalKitStats ??= { cache: new Map(), queues: new Map() });
 
 /** Runs updates for one user one at a time, so concurrent events never lose a count. */
 function serial<T>(userId: string, job: () => Promise<T>): Promise<T> {
@@ -26,12 +35,55 @@ function serial<T>(userId: string, job: () => Promise<T>): Promise<T> {
 export async function getStats(userId: string): Promise<StreamStats> {
   const cached = cache.get(userId);
   if (cached) {
+    pruneStats(cached);
     return cached;
   }
   const [row] = await getDb().select({ state: streamStats.state }).from(streamStats).where(eq(streamStats.userId, userId)).limit(1);
-  const stats = { ...emptyStats(), ...((row?.state ?? {}) as Partial<StreamStats>) } as StreamStats;
+  const stats = await fromStored(userId, row?.state);
   cache.set(userId, stats);
   return stats;
+}
+
+/** Stored JSON to stats: fills defaults, migrates pre-retention state, prunes old YouTube data. */
+async function fromStored(userId: string, state: Record<string, unknown> | undefined) {
+  const stats = { ...emptyStats(), ...((state ?? {}) as Partial<StreamStats>) } as StreamStats;
+  if (state && !("youtubeDays" in state)) {
+    const hadYouTube =
+      mentionsYouTube(state) ||
+      (await getDb()
+        .select({ id: connections.id })
+        .from(connections)
+        .where(and(eq(connections.userId, userId), eq(connections.platform, "youtube")))
+        .limit(1)).length > 0;
+    migrateLegacyStats(stats, hadYouTube);
+  }
+  pruneStats(stats);
+  return stats;
+}
+
+/**
+ * Retention job: prunes the user's stats and writes them back if the stored copy still holds
+ * anything older than 30 days from YouTube (or predates YouTube day buckets). With `all`
+ * (YouTube disconnected or revoked) every YouTube part goes, whatever its age. Returns whether it saved.
+ */
+export function purgeStatsYouTube(userId: string, all = false) {
+  return serial(userId, async () => {
+    const [row] = await getDb().select({ state: streamStats.state }).from(streamStats).where(eq(streamStats.userId, userId)).limit(1);
+    if (!row) {
+      return false;
+    }
+    const legacy = !("youtubeDays" in row.state);
+    const stored = { ...emptyStats(), ...structuredClone(row.state) } as StreamStats;
+    if (!legacy && !pruneStats(stored, Date.now(), all)) {
+      return false;
+    }
+    const stats = await fromStored(userId, row.state);
+    if (all) {
+      pruneStats(stats, Date.now(), true);
+    }
+    await save(userId, stats);
+    return true;
+  });
 }
 
 async function save(userId: string, stats: StreamStats) {
@@ -62,7 +114,7 @@ export function recordStats(userId: string, event: SignalKitEvent) {
 export function startGoal(userId: string, overlayId: string, metric: StatMetric, currency: string) {
   return serial(userId, async () => {
     const stats = structuredClone(await getStats(userId));
-    stats.goalBaselines[overlayId] = { metric, currency: currency.toUpperCase(), value: metricValue(stats.total, metric, currency), at: new Date().toISOString() };
+    stats.goalBaselines[overlayId] = goalStart(stats, metric, currency);
     await save(userId, stats);
     return stats;
   });

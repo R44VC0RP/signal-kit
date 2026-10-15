@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ConnectButton, type ProviderId } from "@/components/AuthButtons";
 import { CopyButton, RevokeKeyButton } from "@/components/dashboard/actions";
 import { ConnectionStatus } from "@/components/dashboard/ConnectionStatus";
-import { PLATFORM_NAME, PlatformTile } from "@/components/dashboard/PlatformLogo";
+import { channelUrl, PLATFORM_NAME, PlatformTile } from "@/components/dashboard/PlatformLogo";
 import { buttonClass, Muted, PageHeader, Row, Section, Status } from "@/components/dashboard/ui";
 import type { Platform } from "@/db/schema";
 import { enabledProviders, loadApiKeys, loadConnections, requireDashboardUser } from "@/lib/dashboard";
@@ -147,7 +147,11 @@ export default async function OverviewPage() {
       >
         {connections.map((connection) => (
           <Row key={connection.id}>
-            <PlatformTile platform={connection.platform} />
+            <PlatformTile
+              platform={connection.platform}
+              href={channelUrl(connection.platform, connection.platformUserId)}
+              label={connection.platform === "youtube" ? `Open ${connection.displayName} on YouTube` : undefined}
+            />
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-[13px] font-medium text-(--text)">{connection.displayName}</span>
               <Muted>
@@ -170,7 +174,7 @@ export default async function OverviewPage() {
         ))}
         {missing.map((platform) => (
           <Row key={platform}>
-            <PlatformTile platform={platform} />
+            <PlatformTile platform={platform} href={platform === "youtube" ? "https://www.youtube.com" : undefined} label={platform === "youtube" ? "YouTube" : undefined} />
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-[13px] font-medium text-(--text)">{PLATFORM_NAME[platform]}</span>
               <Muted>{PLATFORM_BLURB[platform]}</Muted>

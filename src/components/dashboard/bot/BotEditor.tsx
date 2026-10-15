@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ConnectButton } from "@/components/AuthButtons";
 import { Field, NumberField, SelectField, Slider, TextField, Toggle } from "@/components/dashboard/overlays/controls";
-import { PlatformLogo } from "@/components/dashboard/PlatformLogo";
+import { PlatformLogo, PlatformSlot } from "@/components/dashboard/PlatformLogo";
 import { buttonClass, Muted, Section } from "@/components/dashboard/ui";
 import { BUILTINS, commandName, ROLE_LABEL, ROLES, type BotConfig, type Role } from "@/lib/bot/config";
 
@@ -345,7 +345,7 @@ function Loyalty({ config, update }: Props) {
         {board?.slice(0, 20).map((row, index) => (
           <div key={`${row.platform}${row.name}`} className="flex min-h-10 items-center gap-3 border-t border-(--line)">
             <span className="sk-mono w-6 text-xs text-(--text-3)">{index + 1}</span>
-            <PlatformLogo platform={row.platform} size={12} />
+            <PlatformSlot platform={row.platform} size={12} />
             <span className="flex-1 truncate text-[13px] text-(--text)">{row.name}</span>
             <span className="sk-mono w-28 text-right text-xs text-(--text-3)">{`${Math.round(row.watchMinutes / 60)}h watched`}</span>
             <span className="sk-mono w-28 text-right text-xs text-(--text)">{row.points.toLocaleString("en")}</span>

@@ -112,12 +112,13 @@ class YouTubeLiveManager {
       if (!broadcast || !liveChatId) {
         return;
       }
-      // Stream history: the broadcast id lets the tracker sample viewers and see the end.
+      // Stream history: the broadcast id lets the tracker sample viewers and see the end. The start
+      // is when Signal Kit found the broadcast, not YouTube's actualStartTime, so no YouTube
+      // timestamp is stored with the stream (it outlives the 30-day YouTube retention).
       void streamTracker.platformLive(m.source.userId, "youtube", {
         connectionId: m.connectionId,
         broadcastId: broadcast.id,
         title: broadcast.snippet?.title ?? null,
-        startedAt: broadcast.snippet?.actualStartTime ?? null,
       });
       if (liveChatId !== m.liveChatId) {
         m.liveChatId = liveChatId;
@@ -164,6 +165,10 @@ class YouTubeLiveManager {
     m.skipBacklog = false;
     if (!backlog) {
       for (const item of response.items ?? []) {
+        // Stop if the chat closed or the connection was removed (disconnect or revocation purges YouTube data) meanwhile.
+        if (m.liveChatId !== liveChatId || this.managed.get(m.connectionId) !== m) {
+          return;
+        }
         await this.ingest(m, item);
       }
     }
